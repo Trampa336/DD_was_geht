@@ -3,9 +3,8 @@ APScheduler==3.10.4
 Flask==3.0.3
 requests==2.34.2
 beautifulsoup4==4.12.3
-# lxml ist optional: schneller Parser, aber auf 32-bit-Pi-OS (armv7) ohne
-# fertiges Wheel und dann sehr langsam zu bauen. Der Code fällt automatisch
-# auf Pythons html.parser zurück, wenn lxml fehlt (siehe app/scrapers/base.py).
-# Falls der Docker-Build daran hängen bleibt: diese Zeile auskommentieren.
+# lxml ist der schnellere HTML-Parser. Auf dem Pi (aarch64) liefert pip ein
+# fertiges Wheel, der Build kompiliert also nichts. Fehlt lxml doch mal, fällt
+# der Code automatisch auf Pythons html.parser zurück (app/scrapers/base.py).
 lxml==5.3.0
 python-dotenv==1.0.1
