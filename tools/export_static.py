@@ -41,39 +41,8 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import config, db, scoring  # noqa: E402
+from app import config, db, feed  # noqa: E402
 from app.web import app as flask_app  # noqa: E402
-
-# Felder, die das Frontend tatsaechlich anfasst. Alles andere (first_seen,
-# raw_category, detail_fetched_at ...) ist Innenleben und bleibt auf dem Pi.
-EVENT_FIELDS = (
-    "uid", "title", "date", "time", "venue", "category", "source", "url",
-    "image_url", "price_text", "description",
-)
-
-
-def _slim(event):
-    """Ein Event so, wie es die Tagesdatei braucht. Leere Felder fliegen raus -
-    das spart rund ein Zehntel Datenmenge, und das Frontend behandelt fehlende
-    Felder ohnehin schon als leer."""
-    out = OrderedDict()
-    for field in EVENT_FIELDS:
-        value = event.get(field)
-        if value not in (None, ""):
-            out[field] = value
-    if event.get("ongoing"):
-        out["ongoing"] = True
-    # Nur "weiter" wird mitgeschrieben (siehe app/geo.py): Dresden ist der
-    # Normalfall und braucht in jeder Zeile kein eigenes Feld, und das Umland
-    # verhaelt sich im Frontend genau wie Dresden.
-    if event.get("region") == "weiter":
-        out["region"] = "weiter"
-    # Der Score aus dem persoenlichen Lernmodell (app/scoring.py). Bewertet wird
-    # nur auf dem Pi; die oeffentliche Kopie zeigt das Ergebnis mit, damit dort
-    # dieselbe Empfehlungszeile und derselbe "wenig relevant"-Filter funktionieren
-    # wie im Heimnetz.
-    out["score"] = round(event.get("score", 50.0), 1)
-    return out
 
 
 def _dump(payload):
@@ -105,14 +74,15 @@ def _previous_generated_at(index_path, payload):
 
 
 def collect(conn, start, end):
-    """Events des Zeitraums, nach Tag gruppiert. Kategorien werden hier NICHT
-    gefiltert: EXCLUDED_CATEGORIES ist im Web-UI ja nur die Startansicht und
-    ueber die Chips wieder erreichbar - das entscheidet der Browser."""
-    events = db.events_for_range(conn, start.isoformat(), end.isoformat())
-    events = scoring.score_events(conn, events)
+    """Events des Zeitraums, nach Tag gruppiert. Dieselbe Liste, die auch das
+    Web-UI ausliefert (app/web.py) - gebaut vom selben feed.build_events(). Was
+    den Export unterscheidet, steht dort an den Parametern: kein
+    Kategorie-Filter, keine Reaktionen, dafuer die schmalen Zeilen fuer die
+    Tagesdateien."""
+    events = feed.build_events(conn, start, end, slim=True)
     by_day = OrderedDict()
     for event in events:
-        by_day.setdefault(event["date"], []).append(_slim(event))
+        by_day.setdefault(event["date"], []).append(event)
     for day in by_day:
         by_day[day].sort(key=lambda e: (e.get("time") or "99:99", e["title"]))
     return by_day

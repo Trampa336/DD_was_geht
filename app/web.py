@@ -5,12 +5,11 @@ from datetime import date
 
 from flask import Flask, jsonify, render_template, request
 
-from . import config, db, scoring
+from . import config, db, feed, scoring
 from .ranges import month_range, week_range
 from .scrapers import detail_fetch
 
 app = Flask(__name__)
-
 
 def _range_bounds(range_key):
     today = date.today()
@@ -49,13 +48,12 @@ def api_events():
     # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
     # anklickt, soll sie auch dann sehen, wenn sie in EXCLUDED_CATEGORIES steht.
     exclude = None if categories else config.EXCLUDED_CATEGORIES
+    # Dieselbe Liste baut der statische Export (tools/export_static.py) - nur
+    # mit anderen Parametern, siehe feed.build_events.
     with db.get_conn() as conn:
-        events = db.events_for_range(conn, start.isoformat(), end.isoformat(), categories, exclude_categories=exclude)
-        events = scoring.score_events(conn, events)
-        for e in events:
-            e["reaction"] = db.get_reaction(conn, e["uid"])
+        events = feed.build_events(conn, start, end, categories=categories,
+                                   exclude_categories=exclude, with_reactions=True)
 
-    events.sort(key=lambda e: (e["date"], e["time"] or "99:99"))
     return jsonify({
         "range": range_key,
         "categories": categories,
