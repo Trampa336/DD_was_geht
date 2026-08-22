@@ -30,6 +30,7 @@ stehen und wird in events.duplicate_of auf den Gewinner gezeigt; ausgeliefert
 Felder des Gewinners (Bild, Preis, Beschreibung) werden aus dem Duplikat
 aufgefüllt, vorhandene nie überschrieben.
 """
+import collections
 import difflib
 import logging
 import re
@@ -144,8 +145,14 @@ def _title_tokens(slug):
     return {w for w in slug.split("-") if len(w) >= 3 and w not in _TITLE_STOPWORDS}
 
 
+# Was der Titelvergleich hergibt. ratio und overlap sind bewusst zwei getrennte
+# Maße (siehe _title_scores), words ist die Wortzahl des kürzeren Titels - die
+# braucht die Regel für den unbekannten Ort als Gegenprobe.
+_TitleScores = collections.namedtuple("_TitleScores", "ratio overlap words")
+
+
 def _title_scores(title_a, title_b):
-    """(Zeichen-Ähnlichkeit, Wort-Überdeckung) - bewusst zwei getrennte Maße.
+    """Zeichen-Ähnlichkeit, Wort-Überdeckung und Wortzahl des kürzeren Titels.
 
     Die Wort-Überdeckung ("wie viele bedeutsame Wörter des kürzeren Titels
     stecken im längeren") ist das entscheidende Maß, weil die Quellen genau so
@@ -167,14 +174,14 @@ def _title_scores(title_a, title_b):
     """
     slug_a, slug_b = normalize.slugify(title_a or ""), normalize.slugify(title_b or "")
     if not slug_a or not slug_b:
-        return 0.0, 0.0
+        return _TitleScores(0.0, 0.0, 0)
     ratio = difflib.SequenceMatcher(None, slug_a, slug_b).ratio()
 
     tokens_a, tokens_b = _title_tokens(slug_a), _title_tokens(slug_b)
     smaller = min(len(tokens_a), len(tokens_b))
     if not smaller:
-        return ratio, 0.0
-    return ratio, len(tokens_a & tokens_b) / smaller
+        return _TitleScores(ratio, 0.0, 0)
+    return _TitleScores(ratio, len(tokens_a & tokens_b) / smaller, smaller)
 
 
 _TIME_RE = re.compile(r"^(\d{1,2}):(\d{2})$")
@@ -199,59 +206,121 @@ def _time_compatible(time_a, time_b, max_delta=MAX_TIME_DELTA_MINUTES):
     return min(delta, 1440 - delta) <= max_delta
 
 
+# --- Die Entscheidungstabelle ----------------------------------------------
+# Ob zwei Einträge dasselbe Event sind, hängt an drei Größen: der Ortslage, der
+# Titel-Evidenz und dem Abstand der Startzeiten. Jede Ortslage kombiniert sie
+# anders, und genau das steht unten als Tabelle - eine Zeile je
+# (Ortslage -> nötige Titel-Evidenz -> erlaubter Zeitabstand).
+#
+# match() liest _RULES von oben nach unten und nimmt die erste Zeile, die
+# vollständig passt: richtige Ortslage, mindestens einer der beiden
+# Titel-Schwellwerte erreicht, Startzeiten innerhalb des Zeitfensters und - wo
+# vorhanden - die Zusatzprobe bestanden. Passt keine Zeile, sind es zwei
+# verschiedene Termine.
+
+_SAME_VENUE = "gleicher Ort"
+_OTHER_VENUE = "zwei verschiedene, bekannte Orte"
+_UNKNOWN_VENUE = "mindestens ein Ort unbekannt"
+
+# Welche Maße ein Treffer als Ähnlichkeit ausweist (der größere gewinnt).
+_BOTH_MEASURES = ("ratio", "overlap")
+_RATIO_ONLY = ("ratio",)
+_OVERLAP_ONLY = ("overlap",)
+
+# min_overlap/min_ratio: None heißt "dieses Maß zählt in dieser Zeile nicht".
+_Rule = collections.namedtuple(
+    "_Rule", "venue min_overlap min_ratio max_delta score_from reason extra"
+)
+
+
+def _venue_situation(event_a, event_b):
+    """Welche der drei Ortslagen liegt vor?"""
+    key_a, key_b = _venue_key(event_a.get("venue")), _venue_key(event_b.get("venue"))
+    if not (key_a and key_b):
+        return _UNKNOWN_VENUE
+    return _SAME_VENUE if key_a == key_b else _OTHER_VENUE
+
+
+def _neither_is_umbrella(event_a, event_b, scores):
+    """Sammel-Einträge sind per Konstruktion an EINEN Ort gebunden und tragen
+    alle denselben Titel (den Festivalnamen). Über die Titel-Regel würden
+    deshalb sämtliche Spielorte eines Festivaltags zu einem Eintrag verketten -
+    real am 13.09.2026: die sieben Denkmäler des "Tags des Offenen Denkmals"
+    fielen zu einem einzigen zusammen."""
+    return not (_is_umbrella(event_a) or _is_umbrella(event_b))
+
+
+def _two_words_and_both_times(event_a, event_b, scores):
+    """Ein einzelnes enthaltenes Wort ist ohne Ort zu wenig ("Sommerfest" steckt
+    in "Sommerfest der Feuerwehr"). Verlangt werden deshalb mindestens zwei
+    Wörter und beidseitig eine bekannte Uhrzeit."""
+    return scores.words >= 2 and bool(event_a.get("time") and event_b.get("time"))
+
+
+_RULES = (
+    # Gleicher Ort UND ein praktisch deckungsgleicher Titel - die stärkste
+    # Evidenz, die es hier gibt. Nur sie weitet das Zeitfenster: die Quellen
+    # meinen dann Einlass und Beginn (Open Air, siehe
+    # MAX_TIME_DELTA_STRONG_MINUTES).
+    _Rule(venue=_SAME_VENUE,
+          min_overlap=STRONG_TITLE_OVERLAP, min_ratio=None,
+          max_delta=MAX_TIME_DELTA_STRONG_MINUTES,
+          score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
+    # Gleicher Ort, schwächerer Titel: eines der beiden Maße genügt, das enge
+    # Zeitfenster bleibt aber die Gegenprobe (Grundregel 2).
+    _Rule(venue=_SAME_VENUE,
+          min_overlap=SAME_VENUE_MIN_OVERLAP, min_ratio=SAME_VENUE_MIN_RATIO,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
+    # Verschiedene Orte: nur ein praktisch identischer Titel zählt, und die
+    # großzügige Wort-Überdeckung bleibt hier bewusst außen vor.
+    _Rule(venue=_OTHER_VENUE,
+          min_overlap=None, min_ratio=TITLE_MIN_OTHER_VENUE,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_RATIO_ONLY, reason="titel", extra=_neither_is_umbrella),
+    # Mindestens ein Ort unbekannt ("Location siehe Beschreibung" bei Rauze,
+    # "TBA" bei RA). Dann trägt ein fast identischer Titel allein ...
+    _Rule(venue=_UNKNOWN_VENUE,
+          min_overlap=None, min_ratio=TITLE_MIN_UNKNOWN_VENUE,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_RATIO_ONLY, reason="titel", extra=None),
+    # ... oder ein Titel, dessen sämtliche Wörter im anderen stecken - aber nur
+    # unter den Auflagen von _two_words_and_both_times.
+    _Rule(venue=_UNKNOWN_VENUE,
+          min_overlap=1.0, min_ratio=None,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_OVERLAP_ONLY, reason="titel+zeit",
+          extra=_two_words_and_both_times),
+)
+
+
+def _title_evidence_enough(rule, scores):
+    """Reicht der Titel für diese Zeile? Ein erreichter Schwellwert genügt."""
+    return ((rule.min_overlap is not None and scores.overlap >= rule.min_overlap)
+            or (rule.min_ratio is not None and scores.ratio >= rule.min_ratio))
+
+
 def match(event_a, event_b):
     """Sind das zwei Einträge derselben Veranstaltung?
-    Gibt (score, grund) zurück oder None."""
+    Gibt (score, grund) zurück oder None - entschieden wird nach _RULES."""
     if event_a["date"] != event_b["date"]:
         return None
     if event_a["source"] == event_b["source"]:
         return None  # siehe Grundregel 1 im Modul-Docstring
 
-    ratio, overlap = _title_scores(event_a.get("title"), event_b.get("title"))
-    key_a, key_b = _venue_key(event_a.get("venue")), _venue_key(event_b.get("venue"))
-    same_venue = bool(key_a and key_b and key_a == key_b)
+    situation = _venue_situation(event_a, event_b)
+    scores = _title_scores(event_a.get("title"), event_b.get("title"))
 
-    # Die Uhrzeit bleibt die Gegenprobe (Grundregel 2), aber wie streng sie
-    # ausfällt, hängt von der übrigen Evidenz ab: gleicher Ort UND ein praktisch
-    # deckungsgleicher Titel wiegen schwerer als zwei Stunden Zeitunterschied.
-    # Deshalb wird sie erst hier ausgewertet, nach Ort und Titel.
-    max_delta = (
-        MAX_TIME_DELTA_STRONG_MINUTES
-        if same_venue and overlap >= STRONG_TITLE_OVERLAP
-        else MAX_TIME_DELTA_MINUTES
-    )
-    if not _time_compatible(event_a.get("time"), event_b.get("time"), max_delta):
-        return None
-
-    if same_venue:
-        if overlap >= SAME_VENUE_MIN_OVERLAP or ratio >= SAME_VENUE_MIN_RATIO:
-            return max(ratio, overlap), "ort+titel"
-        return None
-    if key_a and key_b:
-        # Sammel-Einträge sind per Konstruktion an EINEN Ort gebunden und tragen
-        # alle denselben Titel (den Festivalnamen). Über die Titel-Regel würden
-        # deshalb sämtliche Spielorte eines Festivaltags zu einem Eintrag
-        # verketten - real am 13.09.2026: die sieben Denkmäler des "Tags des
-        # Offenen Denkmals" fielen zu einem einzigen zusammen.
-        if _is_umbrella(event_a) or _is_umbrella(event_b):
-            return None
-        # Verschiedene Orte: nur ein praktisch identischer Titel zählt, und die
-        # großzügige Wort-Überdeckung bleibt hier bewusst außen vor.
-        return (ratio, "titel") if ratio >= TITLE_MIN_OTHER_VENUE else None
-
-    # Mindestens ein Ort unbekannt ("Location siehe Beschreibung" bei Rauze,
-    # "TBA" bei RA). Dann trägt entweder ein fast identischer Titel - oder ein
-    # Titel, dessen sämtliche Wörter im anderen stecken, aber erst ab zwei
-    # Wörtern und nur mit beidseitig bekannter, passender Uhrzeit.
-    if ratio >= TITLE_MIN_UNKNOWN_VENUE:
-        return ratio, "titel"
-    tokens_known = min(
-        len(_title_tokens(normalize.slugify(event_a.get("title") or ""))),
-        len(_title_tokens(normalize.slugify(event_b.get("title") or ""))),
-    )
-    both_times = event_a.get("time") and event_b.get("time")
-    if overlap >= 1.0 and tokens_known >= 2 and both_times:
-        return overlap, "titel+zeit"
+    for rule in _RULES:
+        if rule.venue != situation:
+            continue
+        if not _title_evidence_enough(rule, scores):
+            continue
+        if not _time_compatible(event_a.get("time"), event_b.get("time"), rule.max_delta):
+            continue
+        if rule.extra is not None and not rule.extra(event_a, event_b, scores):
+            continue
+        return max(getattr(scores, name) for name in rule.score_from), rule.reason
     return None
 
 
@@ -375,6 +444,44 @@ def _canonical_of(cluster):
     return min(cluster, key=_canonical_key)
 
 
+class _Groups:
+    """Union-Find: verschmilzt Paare schrittweise zu Gruppen.
+
+    Nötig, weil Doppelungen paarweise gemessen werden, aber in Gruppen
+    auftreten: liefern drei Quellen dieselbe Nacht, misst match() nur die drei
+    Paare - übrig bleiben soll trotzdem genau ein Eintrag.
+    """
+
+    def __init__(self, uids):
+        self._parent = {uid: uid for uid in uids}
+
+    def root(self, uid):
+        parent = self._parent
+        while parent[uid] != uid:
+            parent[uid] = parent[parent[uid]]
+            uid = parent[uid]
+        return uid
+
+    def merge(self, uid_a, uid_b):
+        root_a, root_b = self.root(uid_a), self.root(uid_b)
+        if root_a != root_b:
+            self._parent[root_b] = root_a
+
+    def all(self):
+        """[[uid, ...], ...] - Gruppen in der Reihenfolge der Eingabe."""
+        grouped = {}
+        for uid in self._parent:
+            grouped.setdefault(self.root(uid), []).append(uid)
+        return list(grouped.values())
+
+
+def _by_date(events):
+    days = {}
+    for event in events:
+        days.setdefault(event["date"], []).append(event)
+    return days
+
+
 def find_duplicates(events):
     """events: Liste von Event-dicts (uid/source/date/time/title/venue/first_seen).
     Gibt {duplikat_uid: (kanonische_uid, score, grund)} zurück.
@@ -382,66 +489,44 @@ def find_duplicates(events):
     Ohne Netzwerk und ohne Datenbank testbar - link_duplicates() ist nur die
     Verdrahtung dieser Funktion mit SQLite.
     """
-    by_date = {}
-    for event in events:
-        by_date.setdefault(event["date"], []).append(event)
-
-    parent = {e["uid"]: e["uid"] for e in events}
     by_uid = {e["uid"]: e for e in events}
+    groups = _Groups(by_uid)
     # Bester (score, grund) je verschmolzenem Paar, für die Protokollierung.
     evidence = {}
 
-    def find(uid):
-        while parent[uid] != uid:
-            parent[uid] = parent[parent[uid]]
-            uid = parent[uid]
-        return uid
-
-    def union(uid_a, uid_b):
-        root_a, root_b = find(uid_a), find(uid_b)
-        if root_a != root_b:
-            parent[root_b] = root_a
-
-    for day_events in by_date.values():
+    for day_events in _by_date(events).values():
         for index, event_a in enumerate(day_events):
             for event_b in day_events[index + 1:]:
                 result = match(event_a, event_b)
                 if result is None:
                     continue
-                union(event_a["uid"], event_b["uid"])
-                pair = frozenset((event_a["uid"], event_b["uid"]))
-                evidence[pair] = result
+                groups.merge(event_a["uid"], event_b["uid"])
+                evidence[frozenset((event_a["uid"], event_b["uid"]))] = result
 
     # Die Ausnahme von Grundregel 1: Zeilen desselben Line-ups an ihren
     # Sammel-Eintrag hängen (siehe _festival_groups).
     lineup_members = set()
     for umbrella_uid, member_uids in _festival_groups(events).items():
         for member_uid in member_uids:
-            union(umbrella_uid, member_uid)
+            groups.merge(umbrella_uid, member_uid)
             evidence[frozenset((umbrella_uid, member_uid))] = (1.0, MATCH_REASON_HEADING)
             lineup_members.add(member_uid)
 
-    clusters = {}
-    for uid in parent:
-        clusters.setdefault(find(uid), []).append(by_uid[uid])
-
     mapping = {}
-    for cluster in clusters.values():
-        if len(cluster) < 2:
+    for uids in groups.all():
+        if len(uids) < 2:
             continue
-        canonical = _canonical_of(cluster)
-        for event in cluster:
-            if event["uid"] == canonical["uid"]:
+        canonical_uid = _canonical_of([by_uid[uid] for uid in uids])["uid"]
+        for uid in uids:
+            if uid == canonical_uid:
                 continue
             # Gewinnt eine bessere Quelle die ganze Gruppe (rauze bei
             # "Klang & Kruste"), gibt es zur Einzelzeile kein direkt gemessenes
             # Paar - der Grund bleibt trotzdem die gemeinsame Überschrift.
-            default = ((1.0, MATCH_REASON_HEADING) if event["uid"] in lineup_members
+            default = ((1.0, MATCH_REASON_HEADING) if uid in lineup_members
                        else (0.0, "gruppe"))
-            score, reason = evidence.get(
-                frozenset((event["uid"], canonical["uid"])), default
-            )
-            mapping[event["uid"]] = (canonical["uid"], score, reason)
+            score, reason = evidence.get(frozenset((uid, canonical_uid)), default)
+            mapping[uid] = (canonical_uid, score, reason)
     return mapping
 
 
@@ -463,16 +548,13 @@ def _upgrade_placeholder_venue(conn, canonical, duplicate):
     return True
 
 
-def link_duplicates(conn, start_date, end_date):
-    """Doppelungen im Zeitraum neu berechnen und in der DB verbuchen.
+def _rows_for_range(conn, start_date, end_date):
+    """Die Events des Zeitraums als dicts, wie find_duplicates sie erwartet.
 
-    Idempotent: Verknüpfungen, die nicht mehr gelten (z.B. weil eine Quelle den
-    Titel geändert hat), werden wieder gelöst. Gibt die Anzahl der aktuell
-    verbuchten Doppelungen im Zeitraum zurück.
+    GROUP_CONCAT holt alle Quellen mit, die diese uid geliefert haben - siehe
+    _best_rank(). LEFT JOIN, damit ein Eintrag ohne Quellen-Buchung (Bestand
+    aus der Zeit vor der Tabelle) nicht stillschweigend verschwindet.
     """
-    # GROUP_CONCAT holt alle Quellen mit, die diese uid geliefert haben - siehe
-    # _best_rank(). LEFT JOIN, damit ein Eintrag ohne Quellen-Buchung (Bestand
-    # aus der Zeit vor der Tabelle) nicht stillschweigend verschwindet.
     rows = []
     for row in conn.execute(
         """SELECT e.uid, e.source, e.date, e.time, e.title, e.venue, e.raw_category,
@@ -485,6 +567,17 @@ def link_duplicates(conn, start_date, end_date):
         row = dict(row)
         row["sources"] = row["sources"].split(",") if row["sources"] else [row["source"]]
         rows.append(row)
+    return rows
+
+
+def link_duplicates(conn, start_date, end_date):
+    """Doppelungen im Zeitraum neu berechnen und in der DB verbuchen.
+
+    Idempotent: Verknüpfungen, die nicht mehr gelten (z.B. weil eine Quelle den
+    Titel geändert hat), werden wieder gelöst. Gibt die Anzahl der aktuell
+    verbuchten Doppelungen im Zeitraum zurück.
+    """
+    rows = _rows_for_range(conn, start_date, end_date)
     mapping = find_duplicates(rows)
     by_uid = {row["uid"]: row for row in rows}
 
