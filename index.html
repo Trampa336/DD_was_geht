@@ -22,6 +22,11 @@
       }
       window.localStorage.removeItem('dresden-takt.' + name);
     });
+    // Bewertet wird nur noch im Heimnetz: die Gast-Bewertungen der oeffentlichen
+    // Kopie sind Altlast und werden beim naechsten Besuch entsorgt.
+    ['dd-was-geht.guest.reactions', 'dd-was-geht.guest.weights',
+     'dresden-takt.guest.reactions', 'dresden-takt.guest.weights']
+      .forEach(function (key) { window.localStorage.removeItem(key); });
   } catch (e) { /* Privatmodus o.ae. - dann eben Standardwerte */ }
 })();
 (function () {
@@ -143,20 +148,43 @@
   .tab:hover { color:var(--ink); }
   .tab[aria-selected="true"] { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
 
-  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:26px; }
-  .chip { appearance:none; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-family:var(--font-body); font-size:12.5px; font-weight:500; padding:6px 12px; border-radius:999px; transition:border-color .15s ease,color .15s ease,background .15s ease; }
+  /* Eine Zeile Kategorien, rechts daneben das Filter-Menue. Die Kategorien
+     brechen bewusst NICHT um: sonst waechst der Kopf der Seite je nach
+     Fensterbreite auf drei Zeilen an, und genau das sollte weg. Passt die Zeile
+     nicht, wird sie seitlich gewischt - der Verlauf am rechten Rand
+     (.is-scrollable) zeigt, dass da noch etwas kommt. */
+  .filterbar { display:flex; align-items:center; gap:10px; margin-bottom:26px; }
+  .chips { flex:1; min-width:0; display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+  /* Etwas schmaler als die Chips im Filter-Menue: nur so passen alle Kategorien
+     auf einem normalen Bildschirm nebeneinander, ohne dass gewischt werden muss. */
+  .chips .chip { font-size:12px; padding:6px 10px; }
+  .chips::-webkit-scrollbar { display:none; }
+  .chips.is-scrollable { -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 24px),transparent); mask-image:linear-gradient(to right,#000 calc(100% - 24px),transparent); }
+  .chip { flex:0 0 auto; white-space:nowrap; appearance:none; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-family:var(--font-body); font-size:12.5px; font-weight:500; padding:6px 12px; border-radius:999px; transition:border-color .15s ease,color .15s ease,background .15s ease; }
   .chip[aria-pressed="true"] { border-color:var(--elbe); color:var(--elbe-strong); background:var(--elbe-soft); }
-  .chip-reset { border-style:dashed; color:var(--ink-faint); }
-  /* Zweite Zeile: keine Kategorien, sondern Sichtbarkeits-Schalter. Damit sie
-     nicht mit den Kategorie-Chips verwechselt werden, sitzen sie in einem
-     abgesetzten Kasten und bekommen im Ein-Zustand den Sandstein-Ton statt des
-     Elbe-Tuerkis. */
-  .filters { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:-16px 0 26px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
-  .filters-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); margin-right:2px; }
-  .filters-label + .filters-label { margin-left:8px; }
+
+  /* Alles ausser den Kategorien liegt im Klappmenue: Sichtbarkeits-Schalter und
+     Quellen. Aufbau, Rahmen und Schatten sind dieselben wie beim Theme-Menue im
+     Kopf (.theme-menu) - derselbe Popup-Typ, nur breiter und mehrzeilig. Die
+     Schalter behalten den Sandstein-Ton im Ein-Zustand, damit sie nicht mit den
+     Kategorien in Elbe-Tuerkis verwechselt werden. */
+  .filter-menu { position:relative; flex:0 0 auto; }
+  .filter-btn { appearance:none; cursor:pointer; display:flex; align-items:center; gap:5px; padding:6px 10px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-family:var(--font-body); font-size:12.5px; font-weight:500; border-radius:999px; transition:color .15s ease,border-color .15s ease; }
+  .filter-btn:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+  .filter-btn[aria-expanded="true"] { color:var(--elbe-strong); border-color:var(--elbe); background:var(--elbe-soft); }
+  /* Zugeklappt sieht man dem Menue sonst nicht an, dass es etwas ausblendet. */
+  .filter-badge { min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:var(--elbe); color:var(--surface-raised); font-family:var(--font-mono); font-size:10px; line-height:16px; text-align:center; }
+  .filter-badge[hidden] { display:none; }
+  .filter-panel { position:absolute; top:calc(100% + 6px); right:0; z-index:60; width:min(320px,calc(100vw - 40px)); display:flex; flex-direction:column; gap:12px; padding:12px; background:var(--surface-raised); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+  .filter-panel[hidden] { display:none; }
+  .filter-group { display:flex; flex-direction:column; gap:7px; }
+  .filter-row { display:flex; flex-wrap:wrap; gap:7px; }
+  .filters-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); }
   .chip-toggle[aria-pressed="true"] { border-color:var(--stone-dark); color:var(--ink); background:color-mix(in srgb, var(--stone) 30%, transparent); }
   .chip-src { font-family:var(--font-mono); font-size:11.5px; }
+  .chip-reset { border-style:dashed; color:var(--ink-faint); align-self:flex-start; }
   .chip-reset:hover { color:var(--ink); }
+  .chip-reset[hidden] { display:none; }
 
   .day-group { margin-bottom:30px; }
   .day-heading { display:flex; align-items:baseline; gap:10px; margin:0 0 10px 14px; }
@@ -234,6 +262,9 @@
   .modal-source-link { font-size:11.5px; color:var(--ink-faint); text-decoration:none; }
   .modal-source-link:hover { color:var(--elbe-strong); text-decoration:underline; }
 
+  /* Ohne Bewerten-Buttons (oeffentliche Kopie) bleibt die Spalte leer - dann
+     soll sie auch keinen Platz einnehmen. */
+  .event-actions:empty { display:none; }
   .fb { display:flex; gap:4px; }
   .fb button { border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:4px 7px; font-size:13px; cursor:pointer; }
   .fb button[data-active="true"] { border-color:var(--elbe); background:var(--elbe-soft); }
@@ -275,7 +306,8 @@
   </header>
 
   <section class="fuer-dich">
-    <h2>Für dich diese Woche</h2>
+    
+    <h2>Empfehlungen der Woche</h2>
     <div class="fuer-dich-row" id="fuer-dich-row"><div class="loading">Lädt …</div></div>
   </section>
 
@@ -285,46 +317,64 @@
     <button class="tab" data-range="monat" aria-selected="false">Diesen Monat</button>
   </div>
 
-  <div class="chips" role="group" aria-label="Kategorien (Mehrfachauswahl)">
-    <button class="chip" data-cat="alle" aria-pressed="true">Alle</button>
-    
-    <button class="chip" data-cat="kultur" aria-pressed="false">Kultur &amp; Bühne</button>
-    
-    <button class="chip" data-cat="musik" aria-pressed="false">Musik &amp; Nightlife</button>
-    
-    <button class="chip" data-cat="familie" aria-pressed="false">Familie &amp; Kinder</button>
-    
-    <button class="chip" data-cat="fuehrungen" aria-pressed="false">Führungen &amp; Touren</button>
-    
-    <button class="chip" data-cat="outdoor" aria-pressed="false">Feste &amp; Märkte</button>
-    
-    <button class="chip" data-cat="sport" aria-pressed="false">Sport &amp; Bewegung</button>
-    
-    <button class="chip" data-cat="sonstiges" aria-pressed="false">Weiteres</button>
-    
-    <button class="chip chip-reset" id="chip-reset" hidden>Auswahl zurücksetzen</button>
-  </div>
-
-  <div class="filters" role="group" aria-label="Sichtbarkeit">
-    <span class="filters-label">Zeigen</span>
-    <button class="chip chip-toggle" data-toggle="ongoing" aria-pressed="false">Dauerangebote</button>
-    <button class="chip chip-toggle" data-toggle="lowscore" aria-pressed="false">Wenig relevant</button>
-    <span class="filters-label">Quellen</span>
-    
-    <button class="chip chip-src" data-src="kulturkalender" aria-pressed="true">Kulturkalender</button>
-    
-    <button class="chip chip-src" data-src="rauze" aria-pressed="true">Rauze</button>
-    
-    <button class="chip chip-src" data-src="ra" aria-pressed="true">Resident Advisor</button>
-    
-    <button class="chip chip-src" data-src="cybersax" aria-pressed="true">SAX Terminal</button>
-    
-    <button class="chip chip-src" data-src="azconni" aria-pressed="true">AZ Conni</button>
-    
-    <button class="chip chip-src" data-src="sektor" aria-pressed="true">Sektor Evolution</button>
-    
-    <button class="chip chip-src" data-src="reddit" aria-pressed="true">Reddit</button>
-    
+  <div class="filterbar">
+    <div class="chips" role="group" aria-label="Kategorien (Mehrfachauswahl)">
+      <button class="chip" data-cat="alle" aria-pressed="true">Alle</button>
+      
+      <button class="chip" data-cat="kultur" aria-pressed="false">Kultur</button>
+      
+      <button class="chip" data-cat="musik" aria-pressed="false">Musik</button>
+      
+      <button class="chip" data-cat="familie" aria-pressed="false">Familie</button>
+      
+      <button class="chip" data-cat="fuehrungen" aria-pressed="false">Führungen</button>
+      
+      <button class="chip" data-cat="outdoor" aria-pressed="false">Feste</button>
+      
+      <button class="chip" data-cat="sport" aria-pressed="false">Sport</button>
+      
+      <button class="chip" data-cat="sonstiges" aria-pressed="false">Weiteres</button>
+      
+    </div>
+    <div class="filter-menu">
+      <button class="filter-btn" id="filter-btn" aria-haspopup="true" aria-expanded="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M7 12h10M10 18h4"></path>
+        </svg>
+        <span>Filter</span>
+        <span class="filter-badge" id="filter-badge" hidden></span>
+      </button>
+      <div class="filter-panel" id="filter-panel" role="group" aria-label="Filter" hidden>
+        <div class="filter-group">
+          <span class="filters-label">Zeigen</span>
+          <div class="filter-row">
+            <button class="chip chip-toggle" data-toggle="ongoing" aria-pressed="false">Dauerangebote</button>
+            <button class="chip chip-toggle" data-toggle="lowscore" aria-pressed="false">Wenig relevant</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filters-label">Quellen</span>
+          <div class="filter-row">
+            
+            <button class="chip chip-src" data-src="kulturkalender" aria-pressed="true">Kulturkalender</button>
+            
+            <button class="chip chip-src" data-src="rauze" aria-pressed="true">Rauze</button>
+            
+            <button class="chip chip-src" data-src="ra" aria-pressed="true">Resident Advisor</button>
+            
+            <button class="chip chip-src" data-src="cybersax" aria-pressed="true">SAX Terminal</button>
+            
+            <button class="chip chip-src" data-src="azconni" aria-pressed="true">AZ Conni</button>
+            
+            <button class="chip chip-src" data-src="sektor" aria-pressed="true">Sektor Evolution</button>
+            
+            <button class="chip chip-src" data-src="reddit" aria-pressed="true">Reddit</button>
+            
+          </div>
+        </div>
+        <button class="chip chip-reset" id="chip-reset" hidden>Auswahl zurücksetzen</button>
+      </div>
+    </div>
   </div>
 
   <main id="list"><div class="loading">Lädt …</div></main>
@@ -350,7 +400,7 @@
   </div>
 
   
-  <p class="footnote">Stand 22.08.2026, 12:52 · Gesammelt aus Dresdner Veranstaltungskalendern. Bewerte Events mit 👍/👎 – deine Bewertungen bleiben in diesem Browser und die „Für dich"-Auswahl lernt daraus.</p>
+  <p class="footnote">Stand 22.08.2026, 15:36 · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
   
 </div>
 
@@ -467,9 +517,23 @@
     bgMenu.appendChild(opt);
   });
 
+  /* Alle Klappmenues der Seite haengen an derselben Liste: Theme, Animation und
+     - aus dem zweiten Skriptblock heraus angemeldet - das Filter-Menue. So gibt
+     es nur EINEN Klick-daneben- und Escape-Handler, und ein neu geoeffnetes
+     Menue schliesst die anderen automatisch. */
+  var MENUS = [];
+
+  function registerMenu(menu, btn) {
+    MENUS.push({ menu: menu, btn: btn });
+    btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(menu, btn); });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
   function closeMenus() {
-    themeMenu.hidden = true; themeBtn.setAttribute('aria-expanded', 'false');
-    bgMenu.hidden = true; bgBtn.setAttribute('aria-expanded', 'false');
+    MENUS.forEach(function (m) {
+      m.menu.hidden = true;
+      m.btn.setAttribute('aria-expanded', 'false');
+    });
   }
 
   function toggleMenu(menu, btn) {
@@ -478,11 +542,11 @@
     if (!wasOpen) { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
   }
 
-  themeBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(themeMenu, themeBtn); });
-  bgBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(bgMenu, bgBtn); });
-  document.addEventListener('click', function (e) {
-    if (!themeMenu.contains(e.target) && !bgMenu.contains(e.target)) { closeMenus(); }
-  });
+  registerMenu(themeMenu, themeBtn);
+  registerMenu(bgMenu, bgBtn);
+  // Der Filterblock laeuft in einer eigenen IIFE und meldet sein Panel hier an.
+  window.ddRegisterMenu = registerMenu;
+  document.addEventListener('click', function () { closeMenus(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeMenus(); }
   });
@@ -496,18 +560,20 @@
        'api'    = Flask auf dem Pi (nur im Heimnetz). Liste, Empfehlungen und
                   Bewertungen laufen ueber /api/..., die Bewertung landet in der
                   SQLite und trainiert das persoenliche Modell.
-       'static' = die oeffentliche Kopie auf GitHub Pages. Dort gibt es keinen
-                  Server: die Events kommen aus vorgerechneten JSON-Dateien,
-                  und wer bewertet, tut das nur fuer sich selbst im eigenen
-                  localStorage (siehe guestReact). Das ist zugleich die
-                  Rechte-Trennung - schreiben kann dort niemand, weil es nichts
-                  zu beschreiben gibt. */
+       'static' = die oeffentliche Kopie auf GitHub Pages. Sie ist rein zum
+                  Lesen: die Events kommen aus vorgerechneten JSON-Dateien, es
+                  gibt keinen Server und damit auch keine Bewerten-Buttons. Der
+                  Score steht schon in den Dateien (tools/export_static.py), die
+                  Empfehlungszeile zeigt also dieselbe Auswahl wie im Heimnetz. */
   var MODE = "static";
+  // Bewertet wird ausschliesslich im Heimnetz. Das ist keine Pruefung, sondern
+  // die Bauart: auf der statischen Kopie gibt es nichts, wohin ein Klick ginge.
+  var CAN_RATE = MODE === 'api';
   // Im api-Modus filtert der Server (web._selected_categories/EXCLUDED_CATEGORIES),
   // im static-Modus muss das der Browser uebernehmen.
   var EXCLUDED = ["familie", "fuehrungen"];
   // Cache-Buster fuer data/index.json: aendert sich mit jedem Export.
-  var DATA_V = "2026-08-22T12:52:07";
+  var DATA_V = "2026-08-22T15:36:55";
 
   var listEl = document.getElementById('list');
   var pickRow = document.getElementById('fuer-dich-row');
@@ -554,6 +620,19 @@
     document.querySelectorAll('.chip-src').forEach(function (chip) {
       chip.setAttribute('aria-pressed', filters.sources.indexOf(chip.dataset.src) !== -1 ? 'true' : 'false');
     });
+    syncFilterBadge();
+  }
+
+  /* Zaehlt, was vom Standard abweicht - zugeklappt sieht man dem Menue sonst
+     nicht an, dass es gerade etwas ausblendet. Die beiden Schalter zaehlen im
+     EIN-Zustand, weil sie standardmaessig aus sind; bei den Quellen zaehlt jede
+     abgewaehlte. */
+  function syncFilterBadge() {
+    var badge = document.getElementById('filter-badge');
+    var n = (filters.ongoing ? 1 : 0) + (filters.lowscore ? 1 : 0)
+      + (Object.keys(SRC_LABEL).length - filters.sources.length);
+    badge.textContent = n;
+    badge.hidden = n === 0;
   }
 
   function passesFilters(e) {
@@ -642,8 +721,6 @@
         chunk.forEach(function (e) {
           if (cats.length) { if (cats.indexOf(e.category) === -1) { return; } }
           else if (EXCLUDED.indexOf(e.category) !== -1) { return; }
-          e.reaction = guestReactions()[e.uid] || null;
-          e.score = guestScore(e);
           events.push(e);
         });
       });
@@ -652,57 +729,6 @@
       });
       return events;
     });
-  }
-
-  var GUEST_R_KEY = 'dd-was-geht.guest.reactions';
-  var GUEST_W_KEY = 'dd-was-geht.guest.weights';
-  var guestR = null, guestW = null;
-
-  function readStore(key) {
-    try { return JSON.parse(window.localStorage.getItem(key)) || {}; } catch (e) { return {}; }
-  }
-  function writeStore(key, value) {
-    try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* Privatmodus o.ae. */ }
-  }
-  function guestReactions() { if (!guestR) { guestR = readStore(GUEST_R_KEY); } return guestR; }
-  function guestWeights() { if (!guestW) { guestW = readStore(GUEST_W_KEY); } return guestW; }
-
-  var FEATURE_WEIGHT = { category: 1.0, venue: 1.0, keyword: 0.6 };
-
-  /* Gleiche Rechnung wie scoring.score_event(): Laplace-geglaettete Like-Rate je
-     Merkmal, gewichtet gemittelt, 50 = neutral. Die Merkmalsschluessel selbst
-     rechnet der Exporter aus (Feld fk) - so bleibt app/normalize.py die einzige
-     Quelle fuer Slugs und Stichwoerter. */
-  function guestScore(ev) {
-    var keys = ev.fk || [];
-    if (!keys.length) { return 50; }
-    var weights = guestWeights(), sum = 0, total = 0;
-    keys.forEach(function (key) {
-      var weight = FEATURE_WEIGHT[key.split(':')[0]] || 1.0;
-      var entry = weights[key] || { l: 0, s: 0 };
-      sum += ((entry.l + 1) / (entry.l + entry.s + 2)) * weight;
-      total += weight;
-    });
-    return Math.round(1000 * sum / total) / 10;
-  }
-
-  /* Gleiche Logik wie scoring.apply_reaction(): idempotent, und ein Wechsel
-     (👎 -> 👍) macht die alte Gewichtung erst rueckgaengig. Landet nur im
-     localStorage dieses Browsers - der Pi erfaehrt davon nichts. */
-  function guestReact(ev, reaction) {
-    var reactions = guestReactions(), weights = guestWeights();
-    var previous = reactions[ev.uid] || null;
-    if (previous === reaction) { return; }
-    (ev.fk || []).forEach(function (key) {
-      var entry = weights[key] || { l: 0, s: 0 };
-      if (previous === 'like') { entry.l -= 1; } else if (previous === 'skip') { entry.s -= 1; }
-      if (reaction === 'like') { entry.l += 1; } else { entry.s += 1; }
-      weights[key] = entry;
-    });
-    reactions[ev.uid] = reaction;
-    writeStore(GUEST_R_KEY, reactions);
-    writeStore(GUEST_W_KEY, weights);
-    ev.reaction = reaction;
   }
 
   function syncChips() {
@@ -721,30 +747,7 @@
   var currentModalEvent = null;
   var lastFocusedEl = null;
 
-  function fbButtons(ev) {
-    var wrap = document.createElement('div');
-    wrap.className = 'fb';
-    ['like', 'skip'].forEach(function (r) {
-      var btn = document.createElement('button');
-      btn.textContent = r === 'like' ? '👍' : '👎';
-      btn.dataset.active = ev.reaction === r ? 'true' : 'false';
-      btn.addEventListener('click', function () {
-        var done = function () {
-          loadList(); loadPicks();
-          if (currentModalEvent === ev) { renderModalFooter(); }
-        };
-        if (MODE === 'static') { guestReact(ev, r); done(); return; }
-        fetch('/api/feedback', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: ev.uid, reaction: r })
-        }).then(function (res) { return res.json(); }).then(function () {
-          ev.reaction = r; done();
-        });
-      });
-      wrap.appendChild(btn);
-    });
-    return wrap;
-  }
+
 
   function formatDay(iso) {
     var today = new Date().toISOString().slice(0, 10);
@@ -770,7 +773,7 @@
   function renderModalFooter() {
     var host = document.getElementById('modal-fb');
     host.innerHTML = '';
-    host.appendChild(fbButtons(currentModalEvent));
+    if (CAN_RATE) { host.appendChild(fbButtons(currentModalEvent)); }
   }
 
   function renderModal() {
@@ -859,11 +862,9 @@
   });
 
   /* Gegenstueck zu /api/fuer-dich (scoring.top_picks): die bestbewerteten acht
-     Events der naechsten sieben Tage. Ohne eine einzige Bewertung stehen alle
-     Events auf 50 - dann waere die Auswahl reiner Zufall, deshalb bleibt die
-     Zeile bis zur ersten Bewertung leer. */
+     Events der naechsten sieben Tage. Der Score kommt fertig aus den
+     Tagesdateien, gerechnet auf dem Pi - hier wird nur sortiert. */
   function staticPicks() {
-    if (!Object.keys(guestReactions()).length) { return Promise.resolve({ events: [] }); }
     return staticEvents('woche', selectedCats).then(function (events) {
       events.sort(function (a, b) { return b.score - a.score; });
       return { events: events.slice(0, 8) };
@@ -877,11 +878,16 @@
     source.then(function (data) {
       pickRow.innerHTML = '';
       var picks = data.events.filter(passesFilters);
-      if (!picks.length) { pickRow.innerHTML = '<div class="loading">Noch keine Empfehlungen – bewerte ein paar Events.</div>'; return; }
+      if (!picks.length) {
+        pickRow.innerHTML = CAN_RATE
+          ? '<div class="loading">Noch keine Empfehlungen – bewerte ein paar Events.</div>'
+          : '<div class="loading">Gerade keine Empfehlungen für diese Auswahl.</div>';
+        return;
+      }
       picks.forEach(function (e) {
         var card = document.createElement('div');
         card.className = 'pick-card';
-        card.innerHTML = '<div class="pick-score">Für dich</div>' +
+        card.innerHTML = '<div class="pick-score">' + (CAN_RATE ? 'Für dich' : 'Empfehlung') + '</div>' +
           '<div class="pick-title"></div><div class="pick-meta"></div>';
         card.querySelector('.pick-title').textContent = e.title;
         card.querySelector('.pick-meta').textContent = formatDay(e.date) + (e.time ? ' · ' + e.time : '');
@@ -938,15 +944,15 @@
           else { ongoingEl.remove(); }
           // Passt das Event zum bisher gelernten Geschmack, bekommt die Zeile
           // denselben Balken-plus-Label-Auftritt - nur in Elbe-Tuerkis. Der
-          // Score liegt im API-Modus aus scoring.score_events() bei, im
-          // statischen Modus aus guestScore() im Browser.
+          // Score kommt aus scoring.score_events(): im api-Modus direkt aus
+          // /api/events, im statischen Modus vorgerechnet aus der Tagesdatei.
           var pickEl = row.querySelector('.tag-pick');
           if (Number(e.score) >= HIGHLIGHT_SCORE) { row.classList.add('top-pick'); pickEl.textContent = 'Top-Treffer'; }
           else { pickEl.remove(); }
           var priceEl = row.querySelector('.price-tag');
           if (e.price_text) { priceEl.textContent = e.price_text; } else { priceEl.remove(); }
           var actions = row.querySelector('.event-actions');
-          actions.appendChild(fbButtons(e));
+          if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
           // Statt eines eigenen Buttons oeffnet ein Klick auf die Zeile das
           // Popup. Die Daumen-Buttons rechts stoppen ihr Event selbst nicht,
           // deshalb hier pruefen, ob der Klick aus .event-actions kam.
@@ -1020,10 +1026,29 @@
     applySelection();
   });
 
+  // Das Filter-Menue haengt sich in dieselbe Menue-Verwaltung wie Theme- und
+  // Animationsmenue (registerMenu im Block darueber): ein Klick daneben oder
+  // Escape schliesst alles, und ein Klick INS Panel schliesst es nicht.
+  var filterPanel = document.getElementById('filter-panel');
+  var filterBtn = document.getElementById('filter-btn');
+  if (window.ddRegisterMenu) { window.ddRegisterMenu(filterPanel, filterBtn); }
+
+  /* Der Verlauf am rechten Rand der Kategorienzeile soll nur da sein, wenn es
+     wirklich weitergeht - sonst sieht die letzte Kategorie auf breiten
+     Bildschirmen grundlos ausgeblichen aus. */
+  var chipsEl = document.querySelector('.chips');
+  function syncChipFade() {
+    var overflow = chipsEl.scrollWidth - chipsEl.clientWidth;
+    chipsEl.classList.toggle('is-scrollable', overflow > 4 && chipsEl.scrollLeft < overflow - 4);
+  }
+  chipsEl.addEventListener('scroll', syncChipFade);
+  window.addEventListener('resize', syncChipFade);
+
   selectedCats = loadSelection();
   loadFilters();
   syncChips();
   syncFilterChips();
+  syncChipFade();
   loadPicks();
   loadList();
 })();
