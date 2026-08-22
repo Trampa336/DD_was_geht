@@ -35,17 +35,13 @@ nur Orte (/terminal/adressen/address/<ort>/). Als url steht deshalb die
 Tagesseite drin - die ist wenigstens stabil und zeigt dauerhaft denselben Tag.
 Bilder und Preise liefert die Quelle gar nicht.
 """
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .. import normalize
 from . import base
 
 SOURCE = "cybersax"
 DATE_URL_TEMPLATE = "https://www.cybersax.de/terminal/day/{year}/{month}/{day}/"
-
-# Wie bei Rauze: für einen Monat sind das bis zu 31 Anfragen.
-REQUEST_DELAY_SECONDS = 1.2
 
 # Die Tagestabelle steht in diesem Container. Alles andere auf der Seite
 # (Sidebar, Werbung, Fußzeile) hat mit Terminen nichts zu tun.
@@ -325,18 +321,8 @@ def _parse(html, day, source_url):
 def scrape_date(day):
     """day: datetime.date. Gibt eine Liste normalisierter Event-dicts zurück."""
     url = DATE_URL_TEMPLATE.format(year=day.year, month=day.month, day=day.day)
-    html = base.fetch_html(url)
-    return _parse(html, day, url)
+    return base.fetch_day(url, day, _parse)
 
 
 def scrape_range(start_day, end_day):
-    all_events = []
-    current = start_day
-    while current <= end_day:
-        try:
-            all_events.extend(scrape_date(current))
-        except Exception as exc:  # ein schlechter Tag soll nicht den Lauf stoppen
-            print(f"[cybersax] Fehler beim Laden von {current}: {exc}")
-        time.sleep(REQUEST_DELAY_SECONDS)
-        current += timedelta(days=1)
-    return all_events
+    return base.scrape_days(start_day, end_day, scrape_date, SOURCE)

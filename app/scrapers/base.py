@@ -16,6 +16,7 @@ nächstgelegenen Vorfahren mit einer Überschrift als "ein Event-Block". Das
 """
 import re
 import time as time_module
+from datetime import timedelta
 
 import requests
 from bs4 import BeautifulSoup
@@ -77,6 +78,47 @@ def fetch_html(url, timeout=15, retries=2):
             last_error = exc
             time_module.sleep(1.5 * (attempt + 1))
     raise RuntimeError(f"Konnte {url} nicht laden: {last_error}")
+
+
+# --- Quellen mit einer Seite pro Tag ---------------------------------------
+# Kulturkalender, Rauze und CyberSAX haben alle drei eine URL je Tag und keine
+# Bereichs-URL. Ihr Ablauf ist deshalb bis auf das Parsen identisch und steht
+# hier einmal: Tagesseite holen -> quellen-eigenes _parse() -> nächster Tag.
+
+# Kleine Pause zwischen zwei Tagesabrufen - für einen Monat sind das bis zu 31
+# Requests an dieselbe Seite; niemand hat etwas davon, wenn wir sie im
+# Sekundentakt bombardieren.
+REQUEST_DELAY_SECONDS = 1.2
+
+
+def fetch_day(url, day, parse):
+    """Eine Tagesseite holen und parsen lassen.
+
+    parse(html, day, source_url) -> Liste von Event-dicts. Die URL wird
+    mitgegeben, weil die Quellen ohne Event-Permalink sie als url eintragen
+    (CyberSAX) bzw. als Rückfallebene brauchen (Rauze, Kulturkalender).
+    """
+    return parse(fetch_html(url), day, url)
+
+
+def scrape_days(start_day, end_day, scrape_date, source,
+                delay=REQUEST_DELAY_SECONDS):
+    """Tag für Tag abfragen und alles einsammeln.
+
+    Ein schlechter Tag (Timeout, Redesign, leere Antwort) darf den Rest des
+    Laufs nicht stoppen: der Fehler wird gemeldet, der nächste Tag trotzdem
+    geholt.
+    """
+    all_events = []
+    current = start_day
+    while current <= end_day:
+        try:
+            all_events.extend(scrape_date(current))
+        except Exception as exc:
+            print(f"[{source}] Fehler beim Laden von {current}: {exc}")
+        time_module.sleep(delay)
+        current += timedelta(days=1)
+    return all_events
 
 
 def _is_event_container(tag):

@@ -17,17 +17,13 @@ Kategorien, die Rauze tatsächlich vergibt (verifiziert):
 "Außerhalb" ist dabei eine Ortsangabe (Veranstaltung im Umland), kein Genre -
 solche Events werden bewusst über die Titel-Schlüsselwörter klassifiziert.
 """
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .. import normalize
 from . import base
 
 SOURCE = "rauze"
 DATE_URL_TEMPLATE = "https://www.rauze.de/?date={date}"
-
-# Kleine Pause zwischen Anfragen - für einen Monat sind das bis zu 31 Requests.
-REQUEST_DELAY_SECONDS = 1.2
 
 # Nur echte Genre-Kategorien. "Sonstiges" und "Außerhalb" fehlen hier absichtlich:
 # beide sagen nichts über die Art der Veranstaltung aus, deshalb sollen sie in die
@@ -129,19 +125,8 @@ def _parse(html, day, source_url):
 
 def scrape_date(day):
     """day: datetime.date. Gibt eine Liste normalisierter Event-dicts zurück."""
-    url = DATE_URL_TEMPLATE.format(date=day.isoformat())
-    html = base.fetch_html(url)
-    return _parse(html, day, url)
+    return base.fetch_day(DATE_URL_TEMPLATE.format(date=day.isoformat()), day, _parse)
 
 
 def scrape_range(start_day, end_day):
-    all_events = []
-    current = start_day
-    while current <= end_day:
-        try:
-            all_events.extend(scrape_date(current))
-        except Exception as exc:  # ein schlechter Tag soll nicht den Lauf stoppen
-            print(f"[rauze] Fehler beim Laden von {current}: {exc}")
-        time.sleep(REQUEST_DELAY_SECONDS)
-        current += timedelta(days=1)
-    return all_events
+    return base.scrape_days(start_day, end_day, scrape_date, SOURCE)

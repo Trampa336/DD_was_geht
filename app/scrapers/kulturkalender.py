@@ -5,16 +5,8 @@ genau diesen Tag, über alle Kategorien hinweg (bestätigt für mehrere Testdate
 im August 2026). Für "diese Woche" / "diesen Monat" wird daher Tag für Tag
 abgefragt statt eine (nicht auffindbare) Bereichs-URL zu nutzen.
 """
-import time
-from datetime import timedelta
-
 from .. import normalize
 from . import base
-
-# Kleine Pause zwischen Anfragen - für einen Monat sind das bis zu 31 Requests
-# an dieselbe Seite; niemand hat etwas davon, wenn wir sie im Sekundentakt
-# bombardieren.
-REQUEST_DELAY_SECONDS = 1.2
 
 SOURCE = "kulturkalender"
 BASE_URL = "https://www.kulturkalender-dresden.de/heute/{date}"
@@ -75,10 +67,8 @@ def _extract_image(container):
     return img.get("src")
 
 
-def scrape_date(day):
-    """day: datetime.date. Gibt eine Liste normalisierter Event-dicts zurück."""
-    url = BASE_URL.format(date=day.isoformat())
-    html = base.fetch_html(url)
+def _parse(html, day, source_url):
+    """Reine Parse-Funktion (ohne Netzzugriff), damit sie testbar bleibt."""
     soup = base.make_soup(html)
 
     events = []
@@ -101,7 +91,7 @@ def scrape_date(day):
             "venue": venue,
             "category": category,
             "raw_category": raw_category,
-            "url": _extract_permalink(container, url),
+            "url": _extract_permalink(container, source_url),
             "image_url": _extract_image(container),
             # Preis und Beschreibung stehen NICHT in der Tagesliste - die holt
             # scrapers.detail_fetch bei Bedarf nach (siehe web.api_event_details).
@@ -109,14 +99,10 @@ def scrape_date(day):
     return events
 
 
+def scrape_date(day):
+    """day: datetime.date. Gibt eine Liste normalisierter Event-dicts zurück."""
+    return base.fetch_day(BASE_URL.format(date=day.isoformat()), day, _parse)
+
+
 def scrape_range(start_day, end_day):
-    all_events = []
-    current = start_day
-    while current <= end_day:
-        try:
-            all_events.extend(scrape_date(current))
-        except Exception as exc:  # eine schlechte Antwort soll nicht den ganzen Lauf stoppen
-            print(f"[kulturkalender] Fehler beim Laden von {current}: {exc}")
-        time.sleep(REQUEST_DELAY_SECONDS)
-        current += timedelta(days=1)
-    return all_events
+    return base.scrape_days(start_day, end_day, scrape_date, SOURCE)

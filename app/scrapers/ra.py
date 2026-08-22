@@ -28,6 +28,7 @@ from datetime import datetime
 import requests
 
 from .. import config, normalize
+from . import base
 
 logger = logging.getLogger("dd-was-geht.scrapers.ra")
 
@@ -41,15 +42,9 @@ PAGE_SIZE = 100
 MAX_PAGES = 10
 REQUEST_DELAY_SECONDS = 1.2
 
-HEADERS = {
-    "Content-Type": "application/json",
-    # Ohne User-Agent: 403. Bewusst derselbe ehrliche UA wie bei den
-    # HTML-Quellen, statt einen Browser vorzutäuschen.
-    "User-Agent": (
-        "Mozilla/5.0 (compatible; DresdenTaktBot/1.0; "
-        "+privates, nicht-kommerzielles Projekt)"
-    ),
-}
+# Ohne User-Agent: 403. Bewusst derselbe ehrliche UA wie bei den HTML-Quellen
+# (base.HEADERS), statt einen Browser vorzutäuschen.
+HEADERS = dict(base.HEADERS, **{"Content-Type": "application/json"})
 
 EVENT_LISTINGS_QUERY = """
 query GET_EVENT_LISTINGS($filters: FilterInputDtoInput, $pageSize: Int, $page: Int) {
