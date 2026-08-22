@@ -3,6 +3,7 @@ Aufruf: python3 tests_smoke.py
 """
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -1434,13 +1435,38 @@ check("Highlight: Standard im Code ist 80",
       '_int("HIGHLIGHT_SCORE", 80)' in
       open(os.path.join(_ROOT, "app", "config.py"), encoding="utf-8").read())
 
-_page = web.app.test_client().get("/").get_data(as_text=True)
+_client_web = web.app.test_client()
+_page = _client_web.get("/").get_data(as_text=True)
+
+
+def _bundle(html, asset_dir):
+    """Seite PLUS die Dateien, die sie einbindet. Seit dem Umbau steht das
+    Frontend nicht mehr in einer Datei; geprueft wird weiter genau das, was im
+    Browser ankommt - und nebenbei, dass jede verlinkte Datei auch da ist."""
+    parts = [html]
+    for name in re.findall(r'(?:src|href)="static/([A-Za-z0-9_.-]+)\?', html):
+        with open(os.path.join(asset_dir, name), encoding="utf-8") as handle:
+            parts.append(handle.read())
+    return "\n".join(parts)
+
+
+_page_all = _bundle(_page, os.path.join(_ROOT, "app", "static"))
+
+# Die Vorlage verlinkt genau diese vier plus rating.js - fehlt eine davon im
+# Container, ist die Seite weiss, ohne dass irgendwo ein Fehler steht.
+for _asset in ("boot.js", "app.css", "app.js", "background.js", "rating.js"):
+    check(f"Flask liefert static/{_asset} aus",
+          _client_web.get("/static/" + _asset).status_code == 200)
+check("Seite verlinkt alle fuenf Dateien",
+      len(re.findall(r'(?:src|href)="static/', _page)) == 5)
+# Ohne Cache-Buster holte der Browser nach einem Deploy weiter die alte Datei.
+check("Verweise tragen eine Version", '?v=' in _page and len(web.asset_version()) == 8)
 check("Highlight: Flask-Seite setzt die Schwelle als Zahl",
-      f"var HIGHLIGHT_SCORE = {config.HIGHLIGHT_SCORE};" in _page)
+      f"highlightScore: {config.HIGHLIGHT_SCORE}" in _page)
 check("Highlight: Zeile bekommt bei hohem Score die Klasse top-pick",
-      "row.classList.add('top-pick')" in _page)
+      "'top-pick'" in _page_all and "HIGHLIGHT_SCORE" in _page_all)
 check("Highlight: Einfaerbung wird von einem Label begleitet",
-      "'Top-Treffer'" in _page and ".tag-pick {" in _page)
+      "'Top-Treffer'" in _page_all and ".tag-pick {" in _page_all)
 
 # Der statische Export rendert dieselbe Vorlage ein zweites Mal - ohne diese
 # Zeile bliebe die oeffentliche Kopie ohne Schwelle zurueck.
@@ -1497,19 +1523,27 @@ check("Export: keine Merkmalsschluessel mehr im Export", "fk" not in _beatpol)
 check("Export: leere Felder fliegen raus", "image_url" not in _beatpol)
 
 _static_html = open(os.path.join(_export_dir, "index.html"), encoding="utf-8").read()
-check("Export: Seite laeuft im static-Modus", 'var MODE = "static";' in _static_html)
+_static_all = _bundle(_static_html, os.path.join(_export_dir, "static"))
+check("Export: Seite laeuft im static-Modus", 'mode: "static"' in _static_html)
+# Der Export muss die Dateien mitnehmen, sonst liegt auf GitHub Pages eine Seite
+# ohne Stylesheet und ohne Skripte.
+check("Export: Stylesheet und Skripte liegen daneben",
+      sorted(os.listdir(os.path.join(_export_dir, "static")))
+      == sorted(web.PUBLIC_ASSETS))
+check("Export: rating.js wird nicht mitkopiert",
+      not os.path.exists(os.path.join(_export_dir, "static", "rating.js")))
 # Der Kern der Rechte-Trennung: auf der oeffentlichen Kopie gibt es keine
 # Bewerten-Buttons und keinen Aufruf, der eine Bewertung irgendwohin schickte.
 check("Export: oeffentliche Seite kann nicht bewerten",
-      'var CAN_RATE = MODE === \'api\';' in _static_html and "/api/feedback" not in _static_html)
+      "var CAN_RATE = MODE === 'api';" in _static_all and "/api/feedback" not in _static_all)
 check("Export: keine Gast-Bewertung im localStorage mehr",
-      "guestReact" not in _static_html and "guest.weights" not in _static_html.split("removeItem")[0])
+      "guestReact" not in _static_all and "guest.weights" not in _static_all.split("removeItem")[0])
 check("Export: Empfehlungszeile heisst oeffentlich anders",
       "Empfehlungen der Woche" in _static_html and "Für dich diese Woche" not in _static_html)
 check("Export: Seite bleibt aus Suchmaschinen raus",
       'name="robots" content="noindex, nofollow"' in _static_html)
 check("Export: Seite liest die Tagesdateien statt der API",
-      "data/index.json?v=" in _static_html and "data/days/" in _static_html)
+      "data/index.json?v=" in _static_all and "data/days/" in _static_all)
 check("Export: robots.txt verbietet das Crawlen",
       "Disallow: /" in open(os.path.join(_export_dir, "robots.txt"), encoding="utf-8").read())
 check("Export: .nojekyll liegt daneben",
@@ -1517,9 +1551,9 @@ check("Export: .nojekyll liegt daneben",
 
 # Die Flask-Seite darf davon nichts abbekommen - sie ist die einzige, auf der
 # eine Bewertung wirklich in der Datenbank landet.
-check("Flask-Seite bleibt im api-Modus", 'var MODE = "api";' in _page)
+check("Flask-Seite bleibt im api-Modus", 'mode: "api"' in _page)
 check("Flask-Seite kann weiterhin bewerten",
-      "/api/feedback" in _page and "Für dich diese Woche" in _page)
+      "/api/feedback" in _page_all and "Für dich diese Woche" in _page)
 
 # Zweiter Lauf ohne Aenderung darf keine Datei anfassen, sonst traegt jeder
 # Push neue Blobs in die Git-Historie.
@@ -1591,20 +1625,22 @@ with db.get_conn() as conn:
           sorted(e["uid"] for e in _near) == ["geo-dd", "geo-umland"])
 
 # Der Export schreibt nur das Entfernte mit - Dresden ist der Normalfall und
-# braucht kein Feld je Zeile (siehe tools/export_static._slim).
+# braucht kein Feld je Zeile (siehe app/feed.slim_event).
+from app import feed  # noqa: E402
+
 check("Export markiert entfernte Events",
-      export_static._slim({"uid": "x", "title": "t", "date": "2026-09-20",
-                           "region": "weiter"}).get("region") == "weiter")
+      feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
+                       "region": "weiter"}).get("region") == "weiter")
 check("Export markiert Dresden nicht",
-      "region" not in export_static._slim({"uid": "x", "title": "t", "date": "2026-09-20",
-                                           "region": "dresden"}))
+      "region" not in feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
+                                       "region": "dresden"}))
 
 # Im Web haengt der Schalter im Filter-Menue und ist standardmaessig AUS.
 check("Web: Schalter 'Umgebung einschließen' ist da",
       'data-toggle="umgebung"' in _page and "Umgebung einschließen" in _page)
-check("Web: Umgebung ist standardmaessig aus", "umgebung: false" in _page)
+check("Web: Umgebung ist standardmaessig aus", "umgebung: false" in _page_all)
 check("Web: entfernte Events werden ohne Schalter ausgeblendet",
-      "e.region === 'weiter' && !filters.umgebung" in _page)
+      "e.region === 'weiter' && !filters.umgebung" in _page_all)
 check("Web: der Schalter gilt auch auf der oeffentlichen Kopie",
       'data-toggle="umgebung"' in _static_html)
 

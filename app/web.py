@@ -1,6 +1,11 @@
 """Personalisierte Web-Oberfläche (Flask) - dieselbe Optik wie der Artifact-
 Prototyp 'DD was geht', aber live aus der SQLite-Datenbank statt mit
-Beispieldaten, plus 'Für dich'-Bereich und Like/Skip direkt im Browser."""
+Beispieldaten, plus 'Für dich'-Bereich und Like/Skip direkt im Browser.
+
+Die Seite selbst ist app/templates/index.html (nur noch Markup); Stylesheet und
+Skripte liegen daneben in app/static/ und werden von Flask ausgeliefert."""
+import hashlib
+import os
 from datetime import date
 
 from flask import Flask, jsonify, render_template, request
@@ -10,6 +15,26 @@ from .ranges import month_range, week_range
 from .scrapers import detail_fetch
 
 app = Flask(__name__)
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+# Nur diese Dateien darf die oeffentliche Kopie mitnehmen. rating.js fehlt hier
+# mit Absicht: dort gibt es keinen Server, an den eine Bewertung ginge, also
+# soll auch der Code dafuer nicht dabei sein (siehe tools/export_static.py).
+PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js")
+
+
+def asset_version():
+    """Kurzer Hash ueber die statischen Dateien, haengt als ?v=... an jedem
+    Link. Ohne ihn holte der Browser nach einem Deploy weiter CSS und JS aus
+    seinem Cache - die Seite saehe kaputt aus, obwohl auf dem Pi das Richtige
+    liegt."""
+    digest = hashlib.sha1()
+    for name in sorted(os.listdir(STATIC_DIR)):
+        with open(os.path.join(STATIC_DIR, name), "rb") as handle:
+            digest.update(handle.read())
+    return digest.hexdigest()[:8]
+
 
 def _range_bounds(range_key):
     today = date.today()
@@ -36,7 +61,8 @@ def index():
                            categories_short=config.CATEGORY_SHORT_LABELS,
                            sources=config.SOURCE_LABELS, mode="api",
                            excluded=[], generated_at="",
-                           highlight_score=config.HIGHLIGHT_SCORE)
+                           highlight_score=config.HIGHLIGHT_SCORE,
+                           asset_v=asset_version())
 
 
 @app.route("/api/events")

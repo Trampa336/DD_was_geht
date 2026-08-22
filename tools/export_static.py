@@ -15,6 +15,8 @@ zeigen hat.
 Ausgabe (in --out, Standard ./data/site):
 
     index.html            dieselbe Vorlage wie das Web-UI, nur mit mode="static"
+    static/*              Stylesheet und Skripte, dieselben Dateien wie auf dem Pi
+                          (ohne rating.js - siehe web.PUBLIC_ASSETS)
     data/index.json       welche Tage es gibt, mit Version je Tag (Cache-Buster)
     data/days/<tag>.json  die Events eines Tages
     robots.txt            Disallow (die Seite ist "unlisted", nicht geheim)
@@ -41,7 +43,7 @@ from datetime import date, datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import config, db, feed  # noqa: E402
+from app import config, db, feed, web  # noqa: E402
 from app.web import app as flask_app  # noqa: E402
 
 
@@ -138,6 +140,21 @@ def export(out_dir, days_ahead=45, today=None):
         generated_at = datetime.now().replace(microsecond=0).isoformat()
     _write(index_path, _dump(dict(index_payload, generated_at=generated_at)))
 
+    # Stylesheet und Skripte sind dieselben Dateien, die auch der Pi ausliefert -
+    # nur rating.js bleibt zurueck (web.PUBLIC_ASSETS). Die Vorlage verlinkt sie
+    # relativ ("static/app.css"), das passt unter Flask wie unter GitHub Pages,
+    # auch wenn die Seite dort in einem Unterverzeichnis liegt.
+    static_out = os.path.join(out_dir, "static")
+    os.makedirs(static_out, exist_ok=True)
+    for name in web.PUBLIC_ASSETS:
+        with open(os.path.join(web.STATIC_DIR, name), "r", encoding="utf-8") as handle:
+            _write(os.path.join(static_out, name), handle.read())
+    # Ein rating.js aus einem aelteren Export muss weg, sonst laege der Code fuer
+    # das Bewerten weiter im oeffentlichen Repo.
+    for name in os.listdir(static_out):
+        if name not in web.PUBLIC_ASSETS:
+            os.remove(os.path.join(static_out, name))
+
     # Dieselbe Vorlage wie die Flask-Seite, nur im anderen Modus - deshalb gibt
     # es kein zweites Frontend, das mit der Zeit auseinanderlaeuft.
     with flask_app.test_request_context("/"):
@@ -150,6 +167,7 @@ def export(out_dir, days_ahead=45, today=None):
             highlight_score=config.HIGHLIGHT_SCORE,
             generated_at=generated_at,
             generated_at_label=datetime.fromisoformat(generated_at).strftime("%d.%m.%Y, %H:%M"),
+            asset_v=web.asset_version(),
         )
     _write(os.path.join(out_dir, "index.html"), html)
 
