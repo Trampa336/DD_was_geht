@@ -40,7 +40,7 @@ def _plain(line):
 def _digest(conn, title, start, end, limit, with_date):
     events = db.events_for_range(
         conn, start.isoformat(), end.isoformat(),
-        exclude_categories=config.EXCLUDED_CATEGORIES,
+        exclude_categories=config.EXCLUDED_CATEGORIES, exclude_far=True,
     )
     top = scoring.top_picks(conn, events, limit=limit)
     if with_date:
