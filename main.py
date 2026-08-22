@@ -19,11 +19,6 @@ def _check_config():
         missing.append("TELEGRAM_BOT_TOKEN")
     if not config.TELEGRAM_CHAT_ID:
         missing.append("TELEGRAM_CHAT_ID")
-    if config.REDDIT_ENABLED:
-        for name in ("REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET",
-                     "REDDIT_USER_AGENT", "ANTHROPIC_API_KEY"):
-            if not getattr(config, name):
-                missing.append(name)
     if missing:
         raise SystemExit(
             f"Fehlende Konfiguration in .env: {', '.join(missing)}. "

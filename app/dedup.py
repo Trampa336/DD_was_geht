@@ -24,7 +24,7 @@ Zwei Grundregeln, die Fehltreffer verhindern:
 
 Wer gewinnt, entscheidet config.SOURCE_PRIORITY (Standard: die Quellen der
 Haeuser selbst - sektor, azconni - vor rauze vor ra vor kulturkalender vor
-cybersax vor reddit). Der Verlierer bleibt vollständig in der Datenbank
+cybersax). Der Verlierer bleibt vollständig in der Datenbank
 stehen und wird in events.duplicate_of auf den Gewinner gezeigt; ausgeliefert
 (Newsletter, Web) wird nur der Gewinner - siehe db.events_for_range(). Fehlende
 Felder des Gewinners (Bild, Preis, Beschreibung) werden aus dem Duplikat
@@ -341,7 +341,7 @@ def _best_rank(event):
     in der Zeile - und wurde deshalb zugunsten des ra.co-Eintrags ausgeblendet.
     Im Newsletter zeigte der Link damit wieder auf RA.
 
-    Fehlt die Liste (reine Unit-Tests, Reddit-Pfad), zählt events.source.
+    Fehlt die Liste (reine Unit-Tests), zählt events.source.
     """
     sources = event.get("sources") or [event["source"]]
     return min(_source_rank(s) for s in sources)
@@ -470,17 +470,6 @@ def link_duplicates(conn, start_date, end_date):
     Titel geändert hat), werden wieder gelöst. Gibt die Anzahl der aktuell
     verbuchten Doppelungen im Zeitraum zurück.
     """
-    if not config.DEDUP_ENABLED:
-        # Abgeschaltet heißt: auch schon verbuchte Ausblendungen aufheben,
-        # sonst blieben Einträge aus einem früheren Lauf für immer unsichtbar.
-        for row in conn.execute(
-            """SELECT uid FROM events
-               WHERE duplicate_of IS NOT NULL AND date >= ? AND date <= ?""",
-            (start_date, end_date),
-        ).fetchall():
-            db.unlink_duplicate(conn, row["uid"])
-        return 0
-
     # GROUP_CONCAT holt alle Quellen mit, die diese uid geliefert haben - siehe
     # _best_rank(). LEFT JOIN, damit ein Eintrag ohne Quellen-Buchung (Bestand
     # aus der Zeit vor der Tabelle) nicht stillschweigend verschwindet.

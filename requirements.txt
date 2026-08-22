@@ -1,8 +1,6 @@
 aiogram==3.13.1
 APScheduler==3.10.4
 Flask==3.0.3
-# 2.34.2 ist das Minimum, das prawcore (via praw) verlangt - mit der alten
-# 2.32.3 lässt sich das Image nicht mehr bauen (ResolutionImpossible).
 requests==2.34.2
 beautifulsoup4==4.12.3
 # lxml ist optional: schneller Parser, aber auf 32-bit-Pi-OS (armv7) ohne
@@ -11,7 +9,3 @@ beautifulsoup4==4.12.3
 # Falls der Docker-Build daran hängen bleibt: diese Zeile auskommentieren.
 lxml==5.3.0
 python-dotenv==1.0.1
-# Nur für die optionale Reddit-Quelle (REDDIT_ENABLED=true). Ohne gesetzte
-# Zugangsdaten werden beide Pakete nie importiert - siehe app/sources/.
-praw==8.0.3
-anthropic==1.0.0

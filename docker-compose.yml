@@ -14,8 +14,5 @@ services:
       - TZ=Europe/Berlin
     volumes:
       - ./data:/app/data
-      # Damit die Subreddit-Liste auf dem Pi bearbeitbar ist, ohne den
-      # Container neu zu bauen (Änderung greift nach einem Neustart).
-      - ./config:/app/config
     ports:
       - "1111:8080"

@@ -81,8 +81,7 @@ def main():
             line = bot._event_line(event, with_date=with_date)
             # Marker fuer das, was in Telegram als Foto rausgeht (siehe
             # bot._send_event): nur Events, die schon eine image_url haben.
-            cover = "\U0001f5bc " if (config.NEWSLETTER_COVERS
-                                  and (event.get("image_url") or "").strip()) else "  "
+            cover = "\U0001f5bc " if (event.get("image_url") or "").strip() else "  "
             print("   " + cover + (line if args.roh else _plain(line)))
     print()
 

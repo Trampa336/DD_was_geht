@@ -2,8 +2,6 @@
 
 Persönlicher Dresden-Eventdienst für deinen Raspberry Pi: Scraper (kulturkalender-dresden.de, rauze.de, ra.co, cybersax.de, azconni.de, sektor-evolution.de) → SQLite → Telegram-Bot (täglicher/wöchentlicher Push) → Web-Oberfläche im „DD was geht“-Look, die aus deinem Feedback lernt, was dir gefällt. Bewertet wird ausschließlich auf der Weboberfläche im Heimnetz; Newsletter und öffentliche Kopie sind reine Lesekanäle. Die Personalisierung ist eine einfache, transparente Scoring-Logik ohne KI (siehe unten).
 
-Optional dazuschaltbar: [Reddit als dritte Quelle](#reddit-als-quelle-optional) für Veranstaltungen, die in keinem Kalender stehen. Das ist der einzige Teil, der eine externe KI-API braucht – standardmäßig ist er aus.
-
 ## Was verifiziert ist – und was nicht
 
 **Verifiziert gegen die echten Seiten:**
@@ -139,9 +137,9 @@ curl -s https://ra.co/graphql -H "Content-Type: application/json" \
   -d '{"query":"query { areas { id name country { name } } }"}'
 ```
 
-Damit findest du auch die Gebiets-IDs für `RA_AREA_ID`: **150 = Dresden** (Standard), 149 Leipzig, 265 Chemnitz, 356 Sachsen. Ein einziger Request deckt einen ganzen Zeitraum ab – nicht Tag für Tag wie bei den HTML-Quellen –, und `content`/`cost` kommen schon in der Liste mit, es gibt also **nichts nachzuladen**. Ein User-Agent muss gesetzt sein, sonst antwortet auch `/graphql` mit 403.
+Damit findest du auch die Gebiets-IDs für `RA_AREA_ID` (Konstante in `app/config.py`): **150 = Dresden** (Standard), 149 Leipzig, 265 Chemnitz, 356 Sachsen. Ein einziger Request deckt einen ganzen Zeitraum ab – nicht Tag für Tag wie bei den HTML-Quellen –, und `content`/`cost` kommen schon in der Liste mit, es gibt also **nichts nachzuladen**. Ein User-Agent muss gesetzt sein, sonst antwortet auch `/graphql` mit 403.
 
-Abschalten geht mit `RA_ENABLED=false` in der `.env`; fällt die API aus, läuft der Rest des Scrapes normal weiter.
+Fällt die API aus, läuft der Rest des Scrapes normal weiter – jede Quelle hat in `app/scheduler.py:run_scrape()` ihren eigenen `try/except`. Abschalten heißt: die Zeile dort auskommentieren.
 
 ## Einzelne Häuser: CyberSAX, AZ Conni und Sektor Evolution als Quellen
 
@@ -175,15 +173,11 @@ Unterschieden wird über `cybersax.SECTION_HEADINGS`, die ausdrückliche Liste d
 
 **Zwei Eigenheiten der Quelle:** Titel und Langfassung stehen in derselben Zelle, getrennt durch ein `&nbsp;`, wobei die Langfassung im aufklappbaren `<div id="info…">` steckt – wird das Div einfach mitentfernt, gibt es gar keine Beschreibung mehr. Und es gibt **keine Event-Permalinks**, nur Ortsseiten; als `url` steht deshalb die Tagesseite drin. Bilder und Preise liefert die Quelle gar nicht.
 
-Abschalten mit `CYBERSAX_ENABLED=false`.
-
 ### AZ Conni
 
 Das AZ Conni steht in **keinem** Aggregator – nicht im Kulturkalender, nicht im SAX-Terminal, und auf Rauze stand genau ein Termin. Deshalb wird `https://www.azconni.de/termine/` direkt geholt: eine einzige Übersichtsseite für alle kommenden Termine, also ein Request pro Lauf statt Tag für Tag.
 
 Das Markup ist sauber (`div.termin` mit `span.time`, `span.categories`, `header a`), hat aber einen Haken: **in der Datumszeile steht kein Jahr** („Donnerstag, 3. September ab 19:00 Uhr“). `_parse_german_date()` nimmt deshalb das nächste Vorkommen ab heute – im Dezember gehört ein Januartermin also ins Folgejahr. Wiederkehrende Termine teilen sich außerdem einen Permalink; das stört nicht, weil `make_event_uid()` das Datum mit einrechnet.
-
-Abschalten mit `AZCONNI_ENABLED=false`.
 
 ### Sektor Evolution
 
@@ -200,11 +194,9 @@ Zwei Eigenheiten, die einen zweiten Request je Termin nötig machen:
 
 Das Haus schreibt sich auf der eigenen Seite mal „SektorEvolution“, mal „Sektor Evolution“, einmal „Sektor Evolutin“; alle Varianten werden auf eine Schreibweise vereinheitlicht, sonst zerfiele der Ortsschlüssel der Doppelungs-Erkennung.
 
-Abschalten mit `SEKTOR_ENABLED=false`.
-
 ### Was noch fehlt
 
-Für einzelne Läden (z.B. das KAWA) gibt es keine auffindbare Website mit Terminliste. Steht nur Instagram dahinter, führt der Weg realistisch über den LLM-Pfad wie bei Reddit, nicht über einen Scraper.
+Für einzelne Läden (z.B. das KAWA) gibt es keine auffindbare Website mit Terminliste. Steht nur Instagram dahinter, gibt es dafür aktuell keinen Weg über einen Scraper.
 
 ## Doppelungen zwischen den Quellen
 
@@ -218,7 +210,7 @@ Der Abgleich läuft über *alle* Quellen, nicht nur über RA – und dort liegt 
 | ra | rauze | 7 |
 | kulturkalender | ra | 1 |
 
-Der Kulturkalender und Rauze führen dieselben Konzerte also laufend doppelt, nur unterschiedlich ausführlich betitelt („Ńoko“ vs. „ŃOKO [pol] Grenzenlose Klänge zwischen Dark Jazz…“). Weil `SOURCE_PRIORITY` mit `rauze` beginnt, steht im Newsletter die kurze Fassung – Preis, Bild und Beschreibung liefert Rauze ohnehin mit. Wer lieber die ausführlichen Titel des Kulturkalenders sehen will, stellt `SOURCE_PRIORITY=kulturkalender,rauze,ra,cybersax,reddit` ein; die fehlenden Felder werden dann aus dem Rauze-Eintrag aufgefüllt.
+Der Kulturkalender und Rauze führen dieselben Konzerte also laufend doppelt, nur unterschiedlich ausführlich betitelt („Ńoko“ vs. „ŃOKO [pol] Grenzenlose Klänge zwischen Dark Jazz…“). Weil `SOURCE_PRIORITY` mit `rauze` beginnt, steht im Newsletter die kurze Fassung – Preis, Bild und Beschreibung liefert Rauze ohnehin mit. Wer lieber die ausführlichen Titel des Kulturkalenders sehen will, stellt `SOURCE_PRIORITY` in `app/config.py` auf `["kulturkalender", "rauze", "ra", "cybersax"]` um; die fehlenden Felder werden dann aus dem Rauze-Eintrag aufgefüllt.
 
 **Warum `cybersax` hinten steht,** ist gemessen und nicht geraten: Die Quelle hat keine Event-Permalinks, sondern nur die Tagesseite. Stand sie *vor* `kulturkalender`, verdrängte sie in einem Testlauf 40 Kulturkalender-Einträge, und der Newsletter verlinkte danach auf eine Tagesliste mit 90 Zeilen statt auf die Veranstaltung – das Auffüllen fehlender Felder konnte den besseren Link nicht nachtragen, weil die Tagesseite das `url`-Feld ja schon belegte. Der Gewinn dieser Quelle ist ihre **Abdeckung**, nicht die Qualität der einzelnen Zeile.
 
@@ -236,7 +228,7 @@ Es gibt zwei Arten von Doppelung, und beide werden mitgezählt:
 
    Diese Fälle erkennt `app/dedup.py` und verbucht sie in `event_duplicates`.
 
-**Wer sichtbar bleibt,** entscheidet `SOURCE_PRIORITY` (Standard `sektor,azconni,rauze,ra,kulturkalender,cybersax,reddit`): Bei einer Doppelung wird nur der Eintrag der vordersten Quelle ausgeliefert, der andere bleibt vollständig in der Datenbank, wird aber nicht mehr gelistet. Vorn stehen dabei die Quellen der Häuser selbst, weil nur sie auf den Laden verlinken statt auf einen Aggregator. **Fehlende Felder des sichtbaren Eintrags werden aus dem verdeckten aufgefüllt** – nennt Rauze keinen Preis und RA schon, steht der Preis trotzdem da. Vorhandene Werte werden nie überschrieben.
+**Wer sichtbar bleibt,** entscheidet `SOURCE_PRIORITY` in `app/config.py` (Standard `sektor, azconni, rauze, ra, kulturkalender, cybersax`): Bei einer Doppelung wird nur der Eintrag der vordersten Quelle ausgeliefert, der andere bleibt vollständig in der Datenbank, wird aber nicht mehr gelistet. Vorn stehen dabei die Quellen der Häuser selbst, weil nur sie auf den Laden verlinken statt auf einen Aggregator. **Fehlende Felder des sichtbaren Eintrags werden aus dem verdeckten aufgefüllt** – nennt Rauze keinen Preis und RA schon, steht der Preis trotzdem da. Vorhandene Werte werden nie überschrieben.
 
 **Die Rangfolge gilt auch innerhalb einer Zeile.** Bei deckungsgleicher Lieferung (Fall 1) gibt es nichts auszublenden – es gibt ja nur einen Eintrag –, und in `events.source` steht dann schlicht, wer zuerst da war. Daraus folgen zwei Regeln, ohne die die Priorität ins Leere liefe:
 
@@ -258,42 +250,9 @@ docker compose exec dd-was-geht python3 tools/show_duplicates.py --tage 7
 docker compose exec dd-was-geht python3 tools/show_duplicates.py --neu-berechnen
 ```
 
-Die Ausgabe zeigt zu jedem Paar beide Fassungen, den Grund des Treffers und die Ähnlichkeit – gut geeignet, um zu prüfen, ob die Erkennung zu großzügig oder zu streng ist. Fehlt ein Ortsname in der Alias-Liste, steht sie als `VENUE_ALIASES` oben in `app/dedup.py`. Mit `DEDUP_ENABLED=false` lässt sich das Ganze abschalten; beim nächsten Lauf werden verdeckte Einträge dann wieder sichtbar.
+Die Ausgabe zeigt zu jedem Paar beide Fassungen, den Grund des Treffers und die Ähnlichkeit – gut geeignet, um zu prüfen, ob die Erkennung zu großzügig oder zu streng ist. Fehlt ein Ortsname in der Alias-Liste, steht sie als `VENUE_ALIASES` oben in `app/dedup.py`.
 
 Die Erkennung läuft automatisch nach jedem Scrape über den kompletten Zeitraum (nicht nur über die frisch geholten Events) und ist idempotent: Ändert eine Quelle ihren Titel so, dass die Paarung nicht mehr trägt, löst sich die Verknüpfung von selbst wieder.
-
-## Reddit als Quelle (optional)
-
-Kalender wie Kulturkalender und Rauze zeigen, was offiziell eingetragen wurde. Vieles wird aber nur angekündigt – in Posts von Läden, Veranstaltern und Leuten aus der Szene. Genau die soll diese Quelle einfangen.
-
-Der Unterschied zu den beiden Scrapern: Reddit liefert Fließtext, keine Veranstaltungsliste. Deshalb hängt hier ein Sprachmodell dahinter, das für jeden Post entscheidet, ob überhaupt eine Veranstaltung angekündigt wird, und Datum, Uhrzeit, Titel und Ort herausliest (auch aus Formulierungen wie „nächsten Freitag“). Danach läuft alles durch dieselbe Normalisierung und Datenbank wie die anderen Quellen – im Telegram-Push und im Web-UI sind Reddit-Events also ganz normale Events.
-
-**Was das kostet:** Der Abruf läuft **einmal täglich** zusammen mit dem Tages-Push. Zusammen mit dem Vorfilter und dem Gedächtnis für schon geprüfte Posts sind das grob **1–3 $ pro Monat**. Der API-Key von [console.anthropic.com](https://console.anthropic.com) wird **nutzungsbasiert abgerechnet und ist nicht Teil eines Claude-Pro-Abos** – das sind zwei getrennte Dinge. `REDDIT_LLM_MAX_CALLS_PER_RUN` in der `.env` ist die harte Obergrenze pro Lauf, falls ein Subreddit mal explodiert.
-
-### Einrichten
-
-1. **Reddit-App anlegen:** [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) → „create app“ → Typ **script**. Client-ID steht klein unter dem App-Namen, das Secret daneben. Der Zugriff ist reines Lesen – ohne Benutzername/Passwort läuft PRAW automatisch im read-only-Modus, der Bot kann also nichts posten.
-2. **`.env` ergänzen:** `REDDIT_ENABLED=true`, `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `ANTHROPIC_API_KEY` (Vorlagen mit Erklärung stehen in `.env.example`).
-3. **Subreddits eintragen:** in `config/reddit_subreddits.txt`, eine Zeile pro Subreddit. Die Datei ist bewusst leer – welche Communities sich lohnen, hängt davon ab, wo tatsächlich angekündigt wird. Solange nichts drinsteht, bleibt die Quelle still.
-
-Kandidaten suchen (fragt die Reddit-API, gibt nur Vorschläge aus – eingetragen wird von Hand):
-
-```bash
-docker compose exec dd-was-geht python3 tools/discover_subreddits.py Dresden "Dresden Techno" "Dresden Party"
-```
-
-Einmal manuell testen, bevor du es dem Scheduler überlässt:
-
-```bash
-docker compose exec dd-was-geht python3 -c "from app.scheduler import run_reddit_poll; print(run_reddit_poll())"
-```
-
-### Grenzen dieser Quelle
-
-- **Ein Modell entscheidet mit.** Was das LLM nicht als Veranstaltung erkennt, taucht nicht auf; was es falsch erkennt, taucht falsch auf. `REDDIT_LLM_CONFIDENCE_THRESHOLD` (Standard 0.6) regelt, wie streng das ist – höher heißt weniger Müll, aber auch mehr Verpasstes.
-- **Ohne Datum kein Event.** Posts, aus denen sich kein konkreter Tag ableiten lässt, werden verworfen – ein Datum ist die Grundlage der Event-ID.
-- **Dubletten nur best-effort.** Kündigen zwei Leute dieselbe Party unterschiedlich an, werden sie über Datum, Ort und Titelähnlichkeit zusammengefasst. Bei stark abweichender Schreibweise erscheint sie zweimal – dasselbe Problem wie schon quellenübergreifend (siehe „Grenzen“ unten).
-- **X/Twitter fehlt bewusst.** Deren API ist kostenpflichtig und kann in der Gratis-Stufe nicht suchen. `app/sources/` ist so aufgebaut, dass eine weitere API-Quelle daneben passt, falls sich das mal lohnt.
 
 ## Was im Newsletter steht
 
@@ -315,7 +274,7 @@ docker compose exec dd-was-geht python3 tools/preview_digest.py --tag 2026-09-05
 docker compose exec dd-was-geht python3 tools/preview_digest.py --roh   # das gesendete HTML
 ```
 
-**Cover-Bilder:** Wo eine Quelle ein Bild mitliefert (`image_url`), wird es angezeigt – in der Web-Liste als kleines Vorschaubild links vom Titel und im Detail-Popup groß. Im Telegram-Newsletter geht ein solches Event als Foto mit Bildunterschrift raus statt als reine Textzeile. Extra nachgeladen wird dafür **nichts** – benutzt wird nur, was ohnehin schon in der Datenbank steht (rauze und RA liefern das Bild beim Scrapen mit, beim Kulturkalender kommt es über den Detail-Abruf dazu). Events ohne Bild bekommen im Web eine Platzhalterfläche mit dem Anfangsbuchstaben der Kategorie und in Telegram die bisherige Textzeile; dasselbe passiert, wenn Telegram eine Bild-URL ablehnt (toter Link, >5 MB). Abschalten mit `NEWSLETTER_COVERS=false` in der `.env` – dann sieht der Newsletter exakt aus wie vorher. Mit `python3 tools/preview_digest.py` zeigt ein 🖼 vor der Zeile, welche Events als Foto rausgehen.
+**Cover-Bilder:** Wo eine Quelle ein Bild mitliefert (`image_url`), wird es angezeigt – in der Web-Liste als kleines Vorschaubild links vom Titel und im Detail-Popup groß. Im Telegram-Newsletter geht ein solches Event als Foto mit Bildunterschrift raus statt als reine Textzeile. Extra nachgeladen wird dafür **nichts** – benutzt wird nur, was ohnehin schon in der Datenbank steht (rauze und RA liefern das Bild beim Scrapen mit, beim Kulturkalender kommt es über den Detail-Abruf dazu). Events ohne Bild bekommen im Web eine Platzhalterfläche mit dem Anfangsbuchstaben der Kategorie und in Telegram die bisherige Textzeile; dasselbe passiert, wenn Telegram eine Bild-URL ablehnt (toter Link, >5 MB). Mit `python3 tools/preview_digest.py` zeigt ein 🖼 vor der Zeile, welche Events als Foto rausgehen.
 
 **Dauerangebote im Web-UI:** Rund die Hälfte aller Einträge gehört zu Reihen, die an vielen Tagen hintereinander laufen – Ausstellungen, Werksführungen, der Hop-on-Hop-off-Bus (2097 von 4297 Zeilen; an einem einzelnen Tag rund 70 von 150). Sie sind nicht falsch, aber sie sind etwas anderes als „was ist heute Abend los“. Im Web werden sie deshalb in warmem Sandstein statt im Elbe-Türkis gezeichnet und mit „Dauerangebot“ beschriftet (`db.ONGOING_MIN_DAYS`, Standard 7 Tage). Im Telegram-Digest ändert sich nichts – dort werden sie ganz normal mitgewertet.
 
@@ -349,7 +308,7 @@ Jedes 👍/👎 auf ein Event passt drei Arten von „Gewichten“ an: die **Kat
 
 **„Weiteres“ (`sonstiges`) zählt bewusst nicht als Geschmacksmerkmal.** Es ist das Restfach des Klassifikators – dort landet, was keine Regel erkannt hat. Als Lern-Feature ist es schädlich: In der Live-Datenbank stand `category:sonstiges` bei 0 Likes / 4 Skips, und die Laplace-Glättung drückte damit *alle* 1734 Einträge dieses Buckets dauerhaft auf 29–41 %, darunter reichlich nur falsch einsortierte Veranstaltungen. Vier Klicks dürfen nicht 40 % des Katalogs stummschalten, deshalb liefert `sonstiges` in `scoring._feature_keys()` keinen Kategorie-Schlüssel mehr (`NEUTRAL_CATEGORIES`). Ort und Schlüsselwörter wirken dort weiterhin ganz normal.
 
-Unabhängig vom Lern-Score gibt es zwei harte Filter. Der eine ist der Ort (siehe „Dresden oder Ausflug“ oben): Was weiter weg liegt als der Speckgürtel, kommt gar nicht erst in den Digest. Der andere ist `EXCLUDED_CATEGORIES` (Standard `familie`, `.env`) blendet Kategorien aus dem Telegram-Newsletter (täglich/wöchentlich/`/monat`) und der Web-Startansicht komplett aus. Im Web-UI bleibt die Kategorie über den Filter-Chip trotzdem erreichbar.
+Unabhängig vom Lern-Score gibt es zwei harte Filter. Der eine ist der Ort (siehe „Dresden oder Ausflug“ oben): Was weiter weg liegt als der Speckgürtel, kommt gar nicht erst in den Digest. Der andere ist `EXCLUDED_CATEGORIES` (`app/config.py`, Standard `familie`, `fuehrungen`): er blendet Kategorien aus dem Telegram-Newsletter (täglich/wöchentlich/`/monat`) und der Web-Startansicht komplett aus. Im Web-UI bleibt die Kategorie über den Filter-Chip trotzdem erreichbar.
 
 Die Kategorien stehen im Web-UI als eine einzige, nicht umbrechende Chip-Zeile über der Liste (Kurzform aus `CATEGORY_SHORT_LABELS`; passt sie nicht, wird seitlich gewischt). Alles andere – „Dauerangebote", „Wenig relevant", die Quellen und „Auswahl zurücksetzen" – liegt rechts daneben im Klappmenü **Filter**, dessen Zähler anzeigt, wie viele Einstellungen vom Standard abweichen. Die Kategorie-Chips selbst sind eine **Mehrfachauswahl**: Jeder Chip lässt sich einzeln an- und abschalten, mehrere gewählte Kategorien werden zusammen angezeigt (`/api/events?cat=musik,kultur`, gleiches für `/api/fuer-dich`). „Alle“ setzt die Auswahl zurück – nur dann greift `EXCLUDED_CATEGORIES`; sobald mindestens ein Chip aktiv ist, zählt ausschließlich die Auswahl. Die Auswahl bleibt pro Browser im `localStorage` erhalten. „Familie & Kinder“ ist bewusst von „Touren & Märkte“ (Führungen, Rundgänge, Märkte, Feste) getrennt, damit der Filter nicht versehentlich auch nicht-familienbezogene Events verschluckt.
 
@@ -447,7 +406,7 @@ Die Seite steht danach unter `https://trampa336.github.io/DD_was_geht/`.
 dd-was-geht/
   main.py                 Startpunkt: Web-UI-Thread + Scheduler + Bot-Polling
   app/
-    config.py              Einstellungen aus .env
+    config.py              .env-Werte (Secrets, Pfade, Zeiten) + feste Konstanten
     db.py                  SQLite: Events, Reaktionen, Gewichte
     normalize.py            Kategorisierung, Schlüsselwörter, stabile Event-IDs
     dedup.py                Doppelungen zwischen Quellen erkennen und verbuchen
@@ -466,14 +425,9 @@ dd-was-geht/
       azconni.py              Quelle 5: AZ Conni (einzelnes Haus)
       sektor.py               Quelle 6: Sektor Evolution (einzelnes Haus)
       detail_fetch.py         Beschreibung/Preis einzelner Events nachladen
-    sources/                 API-Quellen (Fließtext statt Kalenderliste)
-      common.py               LLM-Auswertung (Klassifizierung + Extraktion)
-      reddit/                 Quelle 4, optional (siehe oben)
     templates/index.html     Web-UI - eine Vorlage, zwei Modi: 'api' (Flask im LAN)
                              und 'static' (oeffentliche Kopie, liest JSON-Dateien)
-  config/reddit_subreddits.txt  Welche Subreddits beobachtet werden
   tools/inspect_source.py    Debug-Helfer zur Scraper-Kalibrierung
-  tools/discover_subreddits.py  Schlägt Subreddits zum Beobachten vor
   tools/show_duplicates.py   Zeigt, welche Doppelungen verbucht sind
   tools/preview_digest.py    Zeigt den Newsletter, ohne ihn zu verschicken
   tools/reclassify.py        Kategorien im Bestand nachziehen (Backfill)
@@ -515,7 +469,6 @@ Falls der Kulturkalender sein Markup ändert und Beschreibungen leer bleiben: di
 | cybersax.de (SAX-Terminal) | Kleine Bars, Cafés, Kleinbühnen mit Programm | Tag für Tag |
 | azconni.de | AZ Conni, in keinem Aggregator | ein Request pro Lauf |
 | sektor-evolution.de | Sektor Evolution, für den Link auf das Haus selbst | ein Request plus einer je Termin im Zeitraum |
-| Reddit (optional) | Ankündigungen aus der Szene, die in keinem Kalender stehen | einmal täglich, Rückschau ~30 h |
 
 Der Kulturkalender ist stark bei Hochkultur und Tagesprogramm, Rauze bei Nightlife (Ostpol, objekt klein a, GrooveStation, Sektor Evolution, Chemiefabrik, Scheune). **Resident Advisor überschneidet sich fast vollständig mit Rauze** – im Live-Abgleich über zwei Wochen war jeder RA-Termin auch bei Rauze zu finden. Der Gewinn liegt deshalb weniger in zusätzlichen Terminen als in den besseren Daten: Line-up, Preis und Flyer, die über die Doppelungs-Erkennung in den Rauze-Eintrag einfließen (siehe „Doppelungen zwischen den Quellen“). Über einen längeren Vorlauf listet RA außerdem Termine, die bei Rauze noch nicht eingetragen sind.
 

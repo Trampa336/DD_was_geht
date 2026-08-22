@@ -76,11 +76,11 @@ async def _send_event(chat_id, event, text):
 
     Das Bild wird nie extra nachgeladen: genutzt wird nur, was beim Scrapen
     ohnehin schon in image_url stand (Rauze und RA liefern es mit, der
-    Kulturkalender erst beim Detail-Klick im Web). Kein Bild, ausgeschalteter
-    Schalter oder eine URL, die Telegram nicht annimmt -> ganz normale
-    Textnachricht wie bisher. Ein kaputtes Cover darf den Digest nie kippen.
+    Kulturkalender erst beim Detail-Klick im Web). Kein Bild oder eine URL,
+    die Telegram nicht annimmt -> ganz normale Textnachricht. Ein kaputtes
+    Cover darf den Digest nie kippen.
     """
-    image_url = (event.get("image_url") or "").strip() if config.NEWSLETTER_COVERS else ""
+    image_url = (event.get("image_url") or "").strip()
     if image_url:
         try:
             await get_bot().send_photo(

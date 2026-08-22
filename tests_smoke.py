@@ -9,9 +9,6 @@ import tempfile
 sys.path.insert(0, os.path.dirname(__file__))
 
 os.environ["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "test.db")
-# Damit die Reddit-Pipeline im Test nicht mangels konfigurierter Subreddits
-# sofort abbricht (echtes Netzwerk wird trotzdem nie angefasst, siehe unten).
-os.environ["REDDIT_SUBREDDITS"] = "dresden"
 
 from app import config, db, normalize, scoring  # noqa: E402
 
@@ -310,100 +307,14 @@ check("KK-Fixture: groesste Cover-Variante aus dem srcset",
       kk_scraper._extract_image(_amy) == "https://kk.example/gross.jpg")
 
 
-# --- Reddit-Quelle (ohne Netzwerk, ohne API-Keys) --------------------------
-# Wichtig: der reine Import darf keine Zugangsdaten brauchen, sonst wäre diese
-# Datei hier nicht mehr lauffähig (praw/anthropic werden erst beim Gebrauch
-# importiert - siehe get_reddit_client/get_llm_client).
-from app.sources.reddit import pipeline as reddit_pipeline  # noqa: E402
-from app.sources.reddit import prefilter as reddit_prefilter  # noqa: E402
-from app.sources.reddit import subreddits as reddit_subreddits  # noqa: E402
-
-for _title in ["Rave am Samstag im Ostpol", "Konzert: Pogendroblem, 21.08.",
-               "Lesung morgen in der Scheune", "Line-Up für das Festival steht"]:
-    check(f"Prefilter laesst {_title!r} durch",
-          reddit_prefilter.looks_event_ish(_title) is True)
-
-for _title, _body, _flair in [
-    ("Wer kennt einen guten Zahnarzt?", "", None),
-    ("Warum ist die Elbe so voll", "Nur so eine Beobachtung", None),
-    ("Techno am Freitag", "", "Frage"),
-    ("", "Rave im Ostpol", None),
-]:
-    check(f"Prefilter sortiert {_title!r} aus",
-          reddit_prefilter.looks_event_ish(_title, _body, _flair) is False)
-
-_sub_file = os.path.join(tempfile.mkdtemp(), "subs.txt")
-with open(_sub_file, "w", encoding="utf-8") as _fh:
-    _fh.write("# Kommentar\n\nr/dresden\nTechno_DD   # mit Kommentar dahinter\n"
-              "/r/dresden\n")
-_subs = reddit_subreddits.load_active_subreddits(path=_sub_file, extra="extra_sub, dresden")
-check("Subreddit-Liste: r/-Präfix, Kommentare, Dubletten bereinigt",
-      _subs == ["dresden", "Techno_DD", "extra_sub"])
-check("Fehlende Subreddit-Datei ist kein Fehler",
-      reddit_subreddits.load_active_subreddits(path="/nicht/vorhanden", extra="") == [])
-
-# Reddit-Posts sind unsauberer als gepflegte Kalendereinträge: oft ohne Uhrzeit
-# und mit Emojis im Titel. Das bestehende uid-Schema muss das aushalten.
+# --- uid-Schema bei unvollstaendigen Angaben ------------------------------
+# Nicht jede Quelle liefert eine Uhrzeit. Das uid-Schema muss das aushalten,
+# ohne dass zwei verschiedene Termine dieselbe uid bekommen.
 _uid_no_time = normalize.make_event_uid("2026-08-22", None, "Rave 🔥 im Ostpol", "Ostpol")
 check("uid ohne Uhrzeit ist stabil",
       _uid_no_time == normalize.make_event_uid("2026-08-22", None, "Rave 🔥 im Ostpol", "Ostpol"))
 check("uid ohne Uhrzeit != uid mit Uhrzeit",
       _uid_no_time != normalize.make_event_uid("2026-08-22", "22:00", "Rave 🔥 im Ostpol", "Ostpol"))
-
-# Crossposts: zwei Leute kündigen dieselbe Party an, leicht anders geschrieben.
-_dupes = [
-    {"uid": "a", "date": "2026-08-22", "title": "Sachsentrance Nacht", "venue": "objekt klein a",
-     "time": None, "url": "https://www.reddit.com/spaeter", "_created_utc": 200},
-    {"uid": "b", "date": "2026-08-22", "title": "Sachsentrance-Nacht!", "venue": "objekt klein a",
-     "time": "22:00", "url": "https://www.reddit.com/frueher", "_created_utc": 100},
-    {"uid": "c", "date": "2026-08-22", "title": "Ganz anderes Konzert", "venue": "objekt klein a",
-     "time": None, "url": "https://www.reddit.com/anderes", "_created_utc": 150},
-]
-_collapsed = reddit_pipeline.collapse_near_duplicates(_dupes)
-check("Fast-Dubletten zusammengefasst", len(_collapsed) == 2)
-_kept = next(e for e in _collapsed if e["title"].startswith("Sachsentrance"))
-check("Vollständigerer Eintrag gewinnt (mit Uhrzeit)", _kept["time"] == "22:00")
-check("Frühester Post bleibt als Quelle", _kept["url"] == "https://www.reddit.com/frueher")
-
-# Kompletter Durchlauf mit erfundenen Reddit-Posts und erfundener LLM-Antwort:
-# sichert die Feldnamen ab, auf die db.upsert_events und das Web-UI bauen.
-_fake_posts = [
-    {"id": "p1", "title": "Rave im Ostpol am Samstag", "selftext": "Ab 22 Uhr, Techno.",
-     "created_utc": 1755820800, "permalink": "/r/dresden/comments/p1/", "flair": None},
-    {"id": "p2", "title": "Wie komme ich zum Hauptbahnhof?", "selftext": "",
-     "created_utc": 1755820800, "permalink": "/r/dresden/comments/p2/", "flair": None},
-]
-_fake_llm = [
-    {"id": "p1", "is_event": True, "confidence": 0.9, "date": "2026-08-22",
-     "time": "22:00", "title": "Rave im Ostpol", "venue": "Ostpol", "raw_category": "Rave"},
-]
-_polled = reddit_pipeline.poll_recent(
-    lookback_hours=48,
-    fetch=lambda names, hours: _fake_posts,
-    extract=lambda items: _fake_llm,
-)
-check("Pipeline liefert genau ein Event", len(_polled) == 1)
-_event = _polled[0]
-check("Pipeline: Feldnamen wie bei den Scrapern",
-      set(_event) == {"uid", "source", "date", "time", "title", "venue",
-                      "category", "raw_category", "url"})
-check("Pipeline: source == reddit", _event["source"] == "reddit")
-check("Pipeline: url zeigt auf den Post",
-      _event["url"] == "https://www.reddit.com/r/dresden/comments/p1/")
-check("Pipeline: Kategorie über normalize.classify_category", _event["category"] == "musik")
-with db.get_conn() as conn:
-    check("Pipeline: erkanntes Event als gesehen vermerkt", db.reddit_seen(conn, "p1") is True)
-    check("Pipeline: aussortierter Post als gesehen vermerkt", db.reddit_seen(conn, "p2") is True)
-    check("Pipeline: Event landet in der Datenbank", db.upsert_events(conn, _polled) == 1)
-
-# Zweiter Lauf: die Posts sind bekannt, es darf kein LLM-Aufruf mehr passieren.
-def _explode(items):
-    raise AssertionError("LLM darf für bereits gesehene Posts nicht aufgerufen werden")
-
-_polled_again = reddit_pipeline.poll_recent(
-    lookback_hours=48, fetch=lambda names, hours: _fake_posts, extract=_explode,
-)
-check("Zweiter Lauf spart die schon gesehenen Posts", _polled_again == [])
 
 
 # --- Detail-Spalten, Cache und Popup-Endpunkt -----------------------------
@@ -1486,14 +1397,14 @@ class _FakeBot:
         self.calls.append(("message", kwargs))
 
 
-def _send(event, photo_fails=False, covers=True):
+def _send(event, photo_fails=False):
     fake = _FakeBot(photo_fails=photo_fails)
-    real_get_bot, real_flag = bot.get_bot, config.NEWSLETTER_COVERS
-    bot.get_bot, config.NEWSLETTER_COVERS = (lambda: fake), covers
+    real_get_bot = bot.get_bot
+    bot.get_bot = lambda: fake
     try:
         asyncio.run(bot._send_event(1, event, "Zeile"))
     finally:
-        bot.get_bot, config.NEWSLETTER_COVERS = real_get_bot, real_flag
+        bot.get_bot = real_get_bot
     return [kind for kind, _ in fake.calls]
 
 
@@ -1506,8 +1417,6 @@ check("Cover: leeres image_url zaehlt als kein Bild",
       _send({**_line_event, "uid": "c", "image_url": "   "}) == ["message"])
 check("Cover: abgelehntes Bild faellt auf Text zurueck",
       _send(_with_image, photo_fails=True) == ["photo", "message"])
-check("Cover: NEWSLETTER_COVERS=false schickt weiter nur Text",
-      _send(_with_image, covers=False) == ["message"])
 
 
 # --- Hervorhebung hoch bewerteter Events im Web (config.HIGHLIGHT_SCORE) ----

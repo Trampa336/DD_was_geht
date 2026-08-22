@@ -48,16 +48,6 @@ CREATE TABLE IF NOT EXISTS send_log (
     PRIMARY KEY (event_uid, channel)
 );
 
--- Welche Reddit-Posts schon ausgewertet wurden. Ohne das würde jeder Lauf
--- dieselben Posts erneut ans LLM schicken (die "neu"-Liste überschneidet sich
--- von Tag zu Tag stark) - das ist die eigentliche Kostenbremse.
-CREATE TABLE IF NOT EXISTS reddit_seen_posts (
-    post_id TEXT PRIMARY KEY,
-    verdict TEXT NOT NULL,
-    event_uid TEXT,
-    processed_at TEXT NOT NULL
-);
-
 -- Welche Quellen denselben Eintrag geliefert haben. Nötig, weil die zweite,
 -- ältere Art von Doppelung sonst unsichtbar bleibt: schreiben zwei Quellen
 -- Datum, Zeit, Titel und Ort identisch, erzeugt normalize.make_event_uid()
@@ -515,24 +505,6 @@ def mark_sent(conn, event_uid, channel):
     conn.execute(
         "INSERT OR IGNORE INTO send_log (event_uid, channel, sent_at) VALUES (?, ?, ?)",
         (event_uid, channel, datetime.utcnow().isoformat()),
-    )
-
-
-def reddit_seen(conn, post_id):
-    row = conn.execute(
-        "SELECT 1 FROM reddit_seen_posts WHERE post_id = ?", (post_id,)
-    ).fetchone()
-    return row is not None
-
-
-def mark_reddit_seen(conn, post_id, verdict, event_uid=None):
-    conn.execute(
-        """INSERT INTO reddit_seen_posts (post_id, verdict, event_uid, processed_at)
-           VALUES (?, ?, ?, ?)
-           ON CONFLICT(post_id) DO UPDATE SET verdict = excluded.verdict,
-                                              event_uid = excluded.event_uid,
-                                              processed_at = excluded.processed_at""",
-        (post_id, verdict, event_uid, datetime.utcnow().isoformat()),
     )
 
 

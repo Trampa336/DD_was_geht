@@ -20,28 +20,24 @@ def run_scrape(days_ahead=31):
     events = []
     events.extend(kulturkalender.scrape_range(today, end))
     events.extend(rauze.scrape_range(today, end))
-    if config.RA_ENABLED:
-        # Eigener try/except wie bei Reddit: fällt die RA-API aus, sollen die
-        # beiden HTML-Quellen trotzdem gespeichert werden.
-        try:
-            events.extend(ra.scrape_range(today, end))
-        except Exception:
-            logger.exception("Resident Advisor fehlgeschlagen - Lauf geht weiter.")
-    if config.CYBERSAX_ENABLED:
-        try:
-            events.extend(cybersax.scrape_range(today, end))
-        except Exception:
-            logger.exception("CyberSAX fehlgeschlagen - Lauf geht weiter.")
-    if config.AZCONNI_ENABLED:
-        try:
-            events.extend(azconni.scrape_range(today, end))
-        except Exception:
-            logger.exception("AZ Conni fehlgeschlagen - Lauf geht weiter.")
-    if config.SEKTOR_ENABLED:
-        try:
-            events.extend(sektor.scrape_range(today, end))
-        except Exception:
-            logger.exception("Sektor Evolution fehlgeschlagen - Lauf geht weiter.")
+    # Je Quelle ein eigener try/except: faellt eine aus, werden die anderen
+    # trotzdem gespeichert.
+    try:
+        events.extend(ra.scrape_range(today, end))
+    except Exception:
+        logger.exception("Resident Advisor fehlgeschlagen - Lauf geht weiter.")
+    try:
+        events.extend(cybersax.scrape_range(today, end))
+    except Exception:
+        logger.exception("CyberSAX fehlgeschlagen - Lauf geht weiter.")
+    try:
+        events.extend(azconni.scrape_range(today, end))
+    except Exception:
+        logger.exception("AZ Conni fehlgeschlagen - Lauf geht weiter.")
+    try:
+        events.extend(sektor.scrape_range(today, end))
+    except Exception:
+        logger.exception("Sektor Evolution fehlgeschlagen - Lauf geht weiter.")
 
     with db.get_conn() as conn:
         new_count = db.upsert_events(conn, events)
@@ -55,30 +51,12 @@ def run_scrape(days_ahead=31):
     return len(events), new_count
 
 
-def run_reddit_poll(lookback_hours=None):
-    """Reddit wird bewusst nur einmal täglich abgefragt (siehe README):
-    die LLM-Auswertung kostet pro Post Geld, und für einen Tagesdigest reicht
-    ein Lauf morgens völlig aus."""
-    from .sources.reddit import pipeline as reddit_pipeline
-
-    events = reddit_pipeline.poll_recent(lookback_hours)
-    if not events:
-        return 0, 0
-    with db.get_conn() as conn:
-        new_count = db.upsert_events(conn, events)
-        dates = sorted(e["date"] for e in events if e.get("date"))
-        if dates:
-            dedup.link_duplicates(conn, dates[0], dates[-1])
-    logger.info("Reddit fertig: %d Events gesehen, %d davon neu.", len(events), new_count)
-    return len(events), new_count
-
-
 async def _scrape_job():
     await asyncio.to_thread(run_scrape)
 
 
 async def _daily_job():
-    # Eigener try/except wie bei RA und Reddit, aber um den ganzen Scrape: fällt
+    # Eigener try/except wie bei RA, aber um den ganzen Scrape: fällt
     # eine der beiden HTML-Quellen aus (oder die DB ist kurz gesperrt), soll der
     # Push trotzdem rausgehen. Ein Digest aus den Daten des letzten Laufs ist
     # deutlich besser als gar kein Newsletter - vorher hat genau das den
@@ -87,13 +65,6 @@ async def _daily_job():
         await _scrape_job()
     except Exception:
         logger.exception("Scrape fehlgeschlagen - Push läuft mit den vorhandenen Daten weiter.")
-    if config.REDDIT_ENABLED:
-        # Eigener try/except: fällt Reddit oder die LLM-API aus, sollen der
-        # HTML-Scrape und der Telegram-Push trotzdem durchlaufen.
-        try:
-            await asyncio.to_thread(run_reddit_poll)
-        except Exception:
-            logger.exception("Reddit-Durchlauf fehlgeschlagen - Push läuft trotzdem.")
     await send_daily_digest()
 
 

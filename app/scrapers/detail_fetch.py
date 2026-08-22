@@ -119,7 +119,7 @@ def _parse_rauze_detail(soup):
 
 
 def _parse_generic_detail(soup):
-    """Für alles andere (z.B. Reddit-Events, die auf beliebige Seiten zeigen):
+    """Für alles andere (Events, die auf beliebige Seiten zeigen):
     nur das, was praktisch jede Seite mitliefert."""
     description = None
     for selector in ['meta[property="og:description"]', 'meta[name="description"]']:
