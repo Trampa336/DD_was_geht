@@ -204,11 +204,6 @@ with db.get_conn() as conn:
     score_after_switch = scoring.score_event(conn, new_theater_event)
     check("Score nach Wechsel zu Skip wieder <= 50", score_after_switch <= 50.0)
 
-    # --- send_log ---
-    check("noch nicht gesendet", db.already_sent(conn, "evt1", "telegram_daily") is False)
-    db.mark_sent(conn, "evt1", "telegram_daily")
-    check("jetzt als gesendet markiert", db.already_sent(conn, "evt1", "telegram_daily") is True)
-
 
 # --- Parsing-Fixtures: HTML nachgebaut nach den echten Tagesansichten ---
 # Diese Fixtures haben einen realen Bug aufgedeckt: der Ortsname

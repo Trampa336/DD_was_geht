@@ -179,9 +179,3 @@ def _town_region(slug):
             elif name in words:
                 return region
     return None
-
-
-def is_far(venue):
-    """Liegt der Ort weder in Dresden noch im Speckguertel? Genau das versteckt
-    der Schalter "Umgebung einschliessen" im Web-UI (und der Newsletter immer)."""
-    return classify_region(venue) == REGION_WEITER

@@ -85,7 +85,7 @@ KEYWORD_CATEGORY_MAP = {
     "dampfer": "fuehrungen", "besichtigung": "fuehrungen",
     "audioguide": "fuehrungen", "stadtrundgang": "fuehrungen",
     "schauwerkstatt": "kultur", "museum": "kultur", "sonderausstellung": "kultur",
-    "vernissage": "kultur", "vortrag": "kultur", "lesung": "kultur",
+    "vortrag": "kultur", "lesung": "kultur",
     "workshop": "kultur", "matinee": "kultur",
     "fest": "outdoor", "markt": "outdoor",
 }

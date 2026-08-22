@@ -41,13 +41,6 @@ CREATE TABLE IF NOT EXISTS weights (
     skips INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS send_log (
-    event_uid TEXT NOT NULL,
-    channel TEXT NOT NULL,
-    sent_at TEXT NOT NULL,
-    PRIMARY KEY (event_uid, channel)
-);
-
 -- Welche Quellen denselben Eintrag geliefert haben. Nötig, weil die zweite,
 -- ältere Art von Doppelung sonst unsichtbar bleibt: schreiben zwei Quellen
 -- Datum, Zeit, Titel und Ort identisch, erzeugt normalize.make_event_uid()
@@ -491,20 +484,6 @@ def bump_weight(conn, key, like_delta=0, skip_delta=0):
              likes = MAX(likes + ?, 0),
              skips = MAX(skips + ?, 0)""",
         (key, like_delta, skip_delta, like_delta, skip_delta),
-    )
-
-
-def already_sent(conn, event_uid, channel):
-    row = conn.execute(
-        "SELECT 1 FROM send_log WHERE event_uid = ? AND channel = ?", (event_uid, channel)
-    ).fetchone()
-    return row is not None
-
-
-def mark_sent(conn, event_uid, channel):
-    conn.execute(
-        "INSERT OR IGNORE INTO send_log (event_uid, channel, sent_at) VALUES (?, ?, ?)",
-        (event_uid, channel, datetime.utcnow().isoformat()),
     )
 
 
