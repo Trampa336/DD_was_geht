@@ -1,11 +1,8 @@
-"""Einstiegspunkt: startet Web-UI (eigener Thread), Scheduler und Telegram-Bot
-(asyncio-Hauptschleife) gemeinsam in einem Prozess/Container."""
-import asyncio
+"""Einstiegspunkt: startet den Scrape-Scheduler und danach das Web-UI im
+selben Prozess."""
 import logging
-import threading
 
 from app import config, db
-from app.bot import run_bot
 from app.scheduler import run_scrape, start_scheduler
 from app.web import run_web
 
@@ -13,46 +10,24 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger("dd-was-geht.main")
 
 
-def _check_config():
-    missing = []
-    if not config.TELEGRAM_BOT_TOKEN:
-        missing.append("TELEGRAM_BOT_TOKEN")
-    if not config.TELEGRAM_CHAT_ID:
-        missing.append("TELEGRAM_CHAT_ID")
-    if missing:
-        raise SystemExit(
-            f"Fehlende Konfiguration in .env: {', '.join(missing)}. "
-            f"Siehe .env.example."
-        )
-
-
-async def main():
-    _check_config()
+def main():
     db.init_db()
-
-    # Das Web-UI startet VOR dem ersten Scrape. Frueher hing es dahinter, und
-    # weil ein Voll-Scrape mehrere Minuten dauert, war die Seite nach jedem
-    # Neustart genau so lange tot (Verbindung abgewiesen, nicht mal eine
-    # Fehlerseite). Die Datenbank steht zu diesem Zeitpunkt schon, ein leerer
-    # oder noch alter Bestand wird also normal ausgeliefert.
-    web_thread = threading.Thread(target=run_web, daemon=True)
-    web_thread.start()
-    logger.info("Web-UI läuft auf Port %s", config.WEB_PORT)
 
     logger.info("Erster Scrape läuft (kann beim allerersten Start etwas dauern) ...")
     try:
-        await asyncio.to_thread(run_scrape)
+        run_scrape()
     except Exception:
-        logger.exception("Erster Scrape fehlgeschlagen - Bot/Web starten trotzdem.")
+        logger.exception("Erster Scrape fehlgeschlagen - Web startet trotzdem.")
 
     start_scheduler()
-    logger.info("Scheduler gestartet (täglich %02d:%02d, wöchentlich Tag %d %02d:%02d).",
-                config.DAILY_SEND_HOUR, config.DAILY_SEND_MINUTE,
-                config.WEEKLY_SEND_DAY, config.WEEKLY_SEND_HOUR, config.WEEKLY_SEND_MINUTE)
+    logger.info("Scheduler gestartet (Hintergrund-Scrape alle 6 Stunden).")
 
-    logger.info("Telegram-Bot startet (Polling) ...")
-    await run_bot()
+    # Blockiert im Hauptthread - der Scheduler laeuft in eigenen Threads
+    # daneben weiter. Es gibt keinen zweiten Dienst mehr, der den Prozess
+    # am Leben halten muesste.
+    logger.info("Web-UI läuft auf Port %s", config.WEB_PORT)
+    run_web()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -1,10 +1,10 @@
 """Zentrale Konfiguration.
 
-Oben steht, was per `.env` eingestellt wird: Secrets, Pfade, Port und die
-Zeiten der Pushes. Alles darunter sind feste Konstanten - Werte, die zwar
-Entscheidungen sind, aber im Betrieb nie umgestellt wurden. Wer eine davon
-ändern will, ändert sie hier und deployt neu, statt eine Umgebungsvariable
-zu setzen, die nirgends gesetzt ist.
+Oben steht, was per `.env` eingestellt wird: Pfad, Port und der Highlight-Wert.
+Alles darunter sind feste Konstanten - Werte, die zwar Entscheidungen sind,
+aber im Betrieb nie umgestellt wurden. Wer eine davon ändern will, ändert sie
+hier und deployt neu, statt eine Umgebungsvariable zu setzen, die nirgends
+gesetzt ist.
 """
 import os
 from dotenv import load_dotenv
@@ -21,19 +21,7 @@ def _int(name, default):
 
 # --- Aus der .env ----------------------------------------------------------
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-
 DB_PATH = os.environ.get("DB_PATH", "./data/dd-was-geht.db")
-
-DAILY_SEND_HOUR = _int("DAILY_SEND_HOUR", 8)
-DAILY_SEND_MINUTE = _int("DAILY_SEND_MINUTE", 0)
-
-WEEKLY_SEND_DAY = _int("WEEKLY_SEND_DAY", 0)  # 0 = Montag
-WEEKLY_SEND_HOUR = _int("WEEKLY_SEND_HOUR", 8)
-WEEKLY_SEND_MINUTE = _int("WEEKLY_SEND_MINUTE", 15)
-
-DAILY_TOP_N = _int("DAILY_TOP_N", 6)
 
 WEB_PORT = _int("WEB_PORT", 8080)
 
@@ -75,7 +63,7 @@ RA_AREA_ID = 150
 # die Qualitaet der einzelnen Zeile - und Abdeckung braucht keine Prioritaet.
 SOURCE_PRIORITY = ["sektor", "azconni", "rauze", "ra", "kulturkalender", "cybersax"]
 
-# Kategorien, die im Bot/Web-UI als Filter angeboten werden.
+# Kategorien, die im Web-UI als Filter angeboten werden.
 CATEGORY_LABELS = {
     "kultur": "Kultur & Bühne",
     "musik": "Musik & Nightlife",
@@ -110,9 +98,8 @@ SOURCE_LABELS = {
     "sektor": "Sektor Evolution",
 }
 
-# Kategorien, die standardmäßig aus Newsletter (Telegram) und Web-Startansicht
-# rausgefiltert werden - im Web-UI aber weiterhin über den Kategorie-Chip
-# erreichbar.
+# Kategorien, die standardmäßig aus der Web-Startansicht rausgefiltert werden -
+# im Web-UI aber weiterhin über den Kategorie-Chip erreichbar.
 #
 # "fuehrungen" steht hier, weil die Kategorie den Digest sonst dominiert: sie
 # ist mit Abstand die größte (gemessen am 22.08.2026 rund 1160 von 5500

@@ -1,14 +1,11 @@
-"""APScheduler-Jobs: tägliches Scrapen + Push, wöchentliche Übersicht."""
-import asyncio
+"""APScheduler-Jobs: periodischer Hintergrund-Scrape."""
 import logging
 from datetime import date, timedelta
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from . import config, db, dedup
-from .bot import send_daily_digest, send_weekly_digest
-from .ranges import month_range
 from .scrapers import azconni, cybersax, kulturkalender, ra, rauze, sektor
 
 logger = logging.getLogger("dd-was-geht.scheduler")
@@ -51,47 +48,11 @@ def run_scrape(days_ahead=31):
     return len(events), new_count
 
 
-async def _scrape_job():
-    await asyncio.to_thread(run_scrape)
-
-
-async def _daily_job():
-    # Eigener try/except wie bei RA, aber um den ganzen Scrape: fällt
-    # eine der beiden HTML-Quellen aus (oder die DB ist kurz gesperrt), soll der
-    # Push trotzdem rausgehen. Ein Digest aus den Daten des letzten Laufs ist
-    # deutlich besser als gar kein Newsletter - vorher hat genau das den
-    # Tagesversand still ausfallen lassen.
-    try:
-        await _scrape_job()
-    except Exception:
-        logger.exception("Scrape fehlgeschlagen - Push läuft mit den vorhandenen Daten weiter.")
-    await send_daily_digest()
-
-
-async def _weekly_job():
-    await send_weekly_digest()
-
-
 def start_scheduler():
-    scheduler = AsyncIOScheduler(timezone=config.TIMEZONE)
+    scheduler = BackgroundScheduler(timezone=config.TIMEZONE)
 
-    scheduler.add_job(
-        _daily_job,
-        CronTrigger(hour=config.DAILY_SEND_HOUR, minute=config.DAILY_SEND_MINUTE),
-        id="daily_scrape_and_push",
-    )
-    scheduler.add_job(
-        _weekly_job,
-        CronTrigger(
-            day_of_week=config.WEEKLY_SEND_DAY,
-            hour=config.WEEKLY_SEND_HOUR,
-            minute=config.WEEKLY_SEND_MINUTE,
-        ),
-        id="weekly_push",
-    )
-    # Zusätzlicher, häufigerer Hintergrund-Scrape, damit die Web-Oberfläche
-    # auch außerhalb des täglichen Pushs halbwegs aktuell bleibt.
-    scheduler.add_job(_scrape_job, CronTrigger(hour="*/6", minute=30), id="background_scrape")
+    # Haelt die Web-Oberflaeche zwischen den manuellen/Erst-Scrapes aktuell.
+    scheduler.add_job(run_scrape, CronTrigger(hour="*/6", minute=30), id="background_scrape")
 
     scheduler.start()
     return scheduler

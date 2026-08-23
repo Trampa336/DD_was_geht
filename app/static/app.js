@@ -551,7 +551,7 @@
              wuerde als kleiner Kasten sichtbar bleiben.
                Dauerangebot: laeuft die Reihe an vielen Tagen (db.ONGOING_MIN_DAYS),
                  wird sie eingefaerbt und beschriftet - Farbe allein waere nicht
-                 lesbar, und im Telegram-Digest gibt es sie ohnehin nicht.
+                 lesbar.
                Top-Treffer: passt das Event zum gelernten Geschmack, bekommt die
                  Zeile denselben Auftritt in Elbe-Tuerkis. Der Score kommt aus
                  scoring.score_events() - im api-Modus aus /api/events, im

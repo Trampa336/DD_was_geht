@@ -264,12 +264,13 @@ def events_for_range(conn, start_date, end_date, category=None, exclude_categori
                      include_duplicates=False, exclude_far=False):
     """Liefert standardmäßig nur die "gewinnenden" Einträge: als Doppelung
     verbuchte Zeilen (duplicate_of gesetzt, siehe app/dedup.py) bleiben in der
-    DB, werden aber weder im Newsletter noch im Web ausgeliefert.
+    DB, werden aber nicht ausgeliefert.
 
     exclude_far=True wirft zusätzlich alles raus, was weder in Dresden noch im
-    Speckgürtel liegt (siehe app/geo.py) - so filtert der Telegram-Digest. Das
-    Web-UI bekommt dagegen alles und blendet im Browser aus, was der Schalter
-    "Umgebung einschließen" gerade nicht zeigt (siehe app/templates/index.html)."""
+    Speckgürtel liegt (siehe app/geo.py) - so filtert die Web-Startansicht. Mit
+    dem Schalter "Umgebung einschließen" bekommt sie dagegen alles und blendet
+    im Browser aus, was gerade nicht gezeigt werden soll (siehe
+    app/templates/index.html)."""
     query = "SELECT * FROM events WHERE date >= ? AND date <= ?"
     if not include_duplicates:
         query += " AND duplicate_of IS NULL"
@@ -285,9 +286,7 @@ def events_for_range(conn, start_date, end_date, category=None, exclude_categori
         params.extend(exclude_categories)
     query += " ORDER BY date ASC, time ASC"
     events = [dict(row) for row in conn.execute(query, params).fetchall()]
-    # Zusatzfeld fürs Web. Der Telegram-Digest liest es nicht und bleibt
-    # dadurch unverändert - Dauerangebote werden dort weiterhin ganz normal
-    # mitgewertet.
+    # Zusatzfeld fürs Web.
     ongoing = _ongoing_titles(conn)
     for event in events:
         event["ongoing"] = event["title"] in ongoing

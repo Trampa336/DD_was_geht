@@ -1,4 +1,4 @@
-# NIEMALS committen: enthält deinen Telegram-Bot-Token
+# NIEMALS committen: enthält lokale Zugangsdaten/Pfade
 .env
 
 # Laufzeitdaten (Datenbank, heruntergeladenes HTML zum Debuggen)
