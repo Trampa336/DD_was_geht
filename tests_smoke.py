@@ -1482,4 +1482,36 @@ check("/api/health nennt Klartext-Namen und Fehlertext",
       _health_json["ra"]["label"] == "Resident Advisor"
       and "kaputt" in _health_json["ra"]["error"])
 
+# --- Sicherung der Datenbank (app/backup.py) -------------------------------
+# Der Snapshot muss sich wieder oeffnen lassen UND die Daten enthalten - eine
+# leere, aber gueltige Datei waere der schlimmste Fall: sie sieht wie eine
+# Sicherung aus und ist keine.
+from app import backup  # noqa: E402
+import sqlite3 as _sqlite3  # noqa: E402
+import glob as _glob  # noqa: E402
+
+with db.get_conn() as conn:
+    _rows_vorher = conn.execute("SELECT count(*) FROM events").fetchone()[0]
+
+_snapshot = backup.create_backup(today=_dt.date(2026, 8, 23))
+check("Sicherung liegt unter data/backups mit Datum im Namen",
+      _snapshot.endswith("backups/dd-was-geht-2026-08-23.db") and os.path.exists(_snapshot))
+
+_conn_snap = _sqlite3.connect(_snapshot)
+check("Sicherung laesst sich oeffnen und hat dieselben Events",
+      _conn_snap.execute("SELECT count(*) FROM events").fetchone()[0] == _rows_vorher)
+_conn_snap.close()
+
+# Die Rotation loescht Dateien - deshalb wird sie geprueft, nicht nur gelesen.
+# Angelegt werden N+2 Tage, uebrig bleiben duerfen genau die juengsten N.
+for _tag in range(1, 8):
+    open(os.path.join(backup.backup_dir(), f"dd-was-geht-2026-08-{_tag:02d}.db"), "w").close()
+backup.create_backup(keep=5, today=_dt.date(2026, 8, 23))
+_uebrig = sorted(os.path.basename(f) for f in
+                 _glob.glob(os.path.join(backup.backup_dir(), backup.SNAPSHOT_GLOB)))
+check("Rotation behaelt genau die juengsten N Sicherungen",
+      _uebrig == ["dd-was-geht-2026-08-04.db", "dd-was-geht-2026-08-05.db",
+                  "dd-was-geht-2026-08-06.db", "dd-was-geht-2026-08-07.db",
+                  "dd-was-geht-2026-08-23.db"])
+
 print("\nAlle Smoke-Tests erfolgreich.")

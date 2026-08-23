@@ -1,11 +1,11 @@
-"""APScheduler-Jobs: periodischer Hintergrund-Scrape."""
+"""APScheduler-Jobs: periodischer Hintergrund-Scrape und taegliche Sicherung."""
 import logging
 from datetime import date, datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from . import config, db, dedup
+from . import backup, config, db, dedup
 from .scrapers import azconni, cybersax, kulturkalender, ra, rauze, sektor
 
 logger = logging.getLogger("dd-was-geht.scheduler")
@@ -78,6 +78,13 @@ def start_scheduler():
 
     # Haelt die Web-Oberflaeche zwischen den manuellen/Erst-Scrapes aktuell.
     scheduler.add_job(run_scrape, CronTrigger(hour="*/6", minute=30), id="background_scrape")
+
+    # Taegliche Sicherung der Datenbank (siehe app/backup.py). 03:45 ist bewusst
+    # gewaehlt: die Scrapes laufen zur Minute 30, und um 04:00 startet auf dem
+    # Pi der Watchtower-Lauf, der den Container neu bauen kann - ein Snapshot,
+    # der da noch laeuft, waere abgeschnitten. Der Viertelstunde davor kommt
+    # nichts anderes in die Quere.
+    scheduler.add_job(backup.run_backup, CronTrigger(hour=3, minute=45), id="daily_backup")
 
     scheduler.start()
     return scheduler

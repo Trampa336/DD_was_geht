@@ -37,6 +37,13 @@ HIGHLIGHT_SCORE = _int("HIGHLIGHT_SCORE", 80)
 
 TIMEZONE = "Europe/Berlin"
 
+# --- Sicherung der Datenbank -----------------------------------------------
+# Wie viele Tages-Snapshots in data/backups/ stehen bleiben (app/backup.py).
+# 14 Tage sind der Abstand, in dem ein stiller Schaden - eine missglueckte
+# Migration, ein verunglueckter Dedup-Lauf - erfahrungsgemaess auffaellt.
+# Bei rund 4,5 MB je Snapshot kostet das etwa 63 MB Platte.
+BACKUP_KEEP = 14
+
 # Gebiets-ID auf ra.co für die Resident-Advisor-Quelle (app/scrapers/ra.py).
 # 150 = Dresden, gegen die Live-API geprüft; die Liste aller Gebiete liefert
 # die GET_AREAS-Abfrage, siehe README.
