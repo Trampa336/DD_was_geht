@@ -1552,6 +1552,35 @@ check("expire_orphaned_events(dry_run=False) ist noch nicht scharf geschaltet",
 check("expire_orphaned_events(dry_run=False) loescht trotzdem nichts",
       _nach_scharf_versuch == 1)
 
+# Die Anzahl der Laeufe allein taugt nicht als Schwelle: Deploys und manuelle
+# Testlaeufe haeufen sich, drei davon koennen innerhalb weniger Stunden liegen.
+# Ohne Mindestspanne flaege ein Zukunfts-Event raus, weil zufaellig dreimal kurz
+# hintereinander gescrapt wurde - genau die Lage, in der scrape_runs neu ist.
+with db.get_conn() as conn:
+    db.upsert_events(conn, [{
+        "uid": "verwaist-eng", "source": "cybersax", "date": "2026-09-01",
+        "time": "20:00", "title": "Verwaist trotz enger Laeufe", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    conn.execute("UPDATE events SET last_seen = ? WHERE uid = ?",
+                 ("2026-08-20T09:00:00", "verwaist-eng"))
+    # Drei erfolgreiche Laeufe - aber alle innerhalb von knapp vier Stunden.
+    for _zeit in ("2026-08-23T08:00:00", "2026-08-23T10:00:00", "2026-08-23T11:45:00"):
+        db.record_scrape_run(conn, "cybersax", _zeit, _zeit, ok=True, event_count=1)
+    _eng = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+
+check("gehaertete Schwelle: drei eng beieinanderliegende Laeufe qualifizieren nicht",
+      "cybersax" not in _eng)
+
+with db.get_conn() as conn:
+    # Ein aelterer Lauf weitet das Fenster ueber 12 Stunden - jetzt zaehlt es.
+    db.record_scrape_run(conn, "cybersax", "2026-08-22T18:00:00",
+                         "2026-08-22T18:00:05", ok=True, event_count=1)
+    _weit = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+
+check("gehaertete Schwelle: ab 12 Stunden Spanne qualifiziert dieselbe Quelle",
+      [r["uid"] for r in _weit.get("cybersax", [])] == ["verwaist-eng"])
+
 # --- Sicherung der Datenbank (app/backup.py) -------------------------------
 # Der Snapshot muss sich wieder oeffnen lassen UND die Daten enthalten - eine
 # leere, aber gueltige Datei waere der schlimmste Fall: sie sieht wie eine

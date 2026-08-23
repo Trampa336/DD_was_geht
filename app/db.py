@@ -3,7 +3,7 @@ import logging
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from . import config, geo
 
@@ -549,25 +549,50 @@ def scrape_health(conn):
 # macht das sichtbar (dry_run=True, Default) - das Loeschen selbst kommt erst
 # in einem zweiten, separaten Commit, nachdem ein Dry-Run-Lauf beobachtet wurde.
 
-def _successful_run_cutoff(conn, source, threshold_runs):
-    """Startzeitpunkt des laut scrape_runs threshold_runs-letzten erfolgreichen
-    Laufs einer Quelle. Alles, was seitdem nicht mehr aktualisiert wurde, hat
-    threshold_runs Laeufe am Stueck verpasst - nicht nur einen einzelnen, der
-    auch mal ein Netzwerk-Hakler sein koennte.
+# Wie viel Zeit die gezaehlten Laeufe mindestens abdecken muessen. Die reine
+# Anzahl reicht als Schwelle nicht: Laeufe haeufen sich (Deploys, manuelle
+# Testlaeufe), und drei davon koennen innerhalb weniger Stunden liegen. Die
+# Schwelle waere dann rein rechnerisch erfuellt, obwohl gar kein Tag beobachtet
+# wurde - ein Zukunfts-Event flaege raus, weil zufaellig dreimal kurz
+# hintereinander gescrapt wurde.
+#
+# 12 Stunden und nicht mehr, weil drei aufeinanderfolgende Laeufe des
+# */6h-Rhythmus exakt diese Spanne ergeben: der Normalbetrieb soll die Schwelle
+# gerade erfuellen, die Haeufung nicht.
+MIN_CUTOFF_SPAN = timedelta(hours=12)
 
-    None, wenn die Quelle noch keine threshold_runs erfolgreichen Laeufe hinter
-    sich hat: ohne diese Historie liesse sich ein echtes Verwaisen nicht von
-    "die Quelle laeuft erst seit kurzem" unterscheiden - dann wird nichts
-    markiert, statt zu raten.
+
+def _successful_run_cutoff(conn, source, threshold_runs, min_span=MIN_CUTOFF_SPAN):
+    """Startzeitpunkt des Laufs, ab dem ein Event als verwaist gilt: Alles, was
+    seitdem nicht mehr aktualisiert wurde, hat mindestens threshold_runs Laeufe
+    am Stueck verpasst UND dabei mindestens min_span an Zeit - nicht nur einen
+    einzelnen Lauf, der auch mal ein Netzwerk-Hakler sein koennte, und nicht nur
+    eine Handvoll Laeufe, die zufaellig dicht beieinander lagen.
+
+    Beide Bedingungen zusammen, deshalb wird das Fenster so weit aufgezogen, bis
+    sie beide gelten. Genau die N juengsten Laeufe zu pruefen und bei zu kurzer
+    Spanne aufzugeben, saesse dauerhaft auf der Kante: drei Laeufe des
+    */6h-Rhythmus ergeben exakt 12 Stunden, ein um Sekunden verspaeteter Lauf
+    liesse die Erkennung also staendig kippen und wieder anspringen. Das
+    Aufweiten schiebt den Cutoff nur nach hinten - es markiert damit immer
+    weniger, nie mehr.
+
+    None, wenn die Historie fuer beides nicht reicht: ohne sie liesse sich ein
+    echtes Verwaisen nicht von "die Quelle laeuft erst seit kurzem"
+    unterscheiden - dann wird nichts markiert, statt zu raten.
     """
     rows = conn.execute(
         """SELECT started_at FROM scrape_runs WHERE source = ? AND ok = 1
-           ORDER BY started_at DESC, id DESC LIMIT ?""",
-        (source, threshold_runs),
+           ORDER BY started_at DESC, id DESC""",
+        (source,),
     ).fetchall()
     if len(rows) < threshold_runs:
         return None
-    return rows[-1]["started_at"]
+    newest = datetime.fromisoformat(rows[0]["started_at"])
+    for row in rows[threshold_runs - 1:]:
+        if newest - datetime.fromisoformat(row["started_at"]) >= min_span:
+            return row["started_at"]
+    return None
 
 
 def find_orphaned_events(conn, today, threshold_runs=3):
