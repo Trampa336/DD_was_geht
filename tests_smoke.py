@@ -1537,20 +1537,39 @@ check("expire_orphaned_events(dry_run=True) meldet dieselbe Zeile",
 check("expire_orphaned_events(dry_run=True) loescht nichts",
       _nach_dry_run == 1)
 
-# dry_run=False ist in diesem Commit bewusst nicht angeschlossen - ein
-# versehentliches Scharfschalten muss laut abbrechen, nicht still loeschen.
+# Zukuenftiges Event, identisch verwaist wie "verwaist-zukunft", aber geliked -
+# darf trotz Verwaisung NIE geloescht werden (data/ enthaelt die einzige Kopie
+# der Reaktionen; eine geloeschte Zeile liesse den Favoriten kommentarlos
+# verschwinden, siehe db._delete_orphaned_event).
 with db.get_conn() as conn:
-    try:
-        db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
-        _scharf_blockiert = False
-    except NotImplementedError:
-        _scharf_blockiert = True
-    _nach_scharf_versuch = conn.execute(
-        "SELECT count(*) FROM events WHERE uid = 'verwaist-zukunft'").fetchone()[0]
-check("expire_orphaned_events(dry_run=False) ist noch nicht scharf geschaltet",
-      _scharf_blockiert)
-check("expire_orphaned_events(dry_run=False) loescht trotzdem nichts",
-      _nach_scharf_versuch == 1)
+    db.upsert_events(conn, [{
+        "uid": "verwaist-geliked", "source": "azconni", "date": "2026-09-01",
+        "time": "20:00", "title": "Verwaist, aber geliked", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    conn.execute("UPDATE events SET last_seen = ? WHERE uid = ?",
+                 ("2026-08-20T09:00:00", "verwaist-geliked"))
+    db.set_reaction(conn, "verwaist-geliked", "like")
+
+    db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
+
+    def _existiert(uid):
+        return conn.execute(
+            "SELECT count(*) FROM events WHERE uid = ?", (uid,)).fetchone()[0] == 1
+
+    _zukunft_weg = not _existiert("verwaist-zukunft")
+    _vergangen_da = _existiert("verwaist-vergangen")
+    _frisch_da = _existiert("frisch-zukunft")
+    _geliked_da = _existiert("verwaist-geliked")
+    _sources_leer = conn.execute(
+        "SELECT count(*) FROM event_sources WHERE event_uid = 'verwaist-zukunft'"
+    ).fetchone()[0] == 0
+
+check("dry_run=False loescht die verwaiste Zukunftszeile tatsaechlich", _zukunft_weg)
+check("dry_run=False laesst die vergangene Zeile unangetastet", _vergangen_da)
+check("dry_run=False laesst die weiterhin gesehene Zeile stehen", _frisch_da)
+check("dry_run=False loescht eine verwaiste, aber geliked Zeile NICHT", _geliked_da)
+check("dry_run=False raeumt event_sources der geloeschten Zeile mit auf", _sources_leer)
 
 # Die Anzahl der Laeufe allein taugt nicht als Schwelle: Deploys und manuelle
 # Testlaeufe haeufen sich, drei davon koennen innerhalb weniger Stunden liegen.

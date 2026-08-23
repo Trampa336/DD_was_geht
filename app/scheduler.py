@@ -66,9 +66,11 @@ def run_scrape(days_ahead=31):
         # Erst nach dem Speichern: die Erkennung vergleicht alle Quellen im
         # Zeitraum miteinander, nicht nur die gerade geholten Einträge.
         duplicate_count = dedup.link_duplicates(conn, today.isoformat(), end.isoformat())
-        # Dry-Run: meldet nur, was verwaist waere (siehe db.expire_orphaned_events).
-        # Scharf schalten ist ein eigener, spaeterer Commit.
-        db.expire_orphaned_events(conn, today.isoformat())
+        # Loescht Zukunfts-Events, die ihre Quelle laut der gehaerteten Schwelle
+        # (Zeilen UND Zeitspanne, siehe db.MIN_CUTOFF_SPAN) verwaist hat.
+        # Reaktionen und Doppelungs-Buchfuehrung sind geschuetzt, siehe
+        # db._delete_orphaned_event.
+        db.expire_orphaned_events(conn, today.isoformat(), dry_run=False)
     logger.info(
         "Scrape fertig: %d Events gesehen, %d davon neu, %d Doppelungen ausgeblendet.",
         len(events), new_count, duplicate_count,

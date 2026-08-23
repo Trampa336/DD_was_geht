@@ -629,15 +629,48 @@ def find_orphaned_events(conn, today, threshold_runs=3):
     return result
 
 
-def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
-    """Meldet verwaiste Zukunfts-Events (siehe find_orphaned_events) - mit
-    Anzahl und ein paar Beispieltiteln je Quelle im Log.
+def _delete_orphaned_event(conn, source, row):
+    """Loescht EINE verwaiste Zeile - mit den drei Schutzklauseln, die der
+    Dry-Run nicht brauchte, weil er nie wirklich loeschte.
 
-    dry_run=False loescht in diesem Commit bewusst noch nichts: das Scharf-
-    schalten ist ein eigener, zweiter Commit, der erst nach einem beobachteten
-    Dry-Run-Lauf kommt (siehe Modul-Kommentar oben). Bis dahin loescht dieser
-    Code nichts - ein versehentliches dry_run=False bricht laut ab, statt
-    still zu loeschen.
+    - Eine Zeile mit Reaktion wird NIE geloescht: data/ enthaelt die einzige
+      Kopie der Reaktionen, und liked_events() verbindet reactions -> events -
+      eine geloeschte Zeile liesse einen Favoriten kommentarlos verschwinden.
+    - Ist die Zeile CANONICAL einer Doppelung, werden ihre Duplikate zuerst
+      entkoppelt (unlink_duplicate): sonst zeigt deren duplicate_of ins Leere
+      und ein echtes, weiterhin gescraptes Event bliebe fuer immer ausgeblendet.
+    - Ist die Zeile selbst als Duplikat verbucht, wird diese Buchung mitgeloescht
+      - sonst zeigt sie auf eine nicht mehr existierende Zeile.
+
+    Gibt True zurueck, wenn tatsaechlich geloescht wurde.
+    """
+    uid = row["uid"]
+    if get_reaction(conn, uid) is not None:
+        logger.warning(
+            "Verwaistes Event NICHT geloescht (hat eine Reaktion): %s \"%s\" (%s, %s)",
+            uid, row["title"], row["date"], source,
+        )
+        return False
+
+    for dup in conn.execute(
+        "SELECT duplicate_uid FROM event_duplicates WHERE canonical_uid = ?", (uid,)
+    ).fetchall():
+        unlink_duplicate(conn, dup["duplicate_uid"])
+    conn.execute("DELETE FROM event_duplicates WHERE duplicate_uid = ?", (uid,))
+    conn.execute("DELETE FROM event_sources WHERE event_uid = ?", (uid,))
+    conn.execute("DELETE FROM events WHERE uid = ?", (uid,))
+    logger.warning(
+        "Verwaistes Event geloescht: %s \"%s\" (%s, %s)",
+        uid, row["title"], row["date"], source,
+    )
+    return True
+
+
+def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
+    """Meldet verwaiste Zukunfts-Events (siehe find_orphaned_events) und
+    loescht sie, sofern dry_run=False - mit Anzahl und ein paar Beispieltiteln
+    je Quelle im Log, dazu je geloeschter (oder uebersprungener) Zeile eine
+    eigene Zeile mit ihrer uid, dem einzigen Weg, eine Loeschung nachzuvollziehen.
     """
     orphaned = find_orphaned_events(conn, today, threshold_runs)
     total = sum(len(rows) for rows in orphaned.values())
@@ -654,10 +687,16 @@ def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
             label, len(rows), threshold_runs, samples,
         )
     logger.warning(
-        "Verwaiste Events insgesamt: %d ueber %d Quelle(n). dry_run=%s - "
-        "es wurde nichts geloescht.",
+        "Verwaiste Events insgesamt: %d ueber %d Quelle(n). dry_run=%s.",
         total, len(orphaned), dry_run,
     )
+
+    if not dry_run:
+        for source, rows in orphaned.items():
+            for row in rows:
+                _delete_orphaned_event(conn, source, row)
+
+    return orphaned
 
     if not dry_run:
         raise NotImplementedError(
