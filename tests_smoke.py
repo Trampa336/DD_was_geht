@@ -1482,6 +1482,76 @@ check("/api/health nennt Klartext-Namen und Fehlertext",
       _health_json["ra"]["label"] == "Resident Advisor"
       and "kaputt" in _health_json["ra"]["error"])
 
+# --- Verwaiste Events (app/db.py: find_orphaned_events / expire_orphaned_events) ---
+# uid haengt an date|time|title|venue - eine korrigierte Startzeit erzeugt also
+# eine ZWEITE Zeile statt die erste zu aktualisieren. Die alte bleibt liegen:
+# last_seen wird nie wieder geschrieben. Getestet werden alle drei Schutz-
+# klauseln aus dem Modul-Kommentar, nicht nur der Normalfall.
+with db.get_conn() as conn:
+    _heute = "2026-08-23"
+    db.upsert_events(conn, [{
+        "uid": "verwaist-zukunft", "source": "azconni", "date": "2026-09-01",
+        "time": "20:00", "title": "Verwaistes Zukunftsevent", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    # Identischer Fall, nur in der Vergangenheit - darf NIE als verwaist gelten,
+    # vergangene Events sind historischer Bestand.
+    db.upsert_events(conn, [{
+        "uid": "verwaist-vergangen", "source": "azconni", "date": "2026-08-01",
+        "time": "20:00", "title": "Verwaistes Vergangenheitsevent", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    # Zukuenftiges Event derselben Quelle, das weiterhin gesehen wird.
+    db.upsert_events(conn, [{
+        "uid": "frisch-zukunft", "source": "azconni", "date": "2026-09-02",
+        "time": "20:00", "title": "Frisches Zukunftsevent", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    # Die beiden "verwaist"-Zeilen kuenstlich vor die naechsten 3 erfolgreichen
+    # Laeufe zurueckdatieren - "frisch-zukunft" behaelt sein last_seen von
+    # gerade eben und bleibt damit nach dem letzten Lauf.
+    conn.execute("UPDATE events SET last_seen = ? WHERE uid IN (?, ?)",
+                 ("2026-08-20T09:00:00", "verwaist-zukunft", "verwaist-vergangen"))
+    for _tag in range(21, 25):
+        db.record_scrape_run(conn, "azconni", f"2026-08-{_tag}T09:30:00",
+                             f"2026-08-{_tag}T09:30:05", ok=True, event_count=1)
+
+    _orphaned = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+
+check("find_orphaned_events: nur die zukuenftige verwaiste Zeile",
+      [r["uid"] for r in _orphaned.get("azconni", [])] == ["verwaist-zukunft"])
+check("find_orphaned_events: vergangene Zeile bleibt unangetastet",
+      "verwaist-vergangen" not in [r["uid"] for r in _orphaned.get("azconni", [])])
+check("find_orphaned_events: weiterhin gesehene Zeile bleibt draussen",
+      "frisch-zukunft" not in [r["uid"] for r in _orphaned.get("azconni", [])])
+check("find_orphaned_events: Quelle mit nicht-ok letztem Lauf wird uebersprungen "
+      "(sonst wuerde ein Ausfall die komplette Zukunft der Quelle raeumen)",
+      "sektor" not in _orphaned and "ra" not in _orphaned)
+
+with db.get_conn() as conn:
+    _dry_result = db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=True)
+    _nach_dry_run = conn.execute(
+        "SELECT count(*) FROM events WHERE uid = 'verwaist-zukunft'").fetchone()[0]
+check("expire_orphaned_events(dry_run=True) meldet dieselbe Zeile",
+      [r["uid"] for r in _dry_result.get("azconni", [])] == ["verwaist-zukunft"])
+check("expire_orphaned_events(dry_run=True) loescht nichts",
+      _nach_dry_run == 1)
+
+# dry_run=False ist in diesem Commit bewusst nicht angeschlossen - ein
+# versehentliches Scharfschalten muss laut abbrechen, nicht still loeschen.
+with db.get_conn() as conn:
+    try:
+        db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
+        _scharf_blockiert = False
+    except NotImplementedError:
+        _scharf_blockiert = True
+    _nach_scharf_versuch = conn.execute(
+        "SELECT count(*) FROM events WHERE uid = 'verwaist-zukunft'").fetchone()[0]
+check("expire_orphaned_events(dry_run=False) ist noch nicht scharf geschaltet",
+      _scharf_blockiert)
+check("expire_orphaned_events(dry_run=False) loescht trotzdem nichts",
+      _nach_scharf_versuch == 1)
+
 # --- Sicherung der Datenbank (app/backup.py) -------------------------------
 # Der Snapshot muss sich wieder oeffnen lassen UND die Daten enthalten - eine
 # leere, aber gueltige Datei waere der schlimmste Fall: sie sieht wie eine

@@ -1,10 +1,13 @@
 """SQLite-Zugriff: Schema, Events speichern/lesen, Reaktionen verbuchen."""
+import logging
 import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 
 from . import config, geo
+
+logger = logging.getLogger("dd-was-geht.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (
@@ -535,6 +538,108 @@ def scrape_health(conn):
             "error": latest["error"] if latest else None,
         }
     return health
+
+
+# --- Verwaiste Events -------------------------------------------------------
+# uid = sha1(date|time|title|venue) (siehe normalize.make_event_uid). Korrigiert
+# eine Quelle nachtraeglich die Startzeit eines Events, aendert das die uid -
+# es entsteht eine ZWEITE Zeile statt die erste zu aktualisieren. Die alte
+# Zeile bleibt liegen: last_seen wird nie wieder aktualisiert, aber bislang
+# liest das niemand, und ein DELETE existiert nirgends im Code. Diese Funktion
+# macht das sichtbar (dry_run=True, Default) - das Loeschen selbst kommt erst
+# in einem zweiten, separaten Commit, nachdem ein Dry-Run-Lauf beobachtet wurde.
+
+def _successful_run_cutoff(conn, source, threshold_runs):
+    """Startzeitpunkt des laut scrape_runs threshold_runs-letzten erfolgreichen
+    Laufs einer Quelle. Alles, was seitdem nicht mehr aktualisiert wurde, hat
+    threshold_runs Laeufe am Stueck verpasst - nicht nur einen einzelnen, der
+    auch mal ein Netzwerk-Hakler sein koennte.
+
+    None, wenn die Quelle noch keine threshold_runs erfolgreichen Laeufe hinter
+    sich hat: ohne diese Historie liesse sich ein echtes Verwaisen nicht von
+    "die Quelle laeuft erst seit kurzem" unterscheiden - dann wird nichts
+    markiert, statt zu raten.
+    """
+    rows = conn.execute(
+        """SELECT started_at FROM scrape_runs WHERE source = ? AND ok = 1
+           ORDER BY started_at DESC, id DESC LIMIT ?""",
+        (source, threshold_runs),
+    ).fetchall()
+    if len(rows) < threshold_runs:
+        return None
+    return rows[-1]["started_at"]
+
+
+def find_orphaned_events(conn, today, threshold_runs=3):
+    """Zukuenftige Events je Quelle, die ihre eigene Quelle seit threshold_runs
+    erfolgreichen Laeufen nicht mehr geliefert hat.
+
+    Zwei Schutzklauseln, beide zwingend:
+    - Nur date >= today: vergangene Events sind historischer Bestand und durch
+      Re-Scraping nicht wiederherstellbar - die werden hier nie angefasst.
+    - Nur Quellen, deren LETZTER Lauf laut scrape_runs ok=1 war: sonst wuerde
+      ein Quellen-Ausfall (der Fall, den scrape_runs erst sichtbar macht) die
+      komplette Zukunft dieser Quelle als "verwaist" markieren, obwohl sie nur
+      gerade nicht erreichbar ist.
+
+    Gibt ein dict source -> Liste von Event-Zeilen zurueck (nur Quellen mit
+    Treffern).
+    """
+    result = {}
+    for source in config.SOURCE_LABELS:
+        latest = _last_run(conn, source)
+        if not latest or not latest["ok"]:
+            continue
+        cutoff = _successful_run_cutoff(conn, source, threshold_runs)
+        if cutoff is None:
+            continue
+        rows = conn.execute(
+            """SELECT uid, title, date, time, venue, last_seen FROM events
+               WHERE source = ? AND date >= ? AND last_seen < ?
+               ORDER BY date, time""",
+            (source, today, cutoff),
+        ).fetchall()
+        if rows:
+            result[source] = [dict(r) for r in rows]
+    return result
+
+
+def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
+    """Meldet verwaiste Zukunfts-Events (siehe find_orphaned_events) - mit
+    Anzahl und ein paar Beispieltiteln je Quelle im Log.
+
+    dry_run=False loescht in diesem Commit bewusst noch nichts: das Scharf-
+    schalten ist ein eigener, zweiter Commit, der erst nach einem beobachteten
+    Dry-Run-Lauf kommt (siehe Modul-Kommentar oben). Bis dahin loescht dieser
+    Code nichts - ein versehentliches dry_run=False bricht laut ab, statt
+    still zu loeschen.
+    """
+    orphaned = find_orphaned_events(conn, today, threshold_runs)
+    total = sum(len(rows) for rows in orphaned.values())
+    if not total:
+        logger.info("Verwaiste Events: keine gefunden (Schwelle %d Laeufe).", threshold_runs)
+        return orphaned
+
+    for source, rows in orphaned.items():
+        label = config.SOURCE_LABELS.get(source, source)
+        samples = ", ".join(f'"{r["title"]}"' for r in rows[:3])
+        logger.warning(
+            "Verwaiste Events bei %s: %d seit %d erfolgreichen Laeufen nicht "
+            "mehr gesehen. Beispiele: %s",
+            label, len(rows), threshold_runs, samples,
+        )
+    logger.warning(
+        "Verwaiste Events insgesamt: %d ueber %d Quelle(n). dry_run=%s - "
+        "es wurde nichts geloescht.",
+        total, len(orphaned), dry_run,
+    )
+
+    if not dry_run:
+        raise NotImplementedError(
+            "Scharf schalten folgt in einem eigenen zweiten Commit, erst nach "
+            "einem beobachteten Dry-Run-Lauf (siehe Kommentar bei expire_orphaned_events)."
+        )
+    return orphaned
 
 
 def get_reaction(conn, event_uid):
