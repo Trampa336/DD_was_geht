@@ -77,6 +77,20 @@ def api_events():
     })
 
 
+@app.route("/api/health")
+def api_health():
+    """Zustand der sechs Scraper: letzter Lauf, letzter Erfolg mit Anzahl,
+    letzter Fehlertext.
+
+    Bewusst nur abrufbar und ohne Alarm-Kanal (kein Mail, kein Push, kein
+    Webhook): der einzige Push-Weg dieses Dienstes wurde gerade ersatzlos
+    entfernt, ein neuer waere derselbe Fehler unter anderem Namen. Log und diese
+    Antwort sind das Mass.
+    """
+    with db.get_conn() as conn:
+        return jsonify(db.scrape_health(conn))
+
+
 @app.route("/api/fuer-dich")
 def api_fuer_dich():
     today = date.today()

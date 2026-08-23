@@ -67,6 +67,21 @@ CREATE TABLE IF NOT EXISTS event_duplicates (
     last_seen TEXT NOT NULL
 );
 
+-- Ein Lauf je Quelle und Scrape. Ohne diese Buchführung sieht eine Quelle, die
+-- nach einer HTML-Änderung 0 Events liefert, exakt aus wie ein ruhiger Tag:
+-- die Liste ist kürzer, aber nichts sagt, dass etwas kaputt ist. Erst der
+-- Vergleich mit dem letzten ERFOLGREICHEN Lauf macht daraus ein Signal
+-- (siehe scheduler.run_scrape und /api/health).
+CREATE TABLE IF NOT EXISTS scrape_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    finished_at TEXT,
+    ok INTEGER NOT NULL DEFAULT 0,
+    event_count INTEGER,
+    error TEXT
+);
+
 """
 
 # Die Indizes stehen bewusst NICHT im selben Skript wie die Tabellen: der Index
@@ -81,6 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_events_duplicate_of ON events(duplicate_of);
 CREATE INDEX IF NOT EXISTS idx_event_duplicates_canonical
     ON event_duplicates(canonical_uid);
 CREATE INDEX IF NOT EXISTS idx_event_sources_uid ON event_sources(event_uid);
+CREATE INDEX IF NOT EXISTS idx_scrape_runs_source ON scrape_runs(source, started_at);
 """
 
 
@@ -453,6 +469,63 @@ def duplicate_counts(conn):
            ORDER BY n DESC"""
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+# --- Zustand der Scraper (siehe app/scheduler.py) --------------------------
+
+def record_scrape_run(conn, source, started_at, finished_at, ok, event_count=None,
+                      error=None):
+    """Verbucht den Lauf EINER Quelle. ok=0 heißt nicht nur "Exception": auch
+    ein Nulltreffer trotz früher gefüllter Quelle gilt als nicht erfolgreich,
+    damit last_successful_run() dann sichtbar veraltet."""
+    conn.execute(
+        """INSERT INTO scrape_runs (source, started_at, finished_at, ok, event_count, error)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (source, started_at, finished_at, 1 if ok else 0, event_count, error),
+    )
+
+
+def last_successful_run(conn, source):
+    row = conn.execute(
+        """SELECT * FROM scrape_runs WHERE source = ? AND ok = 1
+           ORDER BY started_at DESC, id DESC LIMIT 1""",
+        (source,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def _last_run(conn, source):
+    row = conn.execute(
+        "SELECT * FROM scrape_runs WHERE source = ? ORDER BY started_at DESC, id DESC LIMIT 1",
+        (source,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def scrape_health(conn):
+    """Je Quelle der jüngste und der jüngste erfolgreiche Lauf.
+
+    Beides, weil erst der Abstand zwischen ihnen die Lage beschreibt: scheitert
+    eine Quelle seit Tagen, steht der letzte Erfolg mit Datum und Anzahl daneben
+    und zeigt, wie alt die ausgelieferten Daten dieser Quelle inzwischen sind.
+
+    Es wird über SOURCE_LABELS iteriert und nicht über die Tabelle: eine Quelle,
+    die noch nie gelaufen ist, muss auftauchen - genau das ist ja der Ausfall,
+    den man sehen will.
+    """
+    health = {}
+    for source, label in config.SOURCE_LABELS.items():
+        latest = _last_run(conn, source)
+        success = last_successful_run(conn, source)
+        health[source] = {
+            "label": label,
+            "last_run": latest["started_at"] if latest else None,
+            "ok": bool(latest["ok"]) if latest else False,
+            "last_success": success["finished_at"] if success else None,
+            "event_count": success["event_count"] if success else None,
+            "error": latest["error"] if latest else None,
+        }
+    return health
 
 
 def get_reaction(conn, event_uid):

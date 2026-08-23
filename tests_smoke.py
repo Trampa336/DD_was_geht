@@ -1450,4 +1450,36 @@ check("Web: Umgebung ist standardmaessig aus", "umgebung: false" in _page_all)
 check("Web: entfernte Events werden ohne Schalter ausgeblendet",
       "e.region === 'weiter' && !filters.umgebung" in _page_all)
 
+# --- Zustand der Scraper: scrape_runs und /api/health ----------------------
+# Der Nulltreffer ist der Fall, um den es geht: eine Quelle, die nach einer
+# HTML-Aenderung 0 Events liefert, darf NICHT als erfolgreich gelten - sonst
+# wandert der "letzter Erfolg"-Zeitstempel mit und der Ausfall bleibt unsichtbar.
+with db.get_conn() as conn:
+    db.record_scrape_run(conn, "sektor", "2026-08-22T10:00:00", "2026-08-22T10:00:20",
+                         ok=True, event_count=12)
+    db.record_scrape_run(conn, "sektor", "2026-08-23T10:00:00", "2026-08-23T10:00:05",
+                         ok=False, event_count=0, error="0 Events, zuletzt waren es 12.")
+    db.record_scrape_run(conn, "ra", "2026-08-23T10:01:00", "2026-08-23T10:01:03",
+                         ok=False, error="RuntimeError('kaputt')")
+
+    check("last_successful_run ueberspringt den Fehllauf",
+          db.last_successful_run(conn, "sektor")["event_count"] == 12)
+    check("last_successful_run ohne je einen Erfolg -> None",
+          db.last_successful_run(conn, "ra") is None)
+    _health = db.scrape_health(conn)
+
+check("scrape_health listet alle Quellen, auch nie gelaufene",
+      sorted(_health) == sorted(config.SOURCE_LABELS))
+check("scrape_health: letzter Erfolg bleibt beim alten Lauf stehen",
+      _health["sektor"]["ok"] is False and _health["sektor"]["event_count"] == 12
+      and _health["sektor"]["last_success"] == "2026-08-22T10:00:20")
+check("scrape_health: nie gelaufene Quelle ist leer, nicht abwesend",
+      _health["cybersax"]["last_run"] is None and _health["cybersax"]["ok"] is False)
+
+_health_json = web.app.test_client().get("/api/health").get_json()
+check("/api/health liefert alle sechs Quellen", len(_health_json) == 6)
+check("/api/health nennt Klartext-Namen und Fehlertext",
+      _health_json["ra"]["label"] == "Resident Advisor"
+      and "kaputt" in _health_json["ra"]["error"])
+
 print("\nAlle Smoke-Tests erfolgreich.")
