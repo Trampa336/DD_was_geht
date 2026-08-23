@@ -1,7 +1,7 @@
 /* Bedienung der Seite: Aussehen (Theme, Hintergrund-Animation), Filter, Liste,
-   Empfehlungszeile und Detail-Popup. Alles, was von Konfiguration oder
-   Betriebsart abhaengt, kommt aus window.DD - gesetzt im Kopf der Vorlage
-   (app/templates/index.html), sonst weiss diese Datei nichts von Jinja. */
+   Empfehlungszeile und Detail-Popup. Alles, was von Konfiguration abhaengt,
+   kommt aus window.DD - gesetzt im Kopf der Vorlage (app/templates/index.html),
+   sonst weiss diese Datei nichts von Jinja. */
 (function () {
   var DD = window.DD;
   document.getElementById('today-label').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -149,15 +149,6 @@
 
   var CAT_LABEL = DD.categories;
 
-  // Die beiden Betriebsarten sind im Kopf der Vorlage beschrieben.
-  var MODE = DD.mode;
-  // Bewertet wird ausschliesslich im Heimnetz. Das ist keine Pruefung, sondern
-  // die Bauart: auf der statischen Kopie gibt es nichts, wohin ein Klick ginge -
-  // rating.js wird dort gar nicht erst mitgeliefert.
-  var CAN_RATE = MODE === 'api';
-  var EXCLUDED = DD.excluded;
-  var DATA_V = DD.dataVersion;
-
   var listEl = document.getElementById('list');
   var pickRow = document.getElementById('fuer-dich-row');
   var currentRange = 'heute';
@@ -216,8 +207,7 @@
 
   function passesFilters(e) {
     if (e.ongoing && !filters.ongoing) { return false; }
-    // Ohne region-Feld gilt ein Event als Dresden - so bleibt eine Tagesdatei
-    // aus einem aelteren Export lesbar (siehe tools/export_static.py).
+    // Nur "weiter" filtert hier aus - Dresden und Umland bleiben sichtbar.
     if (e.region === 'weiter' && !filters.umgebung) { return false; }
     if (!filters.lowscore && Number(e.score) < LOW_SCORE) { return false; }
     // Eine unbekannte Quelle (neuer Scraper, noch kein Label) bleibt sichtbar -
@@ -238,77 +228,6 @@
   function saveSelection() { store('cats', JSON.stringify(selectedCats)); }
 
   function catQuery() { return selectedCats.length ? selectedCats.join(',') : 'alle'; }
-
-  /* --- static-Modus: Daten, Bewertungen und Score ohne Server ---------------
-     Alles ab hier laeuft nur auf der GitHub-Pages-Kopie. Im api-Modus wird
-     keine dieser Funktionen aufgerufen; die Flask-Seite verhaelt sich exakt
-     wie vorher. */
-
-  var staticIndexPromise = null;
-  var dayCache = {};
-
-  function staticIndex() {
-    if (!staticIndexPromise) {
-      staticIndexPromise = fetch('data/index.json?v=' + encodeURIComponent(DATA_V))
-        .then(function (r) { return r.json(); });
-    }
-    return staticIndexPromise;
-  }
-
-  // Lokales Datum. toISOString() waere hier falsch - das rechnet in UTC und
-  // liefert abends in Berlin schon den Folgetag.
-  function isoDay(d) {
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
-      + '-' + String(d.getDate()).padStart(2, '0');
-  }
-
-  // Dieselben rollierenden Fenster wie app/ranges.py: ab heute, nicht ab
-  // Wochen-/Monatsanfang.
-  function rangeDays(range) {
-    var today = new Date(); today.setHours(0, 0, 0, 0);
-    var last = new Date(today);
-    if (range === 'woche') { last.setDate(last.getDate() + 6); }
-    else if (range === 'monat') { last = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
-    var days = [], cur = new Date(today);
-    while (cur <= last) { days.push(isoDay(cur)); cur.setDate(cur.getDate() + 1); }
-    return days;
-  }
-
-  function loadDay(day, version) {
-    if (!dayCache[day]) {
-      dayCache[day] = fetch('data/days/' + day + '.json?v=' + encodeURIComponent(version))
-        .then(function (r) { return r.ok ? r.json() : []; })
-        .catch(function () { return []; });
-    }
-    return dayCache[day];
-  }
-
-  /* Ersatz fuer GET /api/events: nur die Tagesdateien des Zeitraums holen und
-     danach dieselben Filter anwenden, die im api-Modus in SQL stehen
-     (db.events_for_range + web._selected_categories). Doppelungen und die
-     ongoing-Markierung hat schon der Exporter erledigt. */
-  function staticEvents(range, cats) {
-    return staticIndex().then(function (idx) {
-      var versions = {};
-      idx.days.forEach(function (d) { versions[d.date] = d.v; });
-      // Tage ohne Datei (Seite laenger nicht aktualisiert) bleiben einfach leer.
-      var wanted = rangeDays(range).filter(function (d) { return d in versions; });
-      return Promise.all(wanted.map(function (d) { return loadDay(d, versions[d]); }));
-    }).then(function (chunks) {
-      var events = [];
-      chunks.forEach(function (chunk) {
-        chunk.forEach(function (e) {
-          if (cats.length) { if (cats.indexOf(e.category) === -1) { return; } }
-          else if (EXCLUDED.indexOf(e.category) !== -1) { return; }
-          events.push(e);
-        });
-      });
-      events.sort(function (a, b) {
-        return (a.date + (a.time || '99:99')).localeCompare(b.date + (b.time || '99:99'));
-      });
-      return events;
-    });
-  }
 
   function syncChips() {
     press('.chip[data-cat]', function (chip) {
@@ -362,7 +281,7 @@
   function renderModalFooter() {
     var host = document.getElementById('modal-fb');
     host.innerHTML = '';
-    if (CAN_RATE) { host.appendChild(fbButtons(currentModalEvent)); }
+    host.appendChild(fbButtons(currentModalEvent));
   }
 
   function renderModal() {
@@ -412,12 +331,6 @@
 
     // undefined = noch nie geladen. Rauze-Events bringen die Beschreibung schon
     // aus /api/events mit, beim Kulturkalender wird sie hier einmalig geholt.
-    // Im static-Modus gibt es nichts nachzuladen: was der Exporter an
-    // Beschreibung hatte, steckt in der Tagesdatei, alles andere bleibt leer.
-    if (MODE === 'static') {
-      if (ev.description === undefined) { ev.description = ''; renderModal(); }
-      return;
-    }
     if (ev.description === undefined) {
       fetch('/api/event/' + ev.uid + '/details')
         .then(function (r) { return r.json(); })
@@ -449,30 +362,11 @@
     if (e.key === 'Escape' && !overlayEl.hidden) { closeModal(); }
   });
 
-  /* Gegenstueck zu /api/fuer-dich (scoring.top_picks): die bestbewerteten acht
-     Events der naechsten sieben Tage. Der Score kommt fertig aus den
-     Tagesdateien, gerechnet auf dem Pi - hier wird nur sortiert. */
-  function staticPicks() {
-    return staticEvents('woche', selectedCats).then(function (events) {
-      events.sort(function (a, b) { return b.score - a.score; });
-      return { events: events.slice(0, 8) };
-    });
-  }
-
-  /* Liste und Empfehlungszeile holen ihre Events auf demselben Weg: im
-     api-Modus von Flask, im static-Modus aus den Tagesdateien. Nur wo genau,
-     unterscheidet sich - deshalb steht die Fallunterscheidung hier einmal und
-     nicht in beiden Ladefunktionen. */
   function fetchJson(url) {
     return fetch(url).then(function (r) { return r.json(); });
   }
 
   function eventSource(what) {
-    if (MODE === 'static') {
-      return what === 'picks'
-        ? staticPicks()
-        : staticEvents(currentRange, selectedCats).then(function (events) { return { events: events }; });
-    }
     return fetchJson(what === 'picks'
       ? '/api/fuer-dich?cat=' + encodeURIComponent(catQuery())
       : '/api/events?range=' + currentRange + '&cat=' + encodeURIComponent(catQuery()));
@@ -483,15 +377,13 @@
       pickRow.innerHTML = '';
       var picks = data.events.filter(passesFilters);
       if (!picks.length) {
-        pickRow.innerHTML = CAN_RATE
-          ? '<div class="loading">Noch keine Empfehlungen – bewerte ein paar Events.</div>'
-          : '<div class="loading">Gerade keine Empfehlungen für diese Auswahl.</div>';
+        pickRow.innerHTML = '<div class="loading">Noch keine Empfehlungen – bewerte ein paar Events.</div>';
         return;
       }
       picks.forEach(function (e) {
         var card = document.createElement('div');
         card.className = 'pick-card';
-        card.innerHTML = '<div class="pick-score">' + (CAN_RATE ? 'Für dich' : 'Empfehlung') + '</div>' +
+        card.innerHTML = '<div class="pick-score">Für dich</div>' +
           '<div class="pick-title"></div><div class="pick-meta"></div>';
         card.querySelector('.pick-title').textContent = e.title;
         card.querySelector('.pick-meta').textContent = whenLabel(e);
@@ -554,8 +446,7 @@
                  lesbar.
                Top-Treffer: passt das Event zum gelernten Geschmack, bekommt die
                  Zeile denselben Auftritt in Elbe-Tuerkis. Der Score kommt aus
-                 scoring.score_events() - im api-Modus aus /api/events, im
-                 statischen Modus vorgerechnet aus der Tagesdatei.
+                 scoring.score_events() über /api/events.
                Umgebung: steht nur an Eintraegen, die ohne den Schalter gar nicht
                  in der Liste waeren (siehe passesFilters).
                Preis: nur, wenn die Quelle einen mitgeliefert hat. */
@@ -564,7 +455,7 @@
           mark(row, '.tag-region', e.region === 'weiter' && 'Umgebung');
           mark(row, '.price-tag', e.price_text);
           var actions = row.querySelector('.event-actions');
-          if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
+          actions.appendChild(fbButtons(e));
           // Statt eines eigenen Buttons oeffnet ein Klick auf die Zeile das
           // Popup. Die Daumen-Buttons rechts stoppen ihr Event selbst nicht,
           // deshalb hier pruefen, ob der Klick aus .event-actions kam.

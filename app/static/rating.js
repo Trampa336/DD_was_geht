@@ -1,10 +1,6 @@
-/* Bewerten mit 👍/👎. Diese Datei liegt NUR auf der Flask-Seite im Heimnetz:
-   die Vorlage bindet sie im static-Modus nicht ein und tools/export_static.py
-   kopiert sie nicht mit. In der oeffentlichen Kopie gibt es also nicht einen
-   abgeschalteten Knopf, sondern gar keinen Code dafuer.
-
-   app.js reicht beim Aufbau einer Zeile das Event und eine Funktion herein, die
-   nach der gespeicherten Bewertung Liste und Empfehlungen neu zeichnet. */
+/* Bewerten mit 👍/👎. app.js reicht beim Aufbau einer Zeile das Event und eine
+   Funktion herein, die nach der gespeicherten Bewertung Liste und
+   Empfehlungen neu zeichnet. */
 window.ddFeedbackButtons = function (ev, done) {
   var wrap = document.createElement('div');
   wrap.className = 'fb';
