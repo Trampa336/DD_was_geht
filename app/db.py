@@ -494,6 +494,15 @@ def last_successful_run(conn, source):
     return dict(row) if row else None
 
 
+def last_successful_scrape(conn):
+    """Zeitpunkt des jüngsten erfolgreichen Laufs, egal welcher Quelle.
+    Grundlage für die Startentscheidung in main.py."""
+    row = conn.execute(
+        "SELECT MAX(finished_at) AS finished_at FROM scrape_runs WHERE ok = 1"
+    ).fetchone()
+    return row["finished_at"] if row else None
+
+
 def _last_run(conn, source):
     row = conn.execute(
         "SELECT * FROM scrape_runs WHERE source = ? ORDER BY started_at DESC, id DESC LIMIT 1",
