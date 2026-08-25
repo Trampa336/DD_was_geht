@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,500&family=Oswald:wght@500;600&display=swap');
+
+/* Ein festes Theme (Industriegelaende). Der erste Block sind die gemeinsamen
+   Grundwerte, darunter steht nur noch, was das Theme davon abweichend setzt.
+   --font-mono ist ueberall dieselbe Schrift wie --font-body; getrennt bleiben
+   sie, weil die Regeln unten die eine als Lauftext und die andere fuer Zahlen
+   und Kuerzel meinen. Die Signatur-Animation des Themes steht als
+   DEFAULT_ANIM in app.js. */
+
+:root {
+  --bg:#1a1915; --surface:#211f1a; --surface-raised:#262420;
+  --ink:#eeeadf; --ink-soft:#b3ab9c; --ink-faint:#79705f;
+  --stone:#4a4438; --stone-dark:#6b6253;
+  --elbe:#da7756; --elbe-strong:#e89376; --elbe-soft:#3a2a20; --line:#332f28;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  --font-display:'Newsreader',Georgia,serif; --font-body:'IBM Plex Mono',ui-monospace,monospace; --font-mono:var(--font-body);
+  --display-style:italic; --display-tracking:-.01em; --display-scale:1;
+}
+
+/* Industriegelaende: Stahlgrau, Rostorange, kantige Oswald-Versalien */
+:root[data-theme="industriegelaende"] {
+  --bg:#17191a; --surface:#1e2123; --surface-raised:#242829;
+  --ink:#e4e6e3; --ink-soft:#9aa09c; --ink-faint:#656b67;
+  --stone:#3a3f3d; --stone-dark:#565d5a;
+  --elbe:#d4652a; --elbe-strong:#f08545; --elbe-soft:#2e1a0c; --line:#2a2e2c;
+  --font-display:'Oswald',Impact,sans-serif;
+  --display-style:normal; --display-tracking:.02em; --display-scale:1.05;
+}
+
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+.page { max-width:760px; margin:0 auto; padding:28px 20px 80px; }
+
+/* Lebendiger Hintergrund: driftende Punkte, die sich zu Linien verbinden */
+#bg-canvas { position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; display:block; }
+.page { position:relative; z-index:1; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration:.001ms!important; transition-duration:.001ms!important; }
+  #bg-canvas { opacity:.5; }
+}
+
+.masthead { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:18px; border-bottom:2px solid var(--ink); margin-bottom:22px; flex-wrap:wrap; }
+.wordmark { font-family:var(--font-display); font-optical-sizing:auto; font-weight:600; font-size:calc(clamp(30px,5vw,40px) * var(--display-scale)); letter-spacing:var(--display-tracking); margin:0; text-wrap:balance; }
+.wordmark em { font-style:var(--display-style); font-weight:500; color:var(--elbe); }
+.masthead-meta { font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); text-align:right; line-height:1.5; }
+.masthead-meta .city { color:var(--ink); font-weight:500; }
+.masthead-right { display:flex; align-items:flex-start; gap:10px; }
+
+.theme-switch { position:relative; }
+.theme-btn { appearance:none; cursor:pointer; display:flex; align-items:center; justify-content:center; width:28px; height:28px; padding:0; border:1px solid var(--line); background:var(--surface); color:var(--ink-faint); border-radius:8px; transition:color .15s ease,border-color .15s ease; }
+.theme-btn:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+.theme-menu { position:absolute; top:34px; right:0; z-index:60; display:flex; gap:7px; padding:8px; background:var(--surface-raised); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); }
+.theme-menu[hidden] { display:none; }
+.switches { display:flex; gap:6px; }
+
+/* Das Animationsmenue ist eine Textliste statt Farbpunkte - Rahmen, Schatten
+   und Position erbt es von .theme-menu. */
+.bg-menu { flex-direction:column; gap:1px; padding:6px; min-width:196px; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--stone-dark) transparent; }
+.bg-opt { appearance:none; cursor:pointer; text-align:left; border:none; background:transparent; color:var(--ink-soft); font-family:var(--font-body); font-size:12px; padding:6px 9px; border-radius:6px; white-space:nowrap; transition:background .12s ease,color .12s ease; }
+.bg-opt:hover { color:var(--ink); background:color-mix(in srgb, var(--stone) 22%, transparent); }
+.bg-opt[aria-pressed="true"] { color:var(--elbe-strong); background:var(--elbe-soft); }
+
+.fuer-dich { margin-bottom:28px; }
+.fuer-dich h2 { font-family:var(--font-display); font-weight:500; font-style:var(--display-style); font-size:19px; margin:0 0 10px 2px; }
+.fuer-dich-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+.pick-card { flex:0 0 auto; width:220px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); }
+.pick-score { font-family:var(--font-mono); font-size:11px; color:var(--elbe-strong); }
+.pick-title { font-weight:600; font-size:13.5px; margin:4px 0 2px; line-height:1.3; }
+.pick-meta { font-size:11.5px; color:var(--ink-soft); }
+
+.tabs { display:flex; gap:2px; background:var(--line); border:1px solid var(--line); border-radius:10px; padding:3px; margin-bottom:14px; }
+.tab { flex:1; appearance:none; border:none; background:transparent; color:var(--ink-soft); font-family:var(--font-body); font-weight:600; font-size:14px; padding:10px 8px; border-radius:7px; cursor:pointer; transition:background .15s ease,color .15s ease; }
+.tab:hover { color:var(--ink); }
+.tab[aria-selected="true"] { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
+
+/* Eine Zeile Kategorien, rechts daneben das Filter-Menue. Die Kategorien
+   brechen bewusst NICHT um: sonst waechst der Kopf der Seite je nach
+   Fensterbreite auf drei Zeilen an, und genau das sollte weg. Passt die Zeile
+   nicht, wird sie seitlich gewischt - der Verlauf am rechten Rand
+   (.is-scrollable) zeigt, dass da noch etwas kommt. */
+.filterbar { display:flex; align-items:center; gap:10px; margin-bottom:26px; }
+.chips { flex:1; min-width:0; display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+/* Etwas schmaler als die Chips im Filter-Menue: nur so passen alle Kategorien
+   auf einem normalen Bildschirm nebeneinander, ohne dass gewischt werden muss. */
+.chips .chip { font-size:12px; padding:6px 10px; }
+.chips::-webkit-scrollbar { display:none; }
+.chips.is-scrollable { -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 24px),transparent); mask-image:linear-gradient(to right,#000 calc(100% - 24px),transparent); }
+.chip { flex:0 0 auto; white-space:nowrap; appearance:none; cursor:pointer; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-family:var(--font-body); font-size:12.5px; font-weight:500; padding:6px 12px; border-radius:999px; transition:border-color .15s ease,color .15s ease,background .15s ease; }
+.chip[aria-pressed="true"] { border-color:var(--elbe); color:var(--elbe-strong); background:var(--elbe-soft); }
+
+/* Alles ausser den Kategorien liegt im Klappmenue: Sichtbarkeits-Schalter und
+   Quellen. Aufbau, Rahmen und Schatten sind dieselben wie beim Theme-Menue im
+   Kopf (.theme-menu) - derselbe Popup-Typ, nur breiter und mehrzeilig. Die
+   Schalter behalten den Sandstein-Ton im Ein-Zustand, damit sie nicht mit den
+   Kategorien in Elbe-Tuerkis verwechselt werden. */
+.filter-menu { position:relative; flex:0 0 auto; }
+.filter-btn { appearance:none; cursor:pointer; display:flex; align-items:center; gap:5px; padding:6px 10px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-family:var(--font-body); font-size:12.5px; font-weight:500; border-radius:999px; transition:color .15s ease,border-color .15s ease; }
+.filter-btn:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+.filter-btn[aria-expanded="true"] { color:var(--elbe-strong); border-color:var(--elbe); background:var(--elbe-soft); }
+/* Zugeklappt sieht man dem Menue sonst nicht an, dass es etwas ausblendet. */
+.filter-badge { min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:var(--elbe); color:var(--surface-raised); font-family:var(--font-mono); font-size:10px; line-height:16px; text-align:center; }
+.filter-badge[hidden] { display:none; }
+.filter-panel { position:absolute; top:calc(100% + 6px); right:0; z-index:60; width:min(320px,calc(100vw - 40px)); display:flex; flex-direction:column; gap:12px; padding:12px; background:var(--surface-raised); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+.filter-panel[hidden] { display:none; }
+.filter-group { display:flex; flex-direction:column; gap:7px; }
+.filter-row { display:flex; flex-wrap:wrap; gap:7px; }
+.filters-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); }
+.chip-toggle[aria-pressed="true"] { border-color:var(--stone-dark); color:var(--ink); background:color-mix(in srgb, var(--stone) 30%, transparent); }
+.chip-src { font-family:var(--font-mono); font-size:11.5px; }
+.chip-reset { border-style:dashed; color:var(--ink-faint); align-self:flex-start; }
+.chip-reset:hover { color:var(--ink); }
+.chip-reset[hidden] { display:none; }
+
+.day-group { margin-bottom:30px; }
+.day-heading { display:flex; align-items:baseline; gap:10px; margin:0 0 10px 14px; }
+.day-heading .name { font-family:var(--font-display); font-weight:500; font-style:var(--display-style); font-size:19px; }
+.day-heading .date { font-family:var(--font-mono); font-size:12px; color:var(--ink-faint); }
+.day-events { border-left:3px solid var(--stone); display:flex; flex-direction:column; }
+.day-group:nth-of-type(even) .day-events { border-left-color:var(--stone-dark); }
+
+/* Die Zeilen liegen ueber der animierten Hintergrundflaeche. Ein
+   durchscheinendes Schwarz hebt sie ab, ohne die Themes zu ueberschreiben. */
+.event { display:grid; grid-template-columns:58px 92px 1fr auto; align-items:start; gap:14px; padding:11px 14px; border-bottom:1px solid var(--line); --row-bg:rgba(0,0,0,.42); --row-bg-hover:rgba(0,0,0,.58); background:var(--row-bg); cursor:pointer; transition:background .15s ease; }
+.event:hover { background:var(--row-bg-hover); }
+.event:focus-visible { outline:2px solid var(--elbe); outline-offset:-2px; }
+.event:hover .event-title { color:var(--elbe-strong); }
+/* Das Cover steht IMMER in der Zeile, notfalls als Platzhalter mit dem
+   Anfangsbuchstaben der Kategorie - eine nur manchmal vorhandene Spalte
+   wuerde die ganze Liste ausfransen. Bild kommt aus image_url, also nur
+   von Events, bei denen die Quelle eins mitgeliefert hat. */
+.event-cover { width:92px; height:70px; border-radius:10px; background:var(--stone) center/cover no-repeat; border:1px solid var(--line); }
+.event-cover.placeholder { display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--elbe-soft),var(--stone)); font-family:var(--font-display); font-style:var(--display-style); font-size:30px; color:var(--elbe-strong); }
+.day-group:last-child .event:last-child { border-bottom:none; }
+.event-time { font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:13px; color:var(--elbe-strong); padding-top:1px; }
+.event-body { min-width:0; }
+.event-title { font-weight:600; font-size:15px; line-height:1.35; margin:0 0 3px; text-wrap:balance; }
+.event-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); }
+/* Fuenf Marken, eine Form: Kategorie, Dauerangebot, Umgebung, Treffer, Preis.
+   Was sie unterscheidet, sind Farbe und Rahmen - der Rest steht einmal hier. */
+.tag, .tag-ongoing, .tag-region, .tag-pick, .price-tag { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; padding:2px 7px; border-radius:5px; }
+.tag, .tag-ongoing, .tag-region, .tag-pick { text-transform:uppercase; }
+/* Der Preis darf nicht umbrechen und wird notfalls abgeschnitten, die drei
+   Marken daneben bleiben schlicht einzeilig. */
+.tag-ongoing, .tag-region, .tag-pick, .price-tag { white-space:nowrap; }
+.price-tag { max-width:150px; overflow:hidden; text-overflow:ellipsis; }
+.tag { background:var(--surface-raised); border:1px solid var(--line); color:var(--ink-faint); }
+
+/* Dauerangebote (Ausstellungen, Werksfuehrungen, Stadtrundfahrten) machen
+   rund die Haelfte aller Eintraege aus. Sie werden nicht versteckt, sondern
+   zurueckgenommen: warmer Sandstein statt des Elbe-Tuerkis, das den echten
+   Empfehlungen vorbehalten bleibt. Beide Token sind in hell UND dunkel
+   definiert, der Dark Mode zieht also automatisch mit. */
+.event.ongoing { --row-bg:color-mix(in srgb, var(--stone) 14%, rgba(0,0,0,.42)); --row-bg-hover:color-mix(in srgb, var(--stone) 14%, rgba(0,0,0,.58)); box-shadow:inset 3px 0 0 var(--stone-dark); }
+.event.ongoing .event-time { color:var(--stone-dark); }
+.event.ongoing .event-title { font-weight:500; }
+.tag-ongoing { background:color-mix(in srgb, var(--stone) 34%, transparent); border:1px solid var(--stone-dark); color:var(--stone-dark); }
+
+/* Treffer: Events, deren gelernter "Fuer dich"-Score HIGHLIGHT_SCORE erreicht.
+   Gleicher Aufbau wie .ongoing - Balken links, eingefaerbte Zeile, Label -,
+   nur in Elbe-Tuerkis statt Sandstein, denn genau dafuer ist der Akzent da.
+   Das Label traegt die Aussage mit: Farbe allein waere fuer Farbsehschwaeche
+   und im Ausdruck weg. Die Regeln stehen NACH .ongoing, damit ein Dauerangebot
+   mit hohem Score als Treffer gezeichnet wird und nicht zurueckgenommen. */
+.event.top-pick { --row-bg:color-mix(in srgb, var(--elbe) 12%, rgba(0,0,0,.42)); --row-bg-hover:color-mix(in srgb, var(--elbe) 12%, rgba(0,0,0,.58)); box-shadow:inset 3px 0 0 var(--elbe); }
+.event.top-pick .event-time { color:var(--elbe-strong); }
+.event.top-pick .event-title { font-weight:700; }
+/* Nur sichtbar, wenn der Schalter "Umgebung einschliessen" an ist: dann steht
+   in der Liste unvermittelt Meissen oder Bad Schandau neben der Neustadt, und
+   ohne Markierung liest sich das wie ein Fehler. */
+.tag-region { background:transparent; border:1px dashed var(--line); color:var(--ink-faint); }
+.tag-pick { background:color-mix(in srgb, var(--elbe) 26%, transparent); border:1px solid var(--elbe); color:var(--elbe-strong); }
+
+/* Auf dem Handy ist neben Zeit, Titel und Buttons kein Platz mehr fuer das
+   Cover - dort faellt die Spalte komplett weg. */
+@media (max-width: 560px) {
+  .event { grid-template-columns:52px 1fr auto; gap:10px; }
+  .event-cover { display:none; }
+}
+
+.price-tag { background:var(--elbe-soft); border:1px solid var(--elbe); color:var(--elbe-strong); }
+
+.event-actions { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(20,18,14,.5); display:flex; align-items:center; justify-content:center; padding:18px; z-index:100; }
+.modal-overlay[hidden] { display:none; }
+.modal { position:relative; width:100%; max-width:460px; max-height:88vh; overflow-y:auto; background:var(--surface-raised); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); }
+.modal:focus { outline:none; }
+.modal-close { position:absolute; top:10px; right:10px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:50%; font-size:17px; line-height:1; cursor:pointer; }
+.modal-cover { height:230px; background:var(--stone) center/cover no-repeat; border-radius:15px 15px 0 0; }
+.modal-cover.placeholder { display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--elbe-soft),var(--stone)); font-family:var(--font-display); font-style:var(--display-style); font-size:46px; color:var(--elbe-strong); }
+.modal-body { padding:16px 20px 4px; }
+.modal-title { font-family:var(--font-display); font-weight:600; font-size:20px; line-height:1.25; margin:0 0 8px; text-wrap:balance; }
+.modal-meta { display:flex; flex-wrap:wrap; gap:10px; font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }
+.modal-tags { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+.modal-description { font-size:13.5px; line-height:1.6; color:var(--ink); white-space:pre-line; }
+.modal-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 20px 16px; margin-top:12px; border-top:1px solid var(--line); }
+.modal-source-link { font-size:11.5px; color:var(--ink-faint); text-decoration:none; }
+.modal-source-link:hover { color:var(--elbe-strong); text-decoration:underline; }
+
+/* Ohne Bewerten-Buttons (oeffentliche Kopie) bleibt die Spalte leer - dann
+   soll sie auch keinen Platz einnehmen. */
+.event-actions:empty { display:none; }
+.fb { display:flex; gap:4px; }
+.fb button { border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:4px 7px; font-size:13px; cursor:pointer; }
+.fb button[data-active="true"] { border-color:var(--elbe); background:var(--elbe-soft); }
+
+.empty-state, .loading { padding:30px 14px; text-align:center; color:var(--ink-faint); font-size:13.5px; }
+.footnote { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-faint); line-height:1.6; }
