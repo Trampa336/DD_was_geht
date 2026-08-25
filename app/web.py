@@ -18,6 +18,11 @@ app = Flask(__name__)
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
+# Nur diese Dateien darf die oeffentliche Kopie mitnehmen. rating.js fehlt hier
+# mit Absicht: dort gibt es keinen Server, an den eine Bewertung ginge, also
+# soll auch der Code dafuer nicht dabei sein (siehe tools/export_static.py).
+PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js")
+
 
 def asset_version():
     """Kurzer Hash ueber die statischen Dateien, haengt als ?v=... an jedem
@@ -29,6 +34,9 @@ def asset_version():
         with open(os.path.join(STATIC_DIR, name), "rb") as handle:
             digest.update(handle.read())
     return digest.hexdigest()[:8]
+
+
+ASSET_VERSION = asset_version()
 
 
 def _range_bounds(range_key):
@@ -49,11 +57,15 @@ def _selected_categories():
 
 @app.route("/")
 def index():
+    # mode="api": die Seite spricht mit dieser Flask-App. Dieselbe Vorlage wird
+    # von tools/export_static.py ein zweites Mal mit mode="static" gerendert -
+    # das ist die oeffentliche Kopie ohne Server (siehe README).
     return render_template("index.html", categories=config.CATEGORY_LABELS,
                            categories_short=config.CATEGORY_SHORT_LABELS,
-                           sources=config.SOURCE_LABELS,
+                           sources=config.SOURCE_LABELS, mode="api",
+                           excluded=[], generated_at="",
                            highlight_score=config.HIGHLIGHT_SCORE,
-                           asset_v=asset_version())
+                           asset_v=ASSET_VERSION)
 
 
 @app.route("/api/events")
@@ -65,6 +77,8 @@ def api_events():
     # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
     # anklickt, soll sie auch dann sehen, wenn sie in EXCLUDED_CATEGORIES steht.
     exclude = None if categories else config.EXCLUDED_CATEGORIES
+    # Dieselbe Liste baut der statische Export (tools/export_static.py) - nur
+    # mit anderen Parametern, siehe feed.build_events.
     with db.get_conn() as conn:
         events = feed.build_events(conn, start, end, categories=categories,
                                    exclude_categories=exclude, with_reactions=True)

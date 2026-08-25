@@ -1,6 +1,7 @@
 """Schneller Selbsttest ohne Netzwerk: normalize, db, scoring.
 Aufruf: python3 tests_smoke.py
 """
+import json
 import os
 import re
 import sys
@@ -1393,6 +1394,112 @@ check("Highlight: Zeile bekommt bei hohem Score die Klasse top-pick",
 check("Highlight: Einfaerbung wird von einem Label begleitet",
       "'Top-Treffer'" in _page_all and ".tag-pick {" in _page_all)
 
+# Der statische Export rendert dieselbe Vorlage ein zweites Mal - ohne diese
+# Zeile bliebe die oeffentliche Kopie ohne Schwelle zurueck.
+check("Highlight: statischer Export reicht die Schwelle mit",
+      "highlight_score=config.HIGHLIGHT_SCORE" in
+      open(os.path.join(_ROOT, "tools", "export_static.py"), encoding="utf-8").read())
+
+
+# --- statischer Export fuer GitHub Pages (tools/export_static.py) ----------
+# Die oeffentliche Kopie ist read-only von Bauart wegen: sie hat keinen Server,
+# an den eine Bewertung gehen koennte - bewerten kann nur, wer im Heimnetz die
+# Flask-Seite aufmacht. Geprueft wird deshalb, dass der Export vollstaendig ist,
+# die Seite wirklich im static-Modus rendert und nichts nachladen will.
+sys.path.insert(0, os.path.join(_ROOT, "tools"))
+import export_static  # noqa: E402
+
+_export_today = _dt.date.today()
+_export_dir = os.path.join(tempfile.mkdtemp(), "site")
+with db.get_conn() as conn:
+    db.upsert_events(conn, [{
+        "uid": "static-heute", "source": "rauze", "date": _export_today.isoformat(),
+        "time": "20:00", "title": "Konzert im Beatpol", "venue": "Beatpol",
+        "category": "musik", "raw_category": "Konzert",
+        "url": "https://example.org/beatpol", "description": "Ein Abend mit Gitarren.",
+    }, {
+        "uid": "static-spaeter", "source": "rauze",
+        "date": (_export_today + _dt.timedelta(days=3)).isoformat(),
+        "time": "19:00", "title": "Lesung im Kulturhaus", "venue": "Kulturhaus",
+        "category": "kultur", "raw_category": "Lesung",
+    }])
+
+_stats = export_static.export(_export_dir, days_ahead=7, today=_export_today)
+check("Export: beide Events exportiert", _stats["events"] >= 2)
+check("Export: eine Datei je Tag", _stats["days"] >= 2)
+
+_index = json.loads(open(os.path.join(_export_dir, "data", "index.json"), encoding="utf-8").read())
+check("Export: index.json listet die Tage mit Version",
+      all({"date", "count", "v"} <= set(d) for d in _index["days"]))
+check("Export: index.json reicht die ausgeblendeten Kategorien mit",
+      _index["excluded"] == config.EXCLUDED_CATEGORIES)
+
+_day = json.loads(open(os.path.join(_export_dir, "data", "days",
+                                    f"{_export_today.isoformat()}.json"), encoding="utf-8").read())
+_beatpol = [e for e in _day if e["uid"] == "static-heute"][0]
+check("Export: Beschreibung liegt in der Tagesdatei (kein Nachladen noetig)",
+      _beatpol["description"] == "Ein Abend mit Gitarren.")
+# Bewertet wird nur im Heimnetz; oeffentlich geht nur das Ergebnis mit, damit
+# die Empfehlungszeile und der "wenig relevant"-Filter dort ueberhaupt etwas
+# rechnen koennen. Die Merkmalsschluessel (frueher Feld "fk") braucht der
+# Browser seitdem nicht mehr.
+check("Export: Score liegt in der Tagesdatei", isinstance(_beatpol["score"], (int, float)))
+check("Export: Score liegt im gueltigen Bereich", 0 <= _beatpol["score"] <= 100)
+check("Export: keine Merkmalsschluessel mehr im Export", "fk" not in _beatpol)
+check("Export: leere Felder fliegen raus", "image_url" not in _beatpol)
+
+_static_html = open(os.path.join(_export_dir, "index.html"), encoding="utf-8").read()
+_static_all = _bundle(_static_html, os.path.join(_export_dir, "static"))
+check("Export: Seite laeuft im static-Modus", 'mode: "static"' in _static_html)
+# Der Export muss die Dateien mitnehmen, sonst liegt auf GitHub Pages eine Seite
+# ohne Stylesheet und ohne Skripte.
+check("Export: Stylesheet und Skripte liegen daneben",
+      sorted(os.listdir(os.path.join(_export_dir, "static")))
+      == sorted(web.PUBLIC_ASSETS))
+check("Export: rating.js wird nicht mitkopiert",
+      not os.path.exists(os.path.join(_export_dir, "static", "rating.js")))
+# Der Kern der Rechte-Trennung: auf der oeffentlichen Kopie gibt es keine
+# Bewerten-Buttons und keinen Aufruf, der eine Bewertung irgendwohin schickte.
+check("Export: oeffentliche Seite kann nicht bewerten",
+      "var CAN_RATE = MODE === 'api';" in _static_all and "/api/feedback" not in _static_all)
+check("Export: keine Gast-Bewertung im localStorage mehr",
+      "guestReact" not in _static_all and "guest.weights" not in _static_all.split("removeItem")[0])
+check("Export: Empfehlungszeile heisst oeffentlich anders",
+      "Empfehlungen der Woche" in _static_html and "Für dich diese Woche" not in _static_html)
+check("Export: Seite bleibt aus Suchmaschinen raus",
+      'name="robots" content="noindex, nofollow"' in _static_html)
+check("Export: Seite liest die Tagesdateien statt der API",
+      "data/index.json?v=" in _static_all and "data/days/" in _static_all)
+check("Export: robots.txt verbietet das Crawlen",
+      "Disallow: /" in open(os.path.join(_export_dir, "robots.txt"), encoding="utf-8").read())
+check("Export: .nojekyll liegt daneben",
+      os.path.exists(os.path.join(_export_dir, ".nojekyll")))
+
+# Die Flask-Seite darf davon nichts abbekommen - sie ist die einzige, auf der
+# eine Bewertung wirklich in der Datenbank landet.
+check("Flask-Seite bleibt im api-Modus", 'mode: "api"' in _page)
+check("Flask-Seite kann weiterhin bewerten",
+      "/api/feedback" in _page_all and "Für dich diese Woche" in _page)
+
+# Zweiter Lauf ohne Aenderung darf keine Datei anfassen, sonst traegt jeder
+# Push neue Blobs in die Git-Historie.
+_stats2 = export_static.export(_export_dir, days_ahead=7, today=_export_today)
+check("Export: unveraenderte Tage werden nicht neu geschrieben", _stats2["days_written"] == 0)
+
+# Ohne Aenderung darf auch der Zeitstempel nicht weiterlaufen: er steht in
+# index.json UND in der Fussnote der Seite, ein neuer Wert waere also viermal
+# taeglich ein Commit ueber index.html (~90 KB), ohne dass ein Event dazukam.
+_stamp1 = json.loads(open(os.path.join(_export_dir, "data", "index.json"), encoding="utf-8").read())["generated_at"]
+export_static.export(_export_dir, days_ahead=7, today=_export_today)
+_stamp2 = json.loads(open(os.path.join(_export_dir, "data", "index.json"), encoding="utf-8").read())["generated_at"]
+check("Export: unveraenderter Bestand behaelt den Zeitstempel", _stamp1 == _stamp2)
+
+# Ein spaeterer Stichtag laesst die alten Tagesdateien aus dem Fenster laufen -
+# die muessen verschwinden, sonst waechst das Repo endlos.
+_stats3 = export_static.export(_export_dir, days_ahead=7,
+                               today=_export_today + _dt.timedelta(days=30))
+check("Export: abgelaufene Tagesdateien werden entfernt", _stats3["days_removed"] >= 2)
+
 
 # --- Ortsfilter: Dresden, Speckguertel, weiter weg (app/geo.py) -------------
 # Der Kulturkalender listet die ganze Region mit; rund 29% der Eintraege liegen
@@ -1443,12 +1550,25 @@ with db.get_conn() as conn:
     check("exclude_far wirft nur das Entfernte raus",
           sorted(e["uid"] for e in _near) == ["geo-dd", "geo-umland"])
 
+# Der Export schreibt nur das Entfernte mit - Dresden ist der Normalfall und
+# braucht kein Feld je Zeile (siehe app/feed.slim_event).
+from app import feed  # noqa: E402
+
+check("Export markiert entfernte Events",
+      feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
+                       "region": "weiter"}).get("region") == "weiter")
+check("Export markiert Dresden nicht",
+      "region" not in feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
+                                       "region": "dresden"}))
+
 # Im Web haengt der Schalter im Filter-Menue und ist standardmaessig AUS.
 check("Web: Schalter 'Umgebung einschließen' ist da",
       'data-toggle="umgebung"' in _page and "Umgebung einschließen" in _page)
 check("Web: Umgebung ist standardmaessig aus", "umgebung: false" in _page_all)
 check("Web: entfernte Events werden ohne Schalter ausgeblendet",
       "e.region === 'weiter' && !filters.umgebung" in _page_all)
+check("Web: der Schalter gilt auch auf der oeffentlichen Kopie",
+      'data-toggle="umgebung"' in _static_html)
 
 # --- Zustand der Scraper: scrape_runs und /api/health ----------------------
 # Der Nulltreffer ist der Fall, um den es geht: eine Quelle, die nach einer

@@ -1,6 +1,6 @@
 # DD was geht – Self-Hosted Edition
 
-Persönlicher Dresden-Eventdienst für deinen Raspberry Pi: Scraper (kulturkalender-dresden.de, rauze.de, ra.co, cybersax.de, azconni.de, sektor-evolution.de) → SQLite → Web-Oberfläche im „DD was geht“-Look, die aus deinem Feedback lernt, was dir gefällt. Reine Flask-App im Heimnetz, ohne externen Kanal: Ansehen und Bewerten laufen über dieselbe Weboberfläche. Die Personalisierung ist eine einfache, transparente Scoring-Logik ohne KI (siehe unten).
+Persönlicher Dresden-Eventdienst für deinen Raspberry Pi: Scraper (kulturkalender-dresden.de, rauze.de, ra.co, cybersax.de, azconni.de, sektor-evolution.de) → SQLite → Web-Oberfläche im „DD was geht“-Look, die aus deinem Feedback lernt, was dir gefällt. Bewertet wird ausschließlich auf der Weboberfläche im Heimnetz; eine öffentliche Kopie auf GitHub Pages ist ein reiner Lesekanal zum Teilen mit Freunden (siehe [„Öffentliche Seite für Freunde"](#öffentliche-seite-für-freunde)). Die Personalisierung ist eine einfache, transparente Scoring-Logik ohne KI (siehe unten).
 
 ## Was verifiziert ist – und was nicht
 
@@ -12,6 +12,7 @@ Persönlicher Dresden-Eventdienst für deinen Raspberry Pi: Scraper (kulturkalen
 - Die komplette Kernlogik: Datenbank, Lern-Algorithmus, Web-Endpunkte (`python3 tests_smoke.py`, siehe „Tests“).
 - **Resident Advisor:** die GraphQL-Schnittstelle `POST https://ra.co/graphql` inklusive Gebiets-ID 150 für Dresden, der gelieferten Felder (Titel, Startzeit, Ort, `cost`, `content`, Flyer, Line-up) und der Pagination – anders als bei den HTML-Quellen ist hier also auch die Datenstruktur selbst verifiziert, weil es eine API ist.
 - **Doppelungs-Erkennung:** gegen einen echten Abgleich beider Quellen über zwei Wochen geprüft (alle 7 RA-Termine korrekt einem Rauze-Eintrag zugeordnet, keine falschen Treffer).
+- **Statischer Export:** gegen eine Kopie der Live-Datenbank gefahren (4.815 Events, 31 Tage) und live auf GitHub Pages geprüft (siehe „Öffentliche Seite für Freunde").
 
 **Nicht verifiziert:** die exakte HTML-Struktur (Klassennamen, Verschachtelung), weil die Entwicklungsumgebung nur gerenderten Text sehen konnte. Die Parsing-Heuristik ist deshalb bewusst strukturunabhängig gebaut (sie sucht Uhrzeiten und arbeitet sich zum umgebenden Block hoch, statt auf CSS-Klassen zu setzen) und gegen nachgebaute Fixtures getestet. Sollte nach dem ersten Lauf etwas fehlen, hilft „Scraper kalibrieren“ unten – meist 5–10 Minuten.
 
@@ -79,6 +80,14 @@ Ein Neubau kostet also weder die Konfiguration noch die gelernten Bewertungen.
 
 Zurückrollen geht damit auch: `git log --oneline`, dann `git checkout <commit>` und
 noch einmal `docker compose up --build -d`.
+
+## Öffentliche Seite für Freunde
+
+Read-only, ohne Bewerten-Buttons: **https://trampa336.github.io/DD_was_geht/**
+
+Der Pi exportiert den Bestand alle paar Stunden als statische Seite und pusht sie
+per Cron (`tools/publish_site.sh`) auf GitHub Pages – ohne Portfreigabe oder
+Tunnel. Details zum Export: `tools/export_static.py`.
 
 ## Scraper kalibrieren
 
@@ -331,6 +340,8 @@ dd-was-geht/
   tools/inspect_source.py    Debug-Helfer zur Scraper-Kalibrierung
   tools/show_duplicates.py   Zeigt, welche Doppelungen verbucht sind
   tools/reclassify.py        Kategorien im Bestand nachziehen (Backfill)
+  tools/export_static.py     Statischer Export für GitHub Pages (siehe „Öffentliche Seite für Freunde")
+  tools/publish_site.sh      Export + Push auf den Pi-Host (Cronjob)
   tests_smoke.py             Schnelltest der Kernlogik ohne Netzwerk
   .env.example
   docker-compose.yml / Dockerfile

@@ -3,14 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+{% if mode == 'static' %}
+{# Die oeffentliche Seite ist "unlisted": wer den Link hat, kommt rein, aber in
+   Suchmaschinen soll sie nicht auftauchen (robots.txt allein reicht dafuer
+   nicht - die verhindert das Crawlen, nicht das Indexieren eines verlinkten
+   Treffers). #}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
 <title>DD was geht</title>
 <script>
 /* Die einzige Stelle, an der noch Jinja auf JavaScript trifft: alles, was die
    Seite aus Konfiguration und Datenbank wissen muss. Die Skripte selbst liegen
    als statische Dateien daneben (app/static/) und kennen nur dieses Objekt. */
 window.DD = {
+  /* Dieselbe Seite laeuft in zwei Betriebsarten - eine Vorlage, kein zweites
+     Frontend, das auseinanderdriftet:
+       'api'    = Flask auf dem Pi (nur im Heimnetz). Liste, Empfehlungen und
+                  Bewertungen laufen ueber /api/..., die Bewertung landet in der
+                  SQLite und trainiert das persoenliche Modell.
+       'static' = die oeffentliche Kopie auf GitHub Pages. Sie ist rein zum
+                  Lesen: die Events kommen aus vorgerechneten JSON-Dateien, es
+                  gibt keinen Server und damit auch keine Bewerten-Buttons. Der
+                  Score steht schon in den Dateien (tools/export_static.py), die
+                  Empfehlungszeile zeigt also dieselbe Auswahl wie im Heimnetz. */
+  mode: {{ mode | tojson }},
   categories: {{ categories | tojson }},
   sources: {{ sources | tojson }},
+  /* Im api-Modus filtert der Server (web._selected_categories/
+     EXCLUDED_CATEGORIES), im static-Modus muss das der Browser uebernehmen. */
+  excluded: {{ excluded | tojson }},
+  // Cache-Buster fuer data/index.json: aendert sich mit jedem Export.
+  dataVersion: {{ generated_at | tojson }},
   /* Ab diesem Score wird eine Zeile als Treffer hervorgehoben
      (config.HIGHLIGHT_SCORE, aus der .env). */
   highlightScore: {{ highlight_score | tojson }}
@@ -54,7 +77,9 @@ window.DD = {
   </header>
 
   <section class="fuer-dich">
-    <h2>Für dich diese Woche</h2>
+    {# Bewertet wird nur im Heimnetz - oeffentlich ist es deshalb nicht "fuer
+       dich", sondern schlicht die Auswahl aus Leos Modell. #}
+    <h2>{% if mode == 'static' %}Empfehlungen der Woche{% else %}Für dich diese Woche{% endif %}</h2>
     <div class="fuer-dich-row" id="fuer-dich-row"><div class="loading">Lädt …</div></div>
   </section>
 
@@ -124,11 +149,21 @@ window.DD = {
     </div>
   </div>
 
+  {% if mode == 'static' %}
+  <p class="footnote">Stand {{ generated_at_label }} · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
+  {% else %}
   <p class="footnote">Live aus deiner eigenen Datenbank auf dem Raspberry Pi. Bewerte Events mit 👍/👎 – die „Für dich"-Auswahl lernt daraus.</p>
+  {% endif %}
 </div>
 
 
+{% if mode != 'static' %}
+{# Steht nur in der Flask-Fassung der Seite. Der Jinja-Block ist der Grund,
+   warum in der oeffentlichen Kopie nicht einmal der Code fuer eine Bewertung
+   liegt - nicht nur ein abgeschalteter Knopf, sondern gar keiner. Der Exporter
+   kopiert rating.js dementsprechend nicht mit (tools/export_static.py). #}
 <script src="static/rating.js?v={{ asset_v }}"></script>
+{% endif %}
 <script src="static/app.js?v={{ asset_v }}"></script>
 <script src="static/background.js?v={{ asset_v }}"></script>
 </body>

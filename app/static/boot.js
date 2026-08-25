@@ -20,8 +20,8 @@
 })();
 (function () {
   try {
-    var THEMES = ['elbe', 'dvb', 'anthropic', 'semper', 'neustadt'];
+    var THEMES = ['industriegelaende', 'elbe', 'neustadt', 'pappel', 'prohlis'];
     var saved = window.localStorage.getItem('dd-was-geht.theme');
-    document.documentElement.dataset.theme = THEMES.indexOf(saved) !== -1 ? saved : 'elbe';
-  } catch (e) { document.documentElement.dataset.theme = 'elbe'; }
+    document.documentElement.dataset.theme = THEMES.indexOf(saved) !== -1 ? saved : 'industriegelaende';
+  } catch (e) { document.documentElement.dataset.theme = 'industriegelaende'; }
 })();
