@@ -6,12 +6,12 @@
   var DD = window.DD;
   document.getElementById('today-label').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 
-  // Aussehen: Hintergrund-Animation. Das Theme steht fest (Industriegelaende,
-  // gesetzt in boot.js); hier wird nur das Animationsmenue gebaut und die
-  // Wahl persistiert. Der Standard (auto) ist die Signatur-Animation des
-  // Themes, das Animationsmenue kann sie ueberstimmen.
+  // Aussehen: Farbschema und Hintergrund-Animation. Das Theme-Attribut steht
+  // schon vor dem Stylesheet (Inline-Skript im <head>), hier werden nur die
+  // beiden Menues gebaut und die Wahl persistiert. Jedes Theme bringt eine
+  // Signatur-Animation mit; das Animationsmenue kann sie ueberstimmen.
   /* Im Privatmodus wirft schon der Zugriff auf localStorage. Statt das an
-     jedem der Lese- und Schreibpunkte einzeln abzufangen, steht es hier
+     jedem der sechs Lese- und Schreibpunkte einzeln abzufangen, steht es hier
      einmal: gelesen wird dann eben der Standardwert, geschrieben nichts. */
   function stored(key, fallback) {
     try { var raw = window.localStorage.getItem('dd-was-geht.' + key); return raw === null ? fallback : raw; }
@@ -28,9 +28,13 @@
     });
   }
 
-  // Signatur-Animation des festen Themes (Industriegelaende); Standard fuer
-  // "Automatisch" im Animationsmenue, siehe applyAppearance().
-  var DEFAULT_ANIM = 'nebel';
+  var THEMES = [
+    { key: 'industriegelaende', label: 'Industriegelände', swatch: '#d4652a', bg: '#17191a', anim: 'nebel' },
+    { key: 'elbe',              label: 'Elbe Dunkel',      swatch: '#4fc3ba', bg: '#14181a', anim: 'konstellation' },
+    { key: 'neustadt',          label: 'Neustadt Neon',    swatch: '#ff3d8b', bg: '#0e0e12', anim: 'wirbel' },
+    { key: 'pappel',            label: 'Pappel',           swatch: '#7fb349', bg: '#12180f', anim: 'staub' },
+    { key: 'prohlis',           label: 'Prohlis',          swatch: '#4fa8d8', bg: '#16181c', anim: 'puls' }
+  ];
   var ANIMS = [
     { key: 'auto',          label: 'Automatisch (zum Thema)' },
     { key: 'konstellation', label: 'Konstellation' },
@@ -42,8 +46,15 @@
     { key: 'aus',           label: 'Aus' }
   ];
 
+  var themeBtn = document.getElementById('theme-btn');
+  var themeMenu = document.getElementById('theme-menu');
   var bgBtn = document.getElementById('bg-btn');
   var bgMenu = document.getElementById('bg-menu');
+
+  function themeByKey(key) {
+    for (var i = 0; i < THEMES.length; i++) { if (THEMES[i].key === key) { return THEMES[i]; } }
+    return THEMES[0];
+  }
 
   function bgPref() { return stored('bg', 'auto') || 'auto'; }
 
@@ -51,9 +62,17 @@
   // Aenderung; das Hintergrund-Skript haengt an genau diesem Event.
   function applyAppearance() {
     var pref = bgPref();
-    document.documentElement.dataset.bg = pref === 'auto' ? DEFAULT_ANIM : pref;
+    var active = themeByKey(document.documentElement.dataset.theme);
+    document.documentElement.dataset.bg = pref === 'auto' ? active.anim : pref;
+    syncThemeDots();
     syncBgOpts();
     window.dispatchEvent(new CustomEvent('dt-appearance-change'));
+  }
+
+  function setTheme(key) {
+    document.documentElement.dataset.theme = key;
+    store('theme', key);
+    applyAppearance();
   }
 
   function setBg(key) {
@@ -61,10 +80,27 @@
     applyAppearance();
   }
 
+  function syncThemeDots() {
+    var active = document.documentElement.dataset.theme;
+    press('#theme-menu .theme-dot', function (dot) { return dot.dataset.theme === active; });
+  }
+
   function syncBgOpts() {
     var pref = bgPref();
     press('#bg-menu .bg-opt', function (opt) { return opt.dataset.anim === pref; });
   }
+
+  THEMES.forEach(function (t) {
+    var dot = document.createElement('button');
+    dot.className = 'theme-dot';
+    dot.dataset.theme = t.key;
+    dot.title = t.label;
+    dot.style.background = 'linear-gradient(135deg,' + t.swatch + ' 50%,' + t.bg + ' 50%)';
+    dot.innerHTML = '<span class="sr-only"></span>';
+    dot.querySelector('.sr-only').textContent = t.label;
+    dot.addEventListener('click', function () { setTheme(t.key); closeMenus(); });
+    themeMenu.appendChild(dot);
+  });
 
   ANIMS.forEach(function (a) {
     var opt = document.createElement('button');
@@ -100,6 +136,7 @@
     if (!wasOpen) { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
   }
 
+  registerMenu(themeMenu, themeBtn);
   registerMenu(bgMenu, bgBtn);
   // Der Filterblock laeuft in einer eigenen IIFE und meldet sein Panel hier an.
   window.ddRegisterMenu = registerMenu;

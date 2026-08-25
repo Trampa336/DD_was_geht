@@ -1,30 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,500&family=Oswald:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Oswald:wght@500;600&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Space+Grotesk:wght@500;600&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Big+Shoulders+Display:wght@600;700&display=swap');
 
-/* Ein festes Theme (Industriegelaende). Der erste Block sind die gemeinsamen
-   Grundwerte, darunter steht nur noch, was das Theme davon abweichend setzt.
-   --font-mono ist ueberall dieselbe Schrift wie --font-body; getrennt bleiben
-   sie, weil die Regeln unten die eine als Lauftext und die andere fuer Zahlen
-   und Kuerzel meinen. Die Signatur-Animation des Themes steht als
-   DEFAULT_ANIM in app.js. */
+/* Fuenf Dark-Themes. Was ein Theme ausmacht, sind allein diese Tokens - der
+   Rest des Stylesheets kennt keinen Themenamen. Der erste Block sind die
+   gemeinsamen Grundwerte und zugleich Industriegelaende (das Standardtheme),
+   darunter steht je Theme nur noch, was bei ihm anders ist. --font-mono ist
+   ueberall dieselbe Schrift wie --font-body; getrennt bleiben sie, weil die
+   Regeln unten die eine als Lauftext und die andere fuer Zahlen und Kuerzel
+   meinen. Welche Animation zu welchem Theme gehoert, steht in der
+   THEMES-Liste in app.js. */
 
 :root {
-  --bg:#1a1915; --surface:#211f1a; --surface-raised:#262420;
-  --ink:#eeeadf; --ink-soft:#b3ab9c; --ink-faint:#79705f;
-  --stone:#4a4438; --stone-dark:#6b6253;
-  --elbe:#da7756; --elbe-strong:#e89376; --elbe-soft:#3a2a20; --line:#332f28;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
-  --font-display:'Newsreader',Georgia,serif; --font-body:'IBM Plex Mono',ui-monospace,monospace; --font-mono:var(--font-body);
-  --display-style:italic; --display-tracking:-.01em; --display-scale:1;
-}
-
-/* Industriegelaende: Stahlgrau, Rostorange, kantige Oswald-Versalien */
-:root[data-theme="industriegelaende"] {
   --bg:#17191a; --surface:#1e2123; --surface-raised:#242829;
   --ink:#e4e6e3; --ink-soft:#9aa09c; --ink-faint:#656b67;
   --stone:#3a3f3d; --stone-dark:#565d5a;
   --elbe:#d4652a; --elbe-strong:#f08545; --elbe-soft:#2e1a0c; --line:#2a2e2c;
-  --font-display:'Oswald',Impact,sans-serif;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  --font-display:'Oswald',Impact,sans-serif; --font-body:'IBM Plex Mono',ui-monospace,monospace; --font-mono:var(--font-body);
   --display-style:normal; --display-tracking:.02em; --display-scale:1.05;
+}
+
+/* Elbe Dunkel: warmes Nahe-Schwarz, Elbe-Tuerkis, ruhige Fraunces-Kursive */
+:root[data-theme="elbe"] {
+  --bg:#14181a; --surface:#1b2022; --surface-raised:#20262a;
+  --ink:#ede8dc; --ink-soft:#a79e8c; --ink-faint:#6f6858;
+  --stone:#4a443a; --stone-dark:#6b6255;
+  --elbe:#4fc3ba; --elbe-strong:#7ad9d1; --elbe-soft:#1c3230;
+  --line:#2b3134; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  --font-display:'Fraunces',Georgia,serif;
+  --display-style:italic; --display-tracking:-.01em; --display-scale:1;
+}
+
+/* Neustadt Neon: kuehles Schwarz, Magenta, technische Space-Familie */
+:root[data-theme="neustadt"] {
+  --bg:#0e0e12; --surface:#16161c; --surface-raised:#1c1c24;
+  --ink:#e8e8f0; --ink-soft:#9d9db0; --ink-faint:#62627a;
+  --stone:#363648; --stone-dark:#55556e;
+  --elbe:#ff3d8b; --elbe-strong:#ff7ab0; --elbe-soft:#3a0f24; --line:#262633;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  --font-display:'Space Grotesk',system-ui,sans-serif; --font-body:'Space Mono',ui-monospace,monospace;
+  --display-style:normal; --display-tracking:-.02em; --display-scale:.94;
+}
+
+/* Pappel: waldiges Gruen-Schwarz, Laubgruen, organische Cormorant-Kursive */
+:root[data-theme="pappel"] {
+  --bg:#12180f; --surface:#182015; --surface-raised:#1e2819;
+  --ink:#e6ead9; --ink-soft:#a2ac8f; --ink-faint:#6b7458;
+  --stone:#3d4630; --stone-dark:#5c6849;
+  --elbe:#7fb349; --elbe-strong:#9ecb6c; --elbe-soft:#223018; --line:#26301e;
+  --font-display:'Cormorant Garamond',Georgia,serif;
+  --display-style:italic; --display-tracking:0; --display-scale:1.04;
+}
+
+/* Prohlis: kuehles Beton-Blaugrau, Plattenbau-Zyan, wuchtige Big-Shoulders-Grotesk */
+:root[data-theme="prohlis"] {
+  --bg:#16181c; --surface:#1d2025; --surface-raised:#23272d;
+  --ink:#e2e5e8; --ink-soft:#9aa3ab; --ink-faint:#636b72;
+  --stone:#3a4048; --stone-dark:#565f68;
+  --elbe:#4fa8d8; --elbe-strong:#7cc3ea; --elbe-soft:#12262f; --line:#262b31;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  --font-display:'Big Shoulders Display',Impact,sans-serif;
+  --display-style:normal; --display-tracking:.01em; --display-scale:1.02;
 }
 
 * { box-sizing: border-box; }
@@ -51,6 +86,10 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 .theme-btn:hover { color:var(--elbe-strong); border-color:var(--elbe); }
 .theme-menu { position:absolute; top:34px; right:0; z-index:60; display:flex; gap:7px; padding:8px; background:var(--surface-raised); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); }
 .theme-menu[hidden] { display:none; }
+.theme-dot { appearance:none; cursor:pointer; width:22px; height:22px; padding:0; border-radius:50%; border:1px solid var(--line); transition:transform .12s ease; }
+.theme-dot:hover { transform:scale(1.12); }
+.theme-dot[aria-pressed="true"] { outline:2px solid var(--elbe); outline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 .switches { display:flex; gap:6px; }
 
 /* Das Animationsmenue ist eine Textliste statt Farbpunkte - Rahmen, Schatten

@@ -4,7 +4,7 @@
    alle Geraete die Seite einmal geladen haben. */
 (function () {
   try {
-    ['bg', 'cats', 'filters'].forEach(function (name) {
+    ['theme', 'bg', 'cats', 'filters'].forEach(function (name) {
       var alt = window.localStorage.getItem('dresden-takt.' + name);
       if (alt !== null && window.localStorage.getItem('dd-was-geht.' + name) === null) {
         window.localStorage.setItem('dd-was-geht.' + name, alt);
@@ -18,4 +18,10 @@
       .forEach(function (key) { window.localStorage.removeItem(key); });
   } catch (e) { /* Privatmodus o.ae. - dann eben Standardwerte */ }
 })();
-document.documentElement.dataset.theme = 'industriegelaende';
+(function () {
+  try {
+    var THEMES = ['industriegelaende', 'elbe', 'neustadt', 'pappel', 'prohlis'];
+    var saved = window.localStorage.getItem('dd-was-geht.theme');
+    document.documentElement.dataset.theme = THEMES.indexOf(saved) !== -1 ? saved : 'industriegelaende';
+  } catch (e) { document.documentElement.dataset.theme = 'industriegelaende'; }
+})();

@@ -30,15 +30,15 @@ window.DD = {
      EXCLUDED_CATEGORIES), im static-Modus muss das der Browser uebernehmen. */
   excluded: ["familie", "fuehrungen"],
   // Cache-Buster fuer data/index.json: aendert sich mit jedem Export.
-  dataVersion: "2026-08-26T00:24:48",
+  dataVersion: "2026-08-26T01:01:04",
   /* Ab diesem Score wird eine Zeile als Treffer hervorgehoben
      (config.HIGHLIGHT_SCORE, aus der .env). */
   highlightScore: 70
 };
 </script>
 
-<script src="static/boot.js?v=1d4a63b6"></script>
-<link rel="stylesheet" href="static/app.css?v=1d4a63b6">
+<script src="static/boot.js?v=f0888348"></script>
+<link rel="stylesheet" href="static/app.css?v=f0888348">
 </head>
 <body>
 <canvas id="bg-canvas" aria-hidden="true"></canvas>
@@ -48,6 +48,15 @@ window.DD = {
     <div class="masthead-right">
       <div class="masthead-meta"><div class="city">Elbflorenz · Sachsen</div><div id="today-label"></div></div>
       <div class="switches">
+        <div class="theme-switch">
+          <button class="theme-btn" id="theme-btn" aria-haspopup="true" aria-expanded="false" aria-label="Farbschema wählen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"></path>
+            </svg>
+          </button>
+          <div class="theme-menu" id="theme-menu" role="group" aria-label="Farbschema" hidden></div>
+        </div>
         <div class="theme-switch">
           <button class="theme-btn" id="bg-btn" aria-haspopup="true" aria-expanded="false" aria-label="Hintergrund-Animation wählen">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
@@ -158,13 +167,13 @@ window.DD = {
   </div>
 
   
-  <p class="footnote">Stand 26.08.2026, 00:24 · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
+  <p class="footnote">Stand 26.08.2026, 01:01 · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
   
 </div>
 
 
 
-<script src="static/app.js?v=1d4a63b6"></script>
-<script src="static/background.js?v=1d4a63b6"></script>
+<script src="static/app.js?v=f0888348"></script>
+<script src="static/background.js?v=f0888348"></script>
 </body>
 </html>
