@@ -595,22 +595,19 @@ def _successful_run_cutoff(conn, source, threshold_runs, min_span=MIN_CUTOFF_SPA
     return None
 
 
-def find_orphaned_events(conn, today, threshold_runs=3):
-    """Zukuenftige Events je Quelle, die ihre eigene Quelle seit threshold_runs
-    erfolgreichen Laeufen nicht mehr geliefert hat.
+def _healthy_sources(conn, threshold_runs):
+    """Quellen, deren Zustand ueberhaupt eine Aussage ueber Verwaisen zulaesst,
+    je mit ihrem Cutoff.
 
-    Zwei Schutzklauseln, beide zwingend:
-    - Nur date >= today: vergangene Events sind historischer Bestand und durch
-      Re-Scraping nicht wiederherstellbar - die werden hier nie angefasst.
-    - Nur Quellen, deren LETZTER Lauf laut scrape_runs ok=1 war: sonst wuerde
-      ein Quellen-Ausfall (der Fall, den scrape_runs erst sichtbar macht) die
-      komplette Zukunft dieser Quelle als "verwaist" markieren, obwohl sie nur
-      gerade nicht erreichbar ist.
-
-    Gibt ein dict source -> Liste von Event-Zeilen zurueck (nur Quellen mit
-    Treffern).
+    Zwei Bedingungen, beide aus der alten Fassung uebernommen, nur nicht mehr
+    pro Event-Zeile ausgewertet:
+    - der LETZTE Lauf war ok. Eine gerade ausgefallene Quelle darf nichts als
+      verwaist erklaeren, sie liefert ja nur voruebergehend nichts.
+    - _successful_run_cutoff() liefert einen Zeitpunkt. Fehlt die Historie
+      (Zeilen ODER Zeitspanne), laesst sich "verwaist" nicht von "laeuft erst
+      seit kurzem" unterscheiden - dann urteilt diese Quelle gar nicht.
     """
-    result = {}
+    healthy = {}
     for source in config.SOURCE_LABELS:
         latest = _last_run(conn, source)
         if not latest or not latest["ok"]:
@@ -618,19 +615,102 @@ def find_orphaned_events(conn, today, threshold_runs=3):
         cutoff = _successful_run_cutoff(conn, source, threshold_runs)
         if cutoff is None:
             continue
-        rows = conn.execute(
-            """SELECT uid, title, date, time, venue, last_seen FROM events
-               WHERE source = ? AND date >= ? AND last_seen < ?
-               ORDER BY date, time""",
-            (source, today, cutoff),
-        ).fetchall()
-        if rows:
-            result[source] = [dict(r) for r in rows]
+        healthy[source] = cutoff
+    return healthy
+
+
+def find_orphaned_events(conn, today, threshold_runs=3):
+    """Zukuenftige Events, die KEINE der aktuell urteilsfaehigen Quellen mehr
+    liefert.
+
+    Maßgeblich ist event_sources, nicht events.source. Grund (P3, P3b): in
+    events.source steht, wer die Zeile ZUERST angelegt hat, nicht wer sie
+    zuletzt gemeldet hat - liefert ein Aggregator ein Event vor dem Haus, traegt
+    die Zeile fuer immer den Aggregator, obwohl das Haus sie jeden Lauf frisch
+    meldet. Solange die Verwaisungs-Erkennung nach events.source gruppierte,
+    entschied also eine reine Anzeige-Spalte mit, was geloescht wird. Genau
+    diese Kopplung loest diese Funktion auf: events.source ist wieder nur
+    Beschriftung und erreicht keinen loeschenden Pfad mehr (siehe §4.7 des
+    Plans).
+
+    Eine Zukunfts-Zeile gilt als verwaist, wenn ALLE aktuell urteilsfaehigen
+    Quellen, die sie je geliefert haben, sie seit ihrem jeweiligen Cutoff nicht
+    mehr gemeldet haben - gemessen an event_sources.last_seen, das pro Quelle
+    gefuehrt wird, waehrend events.last_seen nur die jeweils letzte beliebige
+    Quelle festhaelt.
+
+    ZWEI Nicht-Leerheits-Schutzklauseln, beide zwingend, weil "alle X sind
+    veraltet" ueber einer LEEREN Menge X wahr ist und die Zeile sonst
+    klaglos zum Loeschen freigeben wuerde:
+    - Zeilen ohne jeden event_sources-Eintrag werden nie markiert. Auf der
+      Live-DB gibt es davon aktuell keine einzige (5789/5789 haben Eintraege,
+      geprueft 2026-09-10) - upsert_events ruft _record_source() bedingungslos
+      als erstes auf, und init_db() traegt Altbestand nach. Die Klausel steht
+      trotzdem hier: sie kostet nichts und faengt jeden kuenftigen Schreibpfad
+      ab, der die Tabelle vergisst.
+    - Zeilen, deren saemtliche Quellen gerade NICHT urteilsfaehig sind, werden
+      ebenfalls nie markiert. Das ist der Fall "Aggregator ausgefallen" bei
+      Zeilen, die nur dieser Aggregator liefert: niemand kann sagen, ob das
+      Event weg ist oder nur die Quelle. Die alte Fassung fing das ueber ihre
+      Schleife ueber Quellen mit ab; ohne diese Klausel waere die neue Fassung
+      an dieser Stelle SCHAERFER als die alte (gemessen: 9 statt 0, siehe
+      Bericht zu P3b-1).
+
+    Nur date >= today: vergangene Events sind historischer Bestand und durch
+    Re-Scraping nicht wiederherstellbar - die werden hier nie angefasst.
+
+    Gibt ein dict zurueck: Schluessel ist die aus event_sources abgeleitete
+    Quellen-Signatur der Zeile ("sektor+kulturkalender"), Wert die Liste der
+    Event-Zeilen. Der Schluessel dient nur dem Log; er kommt bewusst NICHT aus
+    events.source.
+    """
+    healthy = _healthy_sources(conn, threshold_runs)
+    if not healthy:
+        return {}
+
+    rows = conn.execute(
+        """SELECT e.uid, e.title, e.date, e.time, e.venue, e.last_seen,
+                  s.source AS es_source, s.last_seen AS es_last_seen
+             FROM events e
+             JOIN event_sources s ON s.event_uid = e.uid
+            WHERE e.date >= ?
+            ORDER BY e.date, e.time, e.uid""",
+        (today,),
+    ).fetchall()
+
+    per_event = {}
+    order = []
+    for row in rows:
+        if row["uid"] not in per_event:
+            per_event[row["uid"]] = {"row": row, "sources": {}}
+            order.append(row["uid"])
+        per_event[row["uid"]]["sources"][row["es_source"]] = row["es_last_seen"]
+
+    result = {}
+    for uid in order:
+        entry = per_event[uid]
+        sources = entry["sources"]
+        judging = {s: ls for s, ls in sources.items() if s in healthy}
+        if not judging:
+            # Schutzklausel 2 (und, ueber den JOIN, auch 1).
+            continue
+        if not all(last_seen < healthy[s] for s, last_seen in judging.items()):
+            continue
+        row = entry["row"]
+        signature = "+".join(sorted(sources))
+        result.setdefault(signature, []).append({
+            "uid": uid, "title": row["title"], "date": row["date"],
+            "time": row["time"], "venue": row["venue"],
+            "last_seen": row["last_seen"], "sources": signature,
+        })
     return result
 
 
 def _delete_orphaned_event(conn, source, row):
-    """Loescht EINE verwaiste Zeile - mit den drei Schutzklauseln, die der
+    """AKTUELL NICHT AUFGERUFEN - siehe ORPHAN_DELETION_DISABLED weiter unten.
+    Bewusst stehengelassen, weil P3b-3 sie wieder scharf schaltet.
+
+    Loescht EINE verwaiste Zeile - mit den drei Schutzklauseln, die der
     Dry-Run nicht brauchte, weil er nie wirklich loeschte.
 
     - Eine Zeile mit Reaktion wird NIE geloescht: data/ enthaelt die einzige
@@ -666,43 +746,77 @@ def _delete_orphaned_event(conn, source, row):
     return True
 
 
+# ===========================================================================
+# ABSICHT, KEIN BUG: Loeschen ist bewusst abgeschaltet (Packet P3b-1).
+# ---------------------------------------------------------------------------
+# expire_orphaned_events() MELDET ab hier nur noch, was es loeschen wuerde, und
+# loescht nichts - auch nicht mit dry_run=False. Das ist eine Produkt-
+# entscheidung von David, keine Notloesung und kein vergessener Schalter:
+#
+#   Der Erkennungs-Pfad (find_orphaned_events) ist gerade von events.source auf
+#   event_sources umgestellt worden, also KORREKTER geworden. Eine Aenderung,
+#   die einen loeschenden Pfad korrekter macht, und eine Aenderung, die ihn
+#   scharf schaltet, sind zwei verschiedene Aenderungen; dazwischen gehoert eine
+#   Messung. Erschwerend: laut Plan-§7 hat dieser Loeschpfad in der Produktion
+#   noch nie gefeuert - das naechste Deploy (PD) waere zugleich das erste Mal
+#   ueberhaupt UND das erste Mal mit der neuen, breiteren Erkennung, und 45
+#   Minuten spaeter veroeffentlicht ein Cron das Ergebnis oeffentlich.
+#
+# Deshalb: erst mitschreiben, was geloescht WUERDE, dann anhand echter Laeufe
+# urteilen. Das Log dieser Funktion ist die vollstaendige Eingabe fuer Packet
+# P3b-3, das den Schalter wieder entfernt.
+#
+# ZUM SCHARFSCHALTEN (nur in P3b-3, nach >= 3 beobachteten Laeufen auf CT103):
+# die Konstante unten auf False setzen und diesen Block loeschen.
+# NICHT vorher, und nicht "weil dry_run=False uebergeben wird".
+# ===========================================================================
+ORPHAN_DELETION_DISABLED = True
+
+
 def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
-    """Meldet verwaiste Zukunfts-Events (siehe find_orphaned_events) und
-    loescht sie, sofern dry_run=False - mit Anzahl und ein paar Beispieltiteln
-    je Quelle im Log, dazu je geloeschter (oder uebersprungener) Zeile eine
-    eigene Zeile mit ihrer uid, dem einzigen Weg, eine Loeschung nachzuvollziehen.
+    """Meldet verwaiste Zukunfts-Events (siehe find_orphaned_events).
+
+    Loescht derzeit NICHTS, unabhaengig von dry_run - siehe der Block ueber
+    ORPHAN_DELETION_DISABLED. Der Parameter dry_run bleibt in der Signatur
+    erhalten, damit die Aufrufer (scheduler.run_scrape) unveraendert bleiben und
+    P3b-3 nur die Konstante entfernen muss.
+
+    Geloggt wird pro Quellen-Signatur die Anzahl mit ein paar Beispieltiteln und
+    zusaetzlich je Zeile eine eigene Zeile mit uid, Titel, Datum und den Quellen,
+    die sie je geliefert haben - das ist die Eingabe fuer P3b-3.
     """
     orphaned = find_orphaned_events(conn, today, threshold_runs)
     total = sum(len(rows) for rows in orphaned.values())
     if not total:
-        logger.info("Verwaiste Events: keine gefunden (Schwelle %d Laeufe).", threshold_runs)
+        logger.info(
+            "Verwaiste Events: keine gefunden (Schwelle %d Laeufe, Loeschen "
+            "abgeschaltet).", threshold_runs,
+        )
         return orphaned
 
-    for source, rows in orphaned.items():
-        label = config.SOURCE_LABELS.get(source, source)
+    for signature, rows in orphaned.items():
         samples = ", ".join(f'"{r["title"]}"' for r in rows[:3])
         logger.warning(
-            "Verwaiste Events bei %s: %d seit %d erfolgreichen Laeufen nicht "
-            "mehr gesehen. Beispiele: %s",
-            label, len(rows), threshold_runs, samples,
+            "WUERDE LOESCHEN - verwaiste Events aus %s: %d seit %d "
+            "erfolgreichen Laeufen von keiner urteilsfaehigen Quelle mehr "
+            "geliefert. Beispiele: %s",
+            signature, len(rows), threshold_runs, samples,
         )
+        for row in rows:
+            logger.warning(
+                "WUERDE LOESCHEN: %s \"%s\" (%s %s, %s) - Quellen: %s, "
+                "zuletzt gesehen %s",
+                row["uid"], row["title"], row["date"], row["time"] or "",
+                row["venue"], row["sources"], row["last_seen"],
+            )
+
     logger.warning(
-        "Verwaiste Events insgesamt: %d ueber %d Quelle(n). dry_run=%s.",
+        "WUERDE LOESCHEN insgesamt: %d Event(s) ueber %d Quellen-Signatur(en). "
+        "Es wurde NICHTS geloescht - Loeschen ist seit P3b-1 bewusst "
+        "abgeschaltet (ORPHAN_DELETION_DISABLED), scharf schalten macht P3b-3. "
+        "dry_run=%s wird dabei ignoriert.",
         total, len(orphaned), dry_run,
     )
-
-    if not dry_run:
-        for source, rows in orphaned.items():
-            for row in rows:
-                _delete_orphaned_event(conn, source, row)
-
-    return orphaned
-
-    if not dry_run:
-        raise NotImplementedError(
-            "Scharf schalten folgt in einem eigenen zweiten Commit, erst nach "
-            "einem beobachteten Dry-Run-Lauf (siehe Kommentar bei expire_orphaned_events)."
-        )
     return orphaned
 
 

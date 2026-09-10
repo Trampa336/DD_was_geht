@@ -1630,7 +1630,11 @@ with db.get_conn() as conn:
     # Die beiden "verwaist"-Zeilen kuenstlich vor die naechsten 3 erfolgreichen
     # Laeufe zurueckdatieren - "frisch-zukunft" behaelt sein last_seen von
     # gerade eben und bleibt damit nach dem letzten Lauf.
+    # Seit P3b-1 zaehlt event_sources.last_seen (pro Quelle), nicht mehr
+    # events.last_seen (nur die zuletzt beliebige Quelle) - beide zurueckdatieren.
     conn.execute("UPDATE events SET last_seen = ? WHERE uid IN (?, ?)",
+                 ("2026-08-20T09:00:00", "verwaist-zukunft", "verwaist-vergangen"))
+    conn.execute("UPDATE event_sources SET last_seen = ? WHERE event_uid IN (?, ?)",
                  ("2026-08-20T09:00:00", "verwaist-zukunft", "verwaist-vergangen"))
     for _tag in range(21, 25):
         db.record_scrape_run(conn, "azconni", f"2026-08-{_tag}T09:30:00",
@@ -1647,6 +1651,66 @@ check("find_orphaned_events: weiterhin gesehene Zeile bleibt draussen",
 check("find_orphaned_events: Quelle mit nicht-ok letztem Lauf wird uebersprungen "
       "(sonst wuerde ein Ausfall die komplette Zukunft der Quelle raeumen)",
       "sektor" not in _orphaned and "ra" not in _orphaned)
+# P3b-1: der Schluessel kommt aus event_sources, nicht aus events.source. Hier
+# hat die Zeile genau eine Quelle, beide Wege ergaeben "azconni" - deshalb wird
+# zusaetzlich geprueft, dass eine zweite, weiterhin liefernde Quelle die Zeile
+# heraushaelt UND den Schluessel aendert.
+with db.get_conn() as conn:
+    db.upsert_events(conn, [{
+        "uid": "verwaist-zukunft", "source": "kulturkalender", "date": "2026-09-01",
+        "time": "20:00", "title": "Verwaistes Zukunftsevent", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    for _tag in range(21, 25):
+        db.record_scrape_run(conn, "kulturkalender", f"2026-08-{_tag}T09:30:00",
+                             f"2026-08-{_tag}T09:30:05", ok=True, event_count=1)
+    _mit_zweiter = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+check("P3b-1: eine zweite, frisch liefernde Quelle rettet die Zeile "
+      "(azconni ist auf ihr veraltet, kulturkalender nicht)",
+      not any("verwaist-zukunft" in [r["uid"] for r in rows]
+              for rows in _mit_zweiter.values()))
+
+# Nicht-Leerheit 1: eine Zeile ganz ohne event_sources ist NICHT verwaist.
+# "alle gesunden Quellen sind veraltet" waere ueber der leeren Menge wahr.
+with db.get_conn() as conn:
+    conn.execute("DELETE FROM event_sources WHERE event_uid = 'verwaist-zukunft'")
+    _ohne_quellen = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+check("P3b-1: Zeile ohne jeden event_sources-Eintrag gilt nie als verwaist",
+      not any("verwaist-zukunft" in [r["uid"] for r in rows]
+              for rows in _ohne_quellen.values()))
+
+# Nicht-Leerheit 2: sind ALLE Quellen einer Zeile gerade ausgefallen, gilt sie
+# ebenfalls nicht als verwaist - niemand kann dann beurteilen, ob das Event weg
+# ist oder nur die Quelle. Ohne diese Klausel waere die neue Erkennung hier
+# schaerfer als die alte.
+with db.get_conn() as conn:
+    db.upsert_events(conn, [{
+        "uid": "nur-ausgefallene-quelle", "source": "azconni", "date": "2026-09-03",
+        "time": "20:00", "title": "Nur von einer ausgefallenen Quelle", "venue": "Testort",
+        "category": "musik", "raw_category": "Test",
+    }])
+    conn.execute("UPDATE event_sources SET last_seen = ? WHERE event_uid = ?",
+                 ("2026-08-20T09:00:00", "nur-ausgefallene-quelle"))
+    db.record_scrape_run(conn, "azconni", "2026-08-25T09:30:00",
+                         "2026-08-25T09:30:05", ok=False, error="simulierter Ausfall")
+    _alle_krank = db.find_orphaned_events(conn, _heute, threshold_runs=3)
+check("P3b-1: Zeile, deren einzige Quelle gerade ausgefallen ist, gilt nicht "
+      "als verwaist (leere Menge gesunder Quellen)",
+      not any("nur-ausgefallene-quelle" in [r["uid"] for r in rows]
+              for rows in _alle_krank.values()))
+# Diesen Ausfall wieder zuruecknehmen, die folgenden Blocks erwarten azconni ok.
+with db.get_conn() as conn:
+    conn.execute("DELETE FROM scrape_runs WHERE source = 'azconni' AND ok = 0")
+    conn.execute("DELETE FROM events WHERE uid = 'nur-ausgefallene-quelle'")
+    conn.execute("DELETE FROM event_sources WHERE event_uid = 'nur-ausgefallene-quelle'")
+    # verwaist-zukunft wiederherstellen: azconni veraltet, kulturkalender raus.
+    conn.execute("DELETE FROM scrape_runs WHERE source = 'kulturkalender'")
+    conn.execute(
+        """INSERT OR REPLACE INTO event_sources (event_uid, source, first_seen, last_seen)
+           VALUES ('verwaist-zukunft', 'azconni', ?, ?)""",
+        ("2026-08-20T09:00:00", "2026-08-20T09:00:00"))
+    conn.execute("DELETE FROM event_sources WHERE event_uid = 'verwaist-zukunft' "
+                 "AND source = 'kulturkalender'")
 
 with db.get_conn() as conn:
     _dry_result = db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=True)
@@ -1669,27 +1733,37 @@ with db.get_conn() as conn:
     }])
     conn.execute("UPDATE events SET last_seen = ? WHERE uid = ?",
                  ("2026-08-20T09:00:00", "verwaist-geliked"))
+    conn.execute("UPDATE event_sources SET last_seen = ? WHERE event_uid = ?",
+                 ("2026-08-20T09:00:00", "verwaist-geliked"))
     db.set_reaction(conn, "verwaist-geliked", "like")
 
-    db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
+    _gemeldet = db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
 
     def _existiert(uid):
         return conn.execute(
             "SELECT count(*) FROM events WHERE uid = ?", (uid,)).fetchone()[0] == 1
 
-    _zukunft_weg = not _existiert("verwaist-zukunft")
+    _gemeldete_uids = [r["uid"] for rows in _gemeldet.values() for r in rows]
+    _zukunft_da = _existiert("verwaist-zukunft")
     _vergangen_da = _existiert("verwaist-vergangen")
     _frisch_da = _existiert("frisch-zukunft")
     _geliked_da = _existiert("verwaist-geliked")
-    _sources_leer = conn.execute(
+    _sources_da = conn.execute(
         "SELECT count(*) FROM event_sources WHERE event_uid = 'verwaist-zukunft'"
-    ).fetchone()[0] == 0
+    ).fetchone()[0] == 1
 
-check("dry_run=False loescht die verwaiste Zukunftszeile tatsaechlich", _zukunft_weg)
+# P3b-1: Loeschen ist bewusst abgeschaltet (db.ORPHAN_DELETION_DISABLED), auch
+# bei dry_run=False. Diese Erwartungen sind gegenueber frueher umgedreht - das
+# ist die Produktentscheidung, nicht ein kaputt gewordener Test. P3b-3 dreht sie
+# zurueck, wenn der Schalter faellt.
+check("P3b-1: Loeschen ist abgeschaltet", db.ORPHAN_DELETION_DISABLED)
+check("dry_run=False meldet die verwaiste Zukunftszeile", 
+      "verwaist-zukunft" in _gemeldete_uids)
+check("dry_run=False loescht die verwaiste Zukunftszeile NICHT (abgeschaltet)", _zukunft_da)
 check("dry_run=False laesst die vergangene Zeile unangetastet", _vergangen_da)
 check("dry_run=False laesst die weiterhin gesehene Zeile stehen", _frisch_da)
 check("dry_run=False loescht eine verwaiste, aber geliked Zeile NICHT", _geliked_da)
-check("dry_run=False raeumt event_sources der geloeschten Zeile mit auf", _sources_leer)
+check("dry_run=False laesst event_sources der gemeldeten Zeile stehen", _sources_da)
 
 # Die Anzahl der Laeufe allein taugt nicht als Schwelle: Deploys und manuelle
 # Testlaeufe haeufen sich, drei davon koennen innerhalb weniger Stunden liegen.
@@ -1702,6 +1776,8 @@ with db.get_conn() as conn:
         "category": "musik", "raw_category": "Test",
     }])
     conn.execute("UPDATE events SET last_seen = ? WHERE uid = ?",
+                 ("2026-08-20T09:00:00", "verwaist-eng"))
+    conn.execute("UPDATE event_sources SET last_seen = ? WHERE event_uid = ?",
                  ("2026-08-20T09:00:00", "verwaist-eng"))
     # Drei erfolgreiche Laeufe - aber alle innerhalb von knapp vier Stunden.
     for _zeit in ("2026-08-23T08:00:00", "2026-08-23T10:00:00", "2026-08-23T11:45:00"):
