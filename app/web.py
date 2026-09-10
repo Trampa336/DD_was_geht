@@ -11,7 +11,7 @@ from datetime import date
 from flask import Flask, jsonify, render_template, request
 
 from . import config, db, feed, scoring
-from .ranges import month_range, week_range
+from .ranges import day_range, month_range, week_range
 from .scrapers import detail_fetch
 
 app = Flask(__name__)
@@ -48,6 +48,19 @@ def _range_bounds(range_key):
     return today, today
 
 
+def _requested_day():
+    """?date=YYYY-MM-DD fuer die Tagesauswahl im Kalender. Ungueltige oder
+    fehlende Werte fallen zurueck auf None, damit api_events() dann ganz normal
+    ueber range_key entscheidet."""
+    raw = request.args.get("date")
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
 def _selected_categories():
     """Mehrfachauswahl aus ?cat=musik,kultur. Unbekannte Keys fliegen raus,
     "alle" bzw. leer bedeutet: keine Auswahl (= alles, minus EXCLUDED)."""
@@ -72,7 +85,10 @@ def index():
 def api_events():
     range_key = request.args.get("range", "heute")
     categories = _selected_categories()
-    start, end = _range_bounds(range_key)
+    # Ein konkretes Datum sticht einen Reiter - der Kalender waehlt einen Tag,
+    # unabhaengig davon, welcher Reiter zuletzt aktiv war.
+    day = _requested_day()
+    start, end = day_range(day) if day else _range_bounds(range_key)
 
     # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
     # anklickt, soll sie auch dann sehen, wenn sie in EXCLUDED_CATEGORIES steht.
@@ -85,6 +101,7 @@ def api_events():
 
     return jsonify({
         "range": range_key,
+        "date": day.isoformat() if day else None,
         "categories": categories,
         "category": categories[0] if len(categories) == 1 else "alle",
         "events": events,

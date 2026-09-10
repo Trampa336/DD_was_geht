@@ -112,6 +112,12 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 .tab:hover { color:var(--ink); }
 .tab[aria-selected="true"] { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
 
+/* Natives Datumsfeld statt Reiter-Button: color-scheme sorgt dafuer, dass der
+   Browser das Kalendersymbol hell zeichnet (der Seitenhintergrund ist in jedem
+   Farbschema dunkel), sonst waere es auf dunklem Grund unsichtbar. */
+.tab-date { flex:0 0 auto; color-scheme:dark; min-width:132px; text-align:center; }
+.tab-date.is-active { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
+
 /* Eine Zeile Kategorien, rechts daneben das Filter-Menue. Die Kategorien
    brechen bewusst NICHT um: sonst waechst der Kopf der Seite je nach
    Fensterbreite auf drei Zeilen an, und genau das sollte weg. Passt die Zeile

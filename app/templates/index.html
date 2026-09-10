@@ -87,6 +87,9 @@ window.DD = {
     <button class="tab" data-range="heute" aria-selected="true">Heute</button>
     <button class="tab" data-range="woche" aria-selected="false">Diese Woche</button>
     <button class="tab" data-range="monat" aria-selected="false">Diesen Monat</button>
+    {# Eigener Tag statt Reiter: kein Rollfenster, sondern gezielt ein Datum -
+       deshalb ein natives Datumsfeld statt eines weiteren Reiters. #}
+    <input type="date" class="tab tab-date" id="date-pick" aria-label="Datum wählen">
   </div>
 
   <div class="filterbar">

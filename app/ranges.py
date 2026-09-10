@@ -14,3 +14,7 @@ def week_range(today):
 def month_range(today):
     last_day = calendar.monthrange(today.year, today.month)[1]
     return today, date(today.year, today.month, last_day)
+
+
+def day_range(day):
+    return day, day
