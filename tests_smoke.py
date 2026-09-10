@@ -1597,7 +1597,7 @@ check("scrape_health: nie gelaufene Quelle ist leer, nicht abwesend",
       _health["cybersax"]["last_run"] is None and _health["cybersax"]["ok"] is False)
 
 _health_json = web.app.test_client().get("/api/health").get_json()
-check("/api/health liefert alle acht Quellen", len(_health_json) == 8)
+check("/api/health liefert alle zehn Quellen", len(_health_json) == 10)
 check("/api/health nennt Klartext-Namen und Fehlertext",
       _health_json["ra"]["label"] == "Resident Advisor"
       and "kaputt" in _health_json["ra"]["error"])

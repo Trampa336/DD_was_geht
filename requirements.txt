@@ -7,3 +7,8 @@ beautifulsoup4==4.12.3
 # der Code automatisch auf Pythons html.parser zurück (app/scrapers/base.py).
 lxml==5.3.0
 python-dotenv==1.0.1
+# ICS-Kalender fuer groovestation und zentralwerk. recurring_ical_events loest
+# RRULE-Wiederholungen (Zentralwerks offener Chor u.ae.) direkt fuer den
+# gebrauchten Zeitraum auf, statt nur die VEVENT-Vorlagen zu liefern.
+icalendar==7.3.0
+recurring-ical-events==3.8.2

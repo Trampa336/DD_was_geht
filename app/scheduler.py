@@ -29,6 +29,8 @@ SOURCES = [
     "sektor",
     "derlude",
     "strassee",
+    "groovestation",
+    "zentralwerk",
 ]
 
 
