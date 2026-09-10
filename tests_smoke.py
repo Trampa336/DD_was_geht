@@ -1752,4 +1752,39 @@ check("Rotation behaelt genau die juengsten N Sicherungen",
                   "dd-was-geht-2026-08-06.db", "dd-was-geht-2026-08-07.db",
                   "dd-was-geht-2026-08-23.db"])
 
+# --- Straße E Mojibake-Reparatur (app/scrapers/strassee.py, P1b) ----------
+# Der Feed deklariert ISO-8859-1, mischt aber gelegentlich UTF-8-kodierte
+# Interpunktion ein - fetch_html() dekodiert alles als ISO-8859-1, wodurch
+# aus einem typografischen Apostroph sichtbarer Muell wird. Echtes Mojibake
+# nachgebaut statt getippt: UTF-8-Text mit Apostroph, dann als ISO-8859-1
+# fehldekodiert - genau das, was fetch_html() dem Parser vorlegt.
+from app.scrapers import strassee as strassee_scraper  # noqa: E402
+
+_MOJIBAKE_TITLE = "Black Celebration - Doesn\u2019t Matter".encode("utf-8").decode("iso-8859-1")
+_MOJIBAKE_DESC = "Line-up: DJ Doesn\u2019t Care".encode("utf-8").decode("iso-8859-1")
+
+STRASSEE_FIXTURE = f"""<rss><channel>
+<item>
+<title>2026-09-12, Sa : {_MOJIBAKE_TITLE}</title>
+<link>http://www.strasse-e.de/termine.php?id=101</link>
+<description>{_MOJIBAKE_DESC}</description>
+</item>
+<item>
+<title>2026-09-19, Sa : Gr\u00f6\u00dfer Bahnhof</title>
+<link>http://www.strasse-e.de/termine.php?id=102</link>
+<description>Gr\u00f6\u00dfer als sonst</description>
+</item>
+</channel></rss>"""
+
+_strassee_entries = strassee_scraper._parse_feed(STRASSEE_FIXTURE)
+_strassee_by_id = {e["url"].rsplit("=", 1)[1]: e for e in _strassee_entries}
+
+check("Strasse E: UTF-8-Mojibake im Titel repariert",
+      _strassee_by_id["101"]["title"] == "Black Celebration - Doesn\u2019t Matter")
+check("Strasse E: UTF-8-Mojibake in der Beschreibung repariert",
+      _strassee_by_id["101"]["description"] == "Line-up: DJ Doesn\u2019t Care")
+check("Strasse E: echtes ISO-8859-1 (\u00df, \u00f6) bleibt unangetastet",
+      _strassee_by_id["102"]["title"] == "Gr\u00f6\u00dfer Bahnhof"
+      and _strassee_by_id["102"]["description"] == "Gr\u00f6\u00dfer als sonst")
+
 print("\nAlle Smoke-Tests erfolgreich.")

@@ -76,6 +76,25 @@ def _clean(html_fragment):
     return re.sub(r"\s+", " ", text).strip() or None
 
 
+def _fix_mojibake(text):
+    """Der Feed deklariert ISO-8859-1, mischt an manchen Stellen aber
+    UTF-8-kodierte Interpunktion ein (z.B. eine kuratierte Ankuendigung mit
+    typografischem Apostroph) - fetch_html() dekodiert dann alles als
+    ISO-8859-1 und aus dem Apostroph wird "â" plus zwei unsichtbare
+    Kontrollzeichen ("Doesnât Matter"). Reparatur per Rueckkodierungs-Probe:
+    kodiert man den (falsch dekodierten) Text nach ISO-8859-1 zurueck, hat
+    man wieder die Original-Bytes - lassen die sich als UTF-8 dekodieren,
+    war es UTF-8-Interpunktion und das Ergebnis ist korrekt; wirft es,
+    handelte es sich um echtes ISO-8859-1 (z.B. "ß", "ü") und der Text
+    bleibt unangetastet."""
+    if not text:
+        return text
+    try:
+        return text.encode("iso-8859-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return text
+
+
 def _parse_feed(xml_text):
     """Reine Parse-Funktion (ohne Netzzugriff), damit sie testbar bleibt.
 
@@ -97,9 +116,9 @@ def _parse_feed(xml_text):
         desc_match = _DESC_RE.search(raw_item)
         entries.append({
             "date": event_date.isoformat(),
-            "title": title.strip(),
+            "title": _fix_mojibake(title.strip()),
             "url": link_match.group(1).strip(),
-            "description": _clean(desc_match.group(1)) if desc_match else None,
+            "description": _fix_mojibake(_clean(desc_match.group(1))) if desc_match else None,
         })
     return entries
 
