@@ -169,6 +169,20 @@ def _record_source(conn, event_uid, source, now):
     )
 
 
+def _source_rank(source):
+    """Rang einer Quelle nach config.SOURCE_PRIORITY - je kleiner, desto besser.
+
+    SOURCE_PRIORITY ist eine flache Liste, jede Quelle kommt genau einmal vor,
+    also ist list.index() bereits eine eindeutige Totalordnung: zwei
+    verschiedene Quellen können nie denselben Rang haben. Gemeinsam genutzt
+    von _keeps_own_url (Link-Ownership) und upsert_events (events.source-
+    Zuordnung, P3b-2) - eine dritte Kopie dieses Closures wäre der Fehler,
+    den P3b-2 explizit vermeiden sollte.
+    """
+    priority = config.SOURCE_PRIORITY
+    return priority.index(source) if source in priority else len(priority)
+
+
 def _keeps_own_url(conn, event_uid, source):
     """Darf diese Quelle den bereits gespeicherten Link überschreiben?
 
@@ -184,14 +198,22 @@ def _keeps_own_url(conn, event_uid, source):
     Ein leerer Link darf weiterhin von jeder Quelle gefüllt werden - das
     entscheidet der Aufrufer.
     """
-    priority = config.SOURCE_PRIORITY
-
-    def rank(name):
-        return priority.index(name) if name in priority else len(priority)
-
-    return rank(source) <= min(
-        (rank(s) for s in sources_for_event(conn, event_uid)), default=rank(source)
+    return _source_rank(source) <= min(
+        (_source_rank(s) for s in sources_for_event(conn, event_uid)),
+        default=_source_rank(source),
     )
+
+
+def _best_source(conn, event_uid):
+    """Die bestplatzierte Quelle unter allen, die diesen Eintrag je geliefert
+    haben (event_sources) - das, was events.source eigentlich zeigen sollte.
+
+    _source_rank ist eine Totalordnung (jede Quelle hat einen eindeutigen
+    Index in SOURCE_PRIORITY), also ist min() hier bereits deterministisch:
+    zwei Quellen können nicht denselben Rang teilen. min() mit key bricht
+    Gleichstand ohnehin über den ersten Treffer in Auflistungsreihenfolge -
+    sources_for_event sortiert nach first_seen, also stabil pro Zeile."""
+    return min(sources_for_event(conn, event_uid), key=_source_rank)
 
 
 def upsert_events(conn, events):
@@ -210,12 +232,17 @@ def upsert_events(conn, events):
             url = e.get("url")
             if url and existing["url"] and not _keeps_own_url(conn, e["uid"], e["source"]):
                 url = None
+            # source neu bestimmen (P3b-2): _record_source() oben hat die
+            # aktuelle Quelle bereits in event_sources eingetragen, also
+            # reicht danach die bestplatzierte Quelle über ALLE Melder zu
+            # nehmen - nicht die, die zuerst inserted hat.
+            best_source = _best_source(conn, e["uid"])
             # COALESCE: Ein normaler Kulturkalender-Lauf liefert für die
             # Detail-Felder None - das darf einen bereits nachgeladenen Detail-
             # Cache nicht wieder ausnullen. Rauze liefert sie bei jedem Lauf
             # frisch mit und überschreibt damit bewusst (z.B. "ausverkauft").
             conn.execute(
-                """UPDATE events SET last_seen = ?,
+                """UPDATE events SET last_seen = ?, source = ?,
                      url = COALESCE(?, url),
                      image_url = COALESCE(?, image_url),
                      price_text = COALESCE(?, price_text),
@@ -223,7 +250,7 @@ def upsert_events(conn, events):
                      detail_fetched_at = COALESCE(?, detail_fetched_at)
                    WHERE uid = ?""",
                 (
-                    now, url, e.get("image_url"), e.get("price_text"),
+                    now, best_source, url, e.get("image_url"), e.get("price_text"),
                     e.get("description"), e.get("detail_fetched_at"), e["uid"],
                 ),
             )
