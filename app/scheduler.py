@@ -1,4 +1,5 @@
 """APScheduler-Jobs: periodischer Hintergrund-Scrape und taegliche Sicherung."""
+import importlib
 import logging
 from datetime import date, datetime, timedelta
 
@@ -6,7 +7,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from . import backup, config, db, dedup
-from .scrapers import azconni, cybersax, kulturkalender, ra, rauze, sektor
 
 logger = logging.getLogger("dd-was-geht.scheduler")
 
@@ -16,13 +16,17 @@ logger = logging.getLogger("dd-was-geht.scheduler")
 # try/except" versprach. Ausgerechnet kulturkalender liefert rund drei Viertel
 # aller Zeilen - eine Exception dort riss den kompletten Lauf mit. Ueber eine
 # Liste kann eine neue Quelle gar nicht erst ungeschuetzt dazukommen.
+#
+# Nur Slugs, keine Modul-Importe: ein fehlender Dependency-Import darf beim
+# Programmstart nicht den ganzen Container mitreissen. Der Import passiert
+# jetzt innerhalb des try/except in run_scrape, pro Quelle isoliert.
 SOURCES = [
-    ("kulturkalender", kulturkalender),
-    ("rauze", rauze),
-    ("ra", ra),
-    ("cybersax", cybersax),
-    ("azconni", azconni),
-    ("sektor", sektor),
+    "kulturkalender",
+    "rauze",
+    "ra",
+    "cybersax",
+    "azconni",
+    "sektor",
 ]
 
 
@@ -30,10 +34,11 @@ def run_scrape(days_ahead=31):
     today = date.today()
     end = today + timedelta(days=days_ahead)
     events = []
-    for name, module in SOURCES:
+    for name in SOURCES:
         label = config.SOURCE_LABELS.get(name, name)
         started_at = datetime.utcnow().isoformat()
         try:
+            module = importlib.import_module(f".scrapers.{name}", package="app")
             found = module.scrape_range(today, end)
         except Exception as exc:
             logger.exception("%s fehlgeschlagen - Lauf geht weiter.", label)
