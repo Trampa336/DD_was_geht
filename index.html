@@ -25,20 +25,20 @@ window.DD = {
                   Empfehlungszeile zeigt also dieselbe Auswahl wie im Heimnetz. */
   mode: "static",
   categories: {"familie": "Familie \u0026 Kinder", "fuehrungen": "F\u00fchrungen \u0026 Touren", "kultur": "Kultur \u0026 B\u00fchne", "musik": "Musik \u0026 Nightlife", "outdoor": "Feste \u0026 M\u00e4rkte", "sonstiges": "Weiteres", "sport": "Sport \u0026 Bewegung"},
-  sources: {"azconni": "AZ Conni", "cybersax": "SAX Terminal", "kulturkalender": "Kulturkalender", "ra": "Resident Advisor", "rauze": "Rauze", "sektor": "Sektor Evolution"},
+  sources: {"azconni": "AZ Conni", "cybersax": "SAX Terminal", "derlude": "Der Lude", "groovestation": "GrooveStation", "kulturkalender": "Kulturkalender", "ra": "Resident Advisor", "rauze": "Rauze", "sektor": "Sektor Evolution", "strassee": "Stra\u00dfe E", "zentralwerk": "Zentralwerk"},
   /* Im api-Modus filtert der Server (web._selected_categories/
      EXCLUDED_CATEGORIES), im static-Modus muss das der Browser uebernehmen. */
   excluded: ["familie", "fuehrungen"],
   // Cache-Buster fuer data/index.json: aendert sich mit jedem Export.
-  dataVersion: "2026-09-10T03:38:47",
+  dataVersion: "2026-09-10T18:23:01",
   /* Ab diesem Score wird eine Zeile als Treffer hervorgehoben
      (config.HIGHLIGHT_SCORE, aus der .env). */
   highlightScore: 70
 };
 </script>
 
-<script src="static/boot.js?v=f0888348"></script>
-<link rel="stylesheet" href="static/app.css?v=f0888348">
+<script src="static/boot.js?v=df91dc54"></script>
+<link rel="stylesheet" href="static/app.css?v=df91dc54">
 </head>
 <body>
 <canvas id="bg-canvas" aria-hidden="true"></canvas>
@@ -82,6 +82,8 @@ window.DD = {
     <button class="tab" data-range="heute" aria-selected="true">Heute</button>
     <button class="tab" data-range="woche" aria-selected="false">Diese Woche</button>
     <button class="tab" data-range="monat" aria-selected="false">Diesen Monat</button>
+    
+    <input type="date" class="tab tab-date" id="date-pick" aria-label="Datum wählen">
   </div>
 
   <div class="filterbar">
@@ -137,6 +139,14 @@ window.DD = {
             
             <button class="chip chip-src" data-src="sektor" aria-pressed="true">Sektor Evolution</button>
             
+            <button class="chip chip-src" data-src="derlude" aria-pressed="true">Der Lude</button>
+            
+            <button class="chip chip-src" data-src="strassee" aria-pressed="true">Straße E</button>
+            
+            <button class="chip chip-src" data-src="groovestation" aria-pressed="true">GrooveStation</button>
+            
+            <button class="chip chip-src" data-src="zentralwerk" aria-pressed="true">Zentralwerk</button>
+            
           </div>
         </div>
         <button class="chip chip-reset" id="chip-reset" hidden>Auswahl zurücksetzen</button>
@@ -167,13 +177,13 @@ window.DD = {
   </div>
 
   
-  <p class="footnote">Stand 10.09.2026, 03:38 · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
+  <p class="footnote">Stand 10.09.2026, 18:23 · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
   
 </div>
 
 
 
-<script src="static/app.js?v=f0888348"></script>
-<script src="static/background.js?v=f0888348"></script>
+<script src="static/app.js?v=df91dc54"></script>
+<script src="static/background.js?v=df91dc54"></script>
 </body>
 </html>

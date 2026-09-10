@@ -161,6 +161,7 @@
   var listEl = document.getElementById('list');
   var pickRow = document.getElementById('fuer-dich-row');
   var currentRange = 'heute';
+  var selectedDate = null;  // gesetzt ueberstimmt currentRange: ein konkreter Tag statt Rollfenster
   var selectedCats = [];  // leer = "Alle" (ohne die per EXCLUDED_CATEGORIES ausgeblendeten)
 
   // Sichtbarkeits-Schalter. Anders als die Kategorien laufen die NICHT gegen die
@@ -287,12 +288,12 @@
      danach dieselben Filter anwenden, die im api-Modus in SQL stehen
      (db.events_for_range + web._selected_categories). Doppelungen und die
      ongoing-Markierung hat schon der Exporter erledigt. */
-  function staticEvents(range, cats) {
+  function staticEvents(days, cats) {
     return staticIndex().then(function (idx) {
       var versions = {};
       idx.days.forEach(function (d) { versions[d.date] = d.v; });
       // Tage ohne Datei (Seite laenger nicht aktualisiert) bleiben einfach leer.
-      var wanted = rangeDays(range).filter(function (d) { return d in versions; });
+      var wanted = days.filter(function (d) { return d in versions; });
       return Promise.all(wanted.map(function (d) { return loadDay(d, versions[d]); }));
     }).then(function (chunks) {
       var events = [];
@@ -453,7 +454,7 @@
      Events der naechsten sieben Tage. Der Score kommt fertig aus den
      Tagesdateien, gerechnet auf dem Pi - hier wird nur sortiert. */
   function staticPicks() {
-    return staticEvents('woche', selectedCats).then(function (events) {
+    return staticEvents(rangeDays('woche'), selectedCats).then(function (events) {
       events.sort(function (a, b) { return b.score - a.score; });
       return { events: events.slice(0, 8) };
     });
@@ -469,13 +470,15 @@
 
   function eventSource(what) {
     if (MODE === 'static') {
-      return what === 'picks'
-        ? staticPicks()
-        : staticEvents(currentRange, selectedCats).then(function (events) { return { events: events }; });
+      if (what === 'picks') { return staticPicks(); }
+      var days = selectedDate ? [selectedDate] : rangeDays(currentRange);
+      return staticEvents(days, selectedCats).then(function (events) { return { events: events }; });
     }
-    return fetchJson(what === 'picks'
-      ? '/api/fuer-dich?cat=' + encodeURIComponent(catQuery())
-      : '/api/events?range=' + currentRange + '&cat=' + encodeURIComponent(catQuery()));
+    if (what === 'picks') {
+      return fetchJson('/api/fuer-dich?cat=' + encodeURIComponent(catQuery()));
+    }
+    var query = selectedDate ? 'date=' + selectedDate : 'range=' + currentRange;
+    return fetchJson('/api/events?' + query + '&cat=' + encodeURIComponent(catQuery()));
   }
 
   function loadPicks() {
@@ -616,11 +619,27 @@
 
   // Die Reiter melden ihren Zustand als aria-selected, nicht als aria-pressed:
   // eine Auswahl aus dreien, kein Schalter. Deshalb nicht ueber press().
-  onClick('.tab', function (tab) {
-    document.querySelectorAll('.tab').forEach(function (other) {
+  onClick('.tab[data-range]', function (tab) {
+    document.querySelectorAll('.tab[data-range]').forEach(function (other) {
       other.setAttribute('aria-selected', other === tab ? 'true' : 'false');
     });
     currentRange = tab.dataset.range;
+    // Ein Reiter waehlt wieder ein Rollfenster - ein vorher gesetztes Datum
+    // gilt dann nicht mehr, sonst wuerden Reiter und Datumsfeld widersprechen.
+    selectedDate = null;
+    datePickEl.value = '';
+    datePickEl.classList.remove('is-active');
+    loadList();
+  });
+
+  var datePickEl = document.getElementById('date-pick');
+  datePickEl.addEventListener('change', function () {
+    if (!datePickEl.value) { return; }
+    document.querySelectorAll('.tab[data-range]').forEach(function (tab) {
+      tab.setAttribute('aria-selected', 'false');
+    });
+    selectedDate = datePickEl.value;
+    datePickEl.classList.add('is-active');
     loadList();
   });
 
