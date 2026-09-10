@@ -27,6 +27,8 @@ SOURCES = [
     "cybersax",
     "azconni",
     "sektor",
+    "derlude",
+    "strassee",
 ]
 
 

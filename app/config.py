@@ -68,7 +68,7 @@ RA_AREA_ID = 150
 # nachtragen, weil die Tagesseite das url-Feld ja schon belegt. Der Gewinn
 # dieser Quelle ist ihre Abdeckung (Laeden, die sonst niemand listet), nicht
 # die Qualitaet der einzelnen Zeile - und Abdeckung braucht keine Prioritaet.
-SOURCE_PRIORITY = ["sektor", "azconni", "rauze", "ra", "kulturkalender", "cybersax"]
+SOURCE_PRIORITY = ["derlude", "strassee", "sektor", "azconni", "rauze", "ra", "kulturkalender", "cybersax"]
 
 # Kategorien, die im Web-UI als Filter angeboten werden.
 CATEGORY_LABELS = {
@@ -103,6 +103,8 @@ SOURCE_LABELS = {
     "cybersax": "SAX Terminal",
     "azconni": "AZ Conni",
     "sektor": "Sektor Evolution",
+    "derlude": "Der Lude",
+    "strassee": "Straße E",
 }
 
 # Kategorien, die standardmäßig aus der Web-Startansicht rausgefiltert werden -
