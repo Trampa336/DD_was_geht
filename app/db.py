@@ -1,105 +1,42 @@
-"""SQLite-Zugriff: Schema, Events speichern/lesen, Reaktionen verbuchen."""
+"""SQLite-Zugriff: Schema, Events speichern/lesen, Reaktionen verbuchen.
+
+Seit P3 (Schema v2, siehe migrations/001_schema_v2.sql + migrations/CUTOVER.md):
+Venues und Kategorien sind erstklassige Zeilen statt Freitext-Spalten. Es gibt
+KEINE Migration aus v1 - eine neue DB startet leer und wird von den Scrapern
+neu gefuellt (siehe CUTOVER.md). Die 10 Scraper selbst liefern unveraendert
+Dicts mit Freitext-`venue`/`category`; die Aufloesung passiert ausschliesslich
+hier in upsert_events()."""
+import hashlib
 import logging
 import os
+import re
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from pathlib import Path
 
-from . import config, geo
+from . import config, geo, normalize
 
 logger = logging.getLogger("dd-was-geht.db")
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS events (
-    uid TEXT PRIMARY KEY,
-    source TEXT NOT NULL,
-    date TEXT NOT NULL,
-    time TEXT,
-    title TEXT NOT NULL,
-    venue TEXT,
-    category TEXT NOT NULL,
-    raw_category TEXT,
-    url TEXT,
-    image_url TEXT,
-    price_text TEXT,
-    description TEXT,
-    detail_fetched_at TEXT,
-    -- Gesetzt, wenn dieser Eintrag dieselbe Veranstaltung meint wie ein
-    -- anderer aus einer Quelle mit höherer Priorität (siehe app/dedup.py).
-    -- Solche Zeilen bleiben erhalten, werden aber nicht mehr ausgeliefert.
-    duplicate_of TEXT,
-    first_seen TEXT NOT NULL,
-    last_seen TEXT NOT NULL
-);
+_MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
+SCHEMA_V2_PATH = _MIGRATIONS_DIR / "001_schema_v2.sql"
 
+# P3-Zusatz, NICHT Teil von migrations/001_schema_v2.sql: P2s Entwurf laesst
+# `reactions` bewusst weg ("wird von Herzen abgeloest", siehe DDL Abschnitt 6),
+# aber die Herzen-Funktion (kuratierte Auswahl, Wiederanknuepfung ueber
+# identity_key) ist in diesem Paket nicht gebaut - nur die Tabelle `hearts`
+# steht schon in der DDL. Ohne `reactions` waeren David's 👍/👎 ersatzlos weg,
+# bevor ein Ersatz existiert (scoring.apply_reaction, /api/feedback,
+# tests_smoke.py haengen aktiv daran). Deshalb bleibt reactions als
+# Zusatztabelle bestehen, bis ein spaeteres Paket sie wirklich durch Herzen
+# ersetzt - siehe Bericht zu P3.
+REACTIONS_ADDENDUM = """
 CREATE TABLE IF NOT EXISTS reactions (
     event_uid TEXT PRIMARY KEY,
     reaction TEXT NOT NULL CHECK(reaction IN ('like', 'skip')),
     created_at TEXT NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS weights (
-    key TEXT PRIMARY KEY,
-    likes INTEGER NOT NULL DEFAULT 0,
-    skips INTEGER NOT NULL DEFAULT 0
-);
-
--- Welche Quellen denselben Eintrag geliefert haben. Nötig, weil die zweite,
--- ältere Art von Doppelung sonst unsichtbar bleibt: schreiben zwei Quellen
--- Datum, Zeit, Titel und Ort identisch, erzeugt normalize.make_event_uid()
--- dieselbe uid, und die zweite Lieferung aktualisiert stillschweigend die
--- erste Zeile (in events.source steht dann nur, wer zuerst da war).
-CREATE TABLE IF NOT EXISTS event_sources (
-    event_uid TEXT NOT NULL,
-    source TEXT NOT NULL,
-    first_seen TEXT NOT NULL,
-    last_seen TEXT NOT NULL,
-    PRIMARY KEY (event_uid, source)
-);
-
--- Buchführung über erkannte Doppelungen zwischen Quellen: welcher Eintrag
--- wurde zugunsten welches anderen ausgeblendet, wie sicher und seit wann.
-CREATE TABLE IF NOT EXISTS event_duplicates (
-    duplicate_uid TEXT PRIMARY KEY,
-    canonical_uid TEXT NOT NULL,
-    duplicate_source TEXT,
-    canonical_source TEXT,
-    match_score REAL,
-    matched_on TEXT,
-    first_seen TEXT NOT NULL,
-    last_seen TEXT NOT NULL
-);
-
--- Ein Lauf je Quelle und Scrape. Ohne diese Buchführung sieht eine Quelle, die
--- nach einer HTML-Änderung 0 Events liefert, exakt aus wie ein ruhiger Tag:
--- die Liste ist kürzer, aber nichts sagt, dass etwas kaputt ist. Erst der
--- Vergleich mit dem letzten ERFOLGREICHEN Lauf macht daraus ein Signal
--- (siehe scheduler.run_scrape und /api/health).
-CREATE TABLE IF NOT EXISTS scrape_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source TEXT NOT NULL,
-    started_at TEXT NOT NULL,
-    finished_at TEXT,
-    ok INTEGER NOT NULL DEFAULT 0,
-    event_count INTEGER,
-    error TEXT
-);
-
-"""
-
-# Die Indizes stehen bewusst NICHT im selben Skript wie die Tabellen: der Index
-# auf events(duplicate_of) zeigt auf eine Spalte, die in Bestandsdatenbanken
-# erst _migrate_schema() anlegt. Zusammen ausgeführt bricht executescript() auf
-# jeder Datenbank ab, die vor der Doppelungs-Erkennung entstanden ist - und
-# damit schon init_db() beim Containerstart. Deshalb: erst Tabellen, dann
-# Migration, dann Indizes (siehe init_db).
-INDEXES = """
-CREATE INDEX IF NOT EXISTS idx_events_date ON events(date);
-CREATE INDEX IF NOT EXISTS idx_events_duplicate_of ON events(duplicate_of);
-CREATE INDEX IF NOT EXISTS idx_event_duplicates_canonical
-    ON event_duplicates(canonical_uid);
-CREATE INDEX IF NOT EXISTS idx_event_sources_uid ON event_sources(event_uid);
-CREATE INDEX IF NOT EXISTS idx_scrape_runs_source ON scrape_runs(source, started_at);
 """
 
 
@@ -128,35 +65,96 @@ def get_conn():
         conn.close()
 
 
-# Spalten, die nach dem ersten Release dazugekommen sind. SQLite kennt kein
-# "ADD COLUMN IF NOT EXISTS", deshalb wird vor jedem ALTER geprüft.
-_ADDED_EVENT_COLUMNS = {
-    "image_url": "TEXT",
-    "price_text": "TEXT",
-    "description": "TEXT",
-    "detail_fetched_at": "TEXT",
-    "duplicate_of": "TEXT",
-}
-
-
-def _migrate_schema(conn):
-    existing = {row["name"] for row in conn.execute("PRAGMA table_info(events)")}
-    for column, coltype in _ADDED_EVENT_COLUMNS.items():
-        if column not in existing:
-            conn.execute(f"ALTER TABLE events ADD COLUMN {column} {coltype}")
-
-
+# Kein _migrate_schema()/ALTER-Geruest mehr: das war v1s inkrementeller Weg,
+# nachtraeglich hinzugekommene Spalten auf einer alten DB nachzuziehen. Schema
+# v2 kennt laut CUTOVER.md KEINE Migration - eine neue DB wird einmalig aus
+# migrations/001_schema_v2.sql angelegt und danach nicht mehr per ALTER
+# veraendert. init_db() ist deshalb idempotent ueber "Tabelle events existiert
+# schon?" statt ueber einzelne Spalten.
 def init_db():
     with get_conn() as conn:
-        conn.executescript(SCHEMA)
-        _migrate_schema(conn)
-        conn.executescript(INDEXES)
-        # Bestandsdaten nachtragen, damit event_sources auch für Events gefüllt
-        # ist, die vor dieser Tabelle angelegt wurden.
-        conn.execute(
-            """INSERT OR IGNORE INTO event_sources (event_uid, source, first_seen, last_seen)
-               SELECT uid, source, first_seen, last_seen FROM events"""
+        exists = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='events'"
+        ).fetchone()
+        if not exists:
+            conn.executescript(SCHEMA_V2_PATH.read_text(encoding="utf-8"))
+        conn.executescript(REACTIONS_ADDENDUM)
+
+
+# --- Venue-Aufloesung (P3, siehe migrations/001_schema_v2.sql §1) ----------
+# Roh-Venue-String -> venue_id. Die Scraper liefern weiter Freitext; hier wird
+# er aufgeloest. Ein neuer, unbekannter String legt automatisch Venue + Alias
+# an (origin='auto'). Stellt sich spaeter heraus, dass zwei Strings dieselbe
+# Venue meinen, zeigt man den Alias auf die andere venue_id um - ohne Deploy.
+
+# Woerter, die beim Kollaps-Schluessel (venues.slug) verschwinden. Das ist P2s
+# gemessene Normalisierung (siehe DDL-Kommentar §1): Kleinschreibung, Umlaute,
+# Klammerzusaetze und "Dresden"/"e.V."/"GmbH" raus - das und NICHT MEHR, sonst
+# kollabieren echte, verschiedene Venues (P2s Messung: 744 -> 710, 4,7%).
+_VENUE_PAREN_RE = re.compile(r"\([^)]*\)")
+_VENUE_DROP_WORDS = {"dresden", "e", "v", "gmbh"}
+
+
+def venue_slug(raw_venue):
+    """Kollaps-Schluessel fuer Venue-Aufloesung. Oeffentlich, damit die
+    einmalige Venue-Vorbefuellung (siehe CUTOVER.md §3) exakt dieselbe Regel
+    benutzt wie der laufende Schreibpfad - sonst legt ein spaeterer Scrape eine
+    zweite Venue fuer eine schon zusammengelegte Schreibweise an."""
+    if not raw_venue:
+        return ""
+    text = _VENUE_PAREN_RE.sub(" ", raw_venue)
+    slug = normalize.slugify(text)
+    parts = [p for p in slug.split("-") if p and p not in _VENUE_DROP_WORDS]
+    return "-".join(parts) or slug
+
+
+def resolve_venue(conn, raw_venue, now):
+    """raw_venue -> venue_id, oder None wenn raw_venue leer ist.
+
+    Reihenfolge: (1) exakt dieser Rohstring schon als Alias bekannt? Deckt
+    sowohl 'auto' als auch von Hand zusammengelegte ('manuell') Aliase ab.
+    (2) sein Kollaps-Schluessel trifft eine schon existierende Venue (eine
+    andere Schreibweise wurde schon aufgeloest)? Dann wird nur ein Alias
+    ergaenzt, keine zweite Venue angelegt. (3) sonst: neue Venue + Alias."""
+    if not raw_venue:
+        return None
+    existing = conn.execute(
+        "SELECT venue_id FROM venue_aliases WHERE raw_venue = ?", (raw_venue,)
+    ).fetchone()
+    if existing:
+        conn.execute("UPDATE venues SET last_seen = ? WHERE id = ?",
+                     (now, existing["venue_id"]))
+        return existing["venue_id"]
+
+    slug = venue_slug(raw_venue)
+    venue = conn.execute("SELECT id FROM venues WHERE slug = ?", (slug,)).fetchone()
+    if venue:
+        venue_id = venue["id"]
+        conn.execute("UPDATE venues SET last_seen = ? WHERE id = ?", (now, venue_id))
+    else:
+        cur = conn.execute(
+            """INSERT INTO venues (slug, name, region, first_seen, last_seen)
+               VALUES (?, ?, ?, ?, ?)""",
+            (slug, raw_venue, geo.classify_region(raw_venue), now, now),
         )
+        venue_id = cur.lastrowid
+
+    conn.execute(
+        """INSERT INTO venue_aliases (raw_venue, venue_id, origin, first_seen)
+           VALUES (?, ?, 'auto', ?)
+           ON CONFLICT(raw_venue) DO NOTHING""",
+        (raw_venue, venue_id, now),
+    )
+    return venue_id
+
+
+def identity_key(source, url, date):
+    """sha1(source|url|date) - der Wiederanknuepfungs-Griff fuer Herzen, siehe
+    DDL §3. BEWUSST NICHT die uid: identity_key ist keine Identitaet, sondern
+    die Menge der Kandidaten, falls eine uid durch eine Quellen-Redaktion
+    wegbricht."""
+    basis = f"{source}|{url or ''}|{date}"
+    return hashlib.sha1(basis.encode("utf-8")).hexdigest()
 
 
 def _record_source(conn, event_uid, source, now):
@@ -218,56 +216,75 @@ def _best_source(conn, event_uid):
 
 def upsert_events(conn, events):
     """events: Liste von dicts mit uid/source/date/time/title/venue/category/raw_category/url.
-    Gibt die Anzahl neu eingefügter (bisher unbekannter) Events zurück."""
+    Gibt die Anzahl neu eingefügter (bisher unbekannter) Events zurück.
+
+    P3/Schema v2: venue_id-Aufloesung, identity_key und category_slug-FK werden
+    NUR beim INSERT gesetzt - wie category in v1 bleiben sie fuer immer stehen,
+    sobald eine Zeile einmal existiert (siehe tools/reclassify.py fuer
+    nachtraegliches Neueinordnen). Ein erneuter Scrape aktualisiert wie bisher
+    nur last_seen/source/Detail-Felder."""
     now = datetime.utcnow().isoformat()
+    # Einmal pro Lauf statt pro Event: welche category_slug-Werte die FK
+    # ueberhaupt zulaesst. Ein Scraper-Bucket, der (noch) nicht in `categories`
+    # steht, faellt auf 'sonstiges' - das darf die Transaktion nie killen
+    # (CUTOVER.md §4.3).
+    valid_categories = {row["slug"] for row in conn.execute("SELECT slug FROM categories")}
     new_count = 0
     for e in events:
-        _record_source(conn, e["uid"], e["source"], now)
         existing = conn.execute(
             "SELECT uid, url FROM events WHERE uid = ?", (e["uid"],)
         ).fetchone()
-        if existing:
-            # Der Link einer besser platzierten Quelle bleibt stehen (siehe
-            # _keeps_own_url); ist noch gar keiner da, füllt ihn jede Quelle.
-            url = e.get("url")
-            if url and existing["url"] and not _keeps_own_url(conn, e["uid"], e["source"]):
-                url = None
-            # source neu bestimmen (P3b-2): _record_source() oben hat die
-            # aktuelle Quelle bereits in event_sources eingetragen, also
-            # reicht danach die bestplatzierte Quelle über ALLE Melder zu
-            # nehmen - nicht die, die zuerst inserted hat.
-            best_source = _best_source(conn, e["uid"])
-            # COALESCE: Ein normaler Kulturkalender-Lauf liefert für die
-            # Detail-Felder None - das darf einen bereits nachgeladenen Detail-
-            # Cache nicht wieder ausnullen. Rauze liefert sie bei jedem Lauf
-            # frisch mit und überschreibt damit bewusst (z.B. "ausverkauft").
-            conn.execute(
-                """UPDATE events SET last_seen = ?, source = ?,
-                     url = COALESCE(?, url),
-                     image_url = COALESCE(?, image_url),
-                     price_text = COALESCE(?, price_text),
-                     description = COALESCE(?, description),
-                     detail_fetched_at = COALESCE(?, detail_fetched_at)
-                   WHERE uid = ?""",
-                (
-                    now, best_source, url, e.get("image_url"), e.get("price_text"),
-                    e.get("description"), e.get("detail_fetched_at"), e["uid"],
-                ),
-            )
-        else:
+        if not existing:
+            # Insert VOR _record_source: event_sources.event_uid traegt seit
+            # Schema v2 eine FK auf events(uid) (v1 hatte keine) - die Zeile,
+            # auf die verwiesen wird, muss also zuerst existieren.
             new_count += 1
+            venue_id = resolve_venue(conn, e.get("venue"), now)
+            ikey = identity_key(e["source"], e.get("url"), e["date"])
+            category_slug = e["category"] if e["category"] in valid_categories else "sonstiges"
             conn.execute(
                 """INSERT INTO events
-                   (uid, source, date, time, title, venue, category, raw_category, url,
-                    image_url, price_text, description, detail_fetched_at, first_seen, last_seen)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   (uid, identity_key, source, date, time, title, venue_id, raw_venue,
+                    category_slug, raw_category, url, image_url, price_text, description,
+                    detail_fetched_at, first_seen, last_seen)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    e["uid"], e["source"], e["date"], e.get("time"), e["title"],
-                    e.get("venue"), e["category"], e.get("raw_category"),
+                    e["uid"], ikey, e["source"], e["date"], e.get("time"), e["title"],
+                    venue_id, e.get("venue"), category_slug, e.get("raw_category"),
                     e.get("url"), e.get("image_url"), e.get("price_text"),
                     e.get("description"), e.get("detail_fetched_at"), now, now,
                 ),
             )
+            _record_source(conn, e["uid"], e["source"], now)
+            continue
+
+        # Bestehende Zeile: _record_source() zuerst, damit die aktuelle Quelle
+        # schon in event_sources steht, wenn _keeps_own_url/_best_source gleich
+        # darauf ueber ALLE Melder werten (P3b-2) - unveraendert aus v1.
+        _record_source(conn, e["uid"], e["source"], now)
+        # Der Link einer besser platzierten Quelle bleibt stehen (siehe
+        # _keeps_own_url); ist noch gar keiner da, füllt ihn jede Quelle.
+        url = e.get("url")
+        if url and existing["url"] and not _keeps_own_url(conn, e["uid"], e["source"]):
+            url = None
+        best_source = _best_source(conn, e["uid"])
+        # COALESCE: Ein normaler Kulturkalender-Lauf liefert für die
+        # Detail-Felder None - das darf einen bereits nachgeladenen Detail-
+        # Cache nicht wieder ausnullen. Rauze liefert sie bei jedem Lauf
+        # frisch mit und überschreibt damit bewusst (z.B. "ausverkauft").
+        conn.execute(
+            """UPDATE events SET last_seen = ?, source = ?,
+                 url = COALESCE(?, url),
+                 image_url = COALESCE(?, image_url),
+                 price_text = COALESCE(?, price_text),
+                 description = COALESCE(?, description),
+                 detail_fetched_at = COALESCE(?, detail_fetched_at)
+               WHERE uid = ?""",
+            (
+                now, best_source, url, e.get("image_url"), e.get("price_text"),
+                e.get("description"), e.get("detail_fetched_at"), e["uid"],
+            ),
+        )
     return new_count
 
 
@@ -317,29 +334,38 @@ def events_for_range(conn, start_date, end_date, category=None, exclude_categori
     dem Schalter "Umgebung einschließen" bekommt sie dagegen alles und blendet
     im Browser aus, was gerade nicht gezeigt werden soll (siehe
     app/templates/index.html)."""
-    query = "SELECT * FROM events WHERE date >= ? AND date <= ?"
+    # category/venue als Aliase: category_slug/raw_venue heissen seit Schema v2
+    # anders in der Tabelle, aber jeder Aufrufer (feed.py, scoring.py, dedup.py,
+    # Templates) erwartet weiter event["category"]/event["venue"] - das ist die
+    # ganze Grenze, die P3s Umbau nach aussen unsichtbar macht.
+    query = ("SELECT e.*, e.category_slug AS category, e.raw_venue AS venue, "
+             "v.region AS region "
+             "FROM events e LEFT JOIN venues v ON v.id = e.venue_id "
+             "WHERE e.date >= ? AND e.date <= ?")
     if not include_duplicates:
-        query += " AND duplicate_of IS NULL"
+        query += " AND e.duplicate_of IS NULL"
     params = [start_date, end_date]
     categories = category_filter(category)
     if categories:
         placeholders = ",".join("?" for _ in categories)
-        query += f" AND category IN ({placeholders})"
+        query += f" AND e.category_slug IN ({placeholders})"
         params.extend(categories)
     if exclude_categories:
         placeholders = ",".join("?" for _ in exclude_categories)
-        query += f" AND category NOT IN ({placeholders})"
+        query += f" AND e.category_slug NOT IN ({placeholders})"
         params.extend(exclude_categories)
-    query += " ORDER BY date ASC, time ASC"
+    query += " ORDER BY e.date ASC, e.time ASC"
     events = [dict(row) for row in conn.execute(query, params).fetchall()]
     # Zusatzfeld fürs Web.
     ongoing = _ongoing_titles(conn)
     for event in events:
         event["ongoing"] = event["title"] in ongoing
-        # Ortszuordnung wie ongoing bewusst beim Lesen und nicht als Spalte:
-        # die Listen in app/geo.py wachsen weiter, und eine gespeicherte
-        # Zuordnung müsste nach jeder Ergänzung nachgezogen werden.
-        event["region"] = geo.classify_region(event.get("venue"))
+        # Region kommt jetzt aus venues.region (JOIN oben, einmal pro Venue
+        # berechnet statt einmal pro Event - siehe DDL §1). Nur wenn ein Event
+        # gar keine Venue hat (venue_id NULL), faellt es auf die alte
+        # Pro-Event-Berechnung zurueck.
+        if event.get("region") is None:
+            event["region"] = geo.classify_region(event.get("venue"))
     if exclude_far:
         events = [e for e in events if e["region"] != geo.REGION_WEITER]
     return events
@@ -444,8 +470,12 @@ def fill_missing_from_duplicate(conn, canonical_uid, duplicate_uid):
 def set_venue(conn, uid, venue):
     """Ort eines Eintrags setzen. Genutzt von dedup._upgrade_placeholder_venue(),
     wenn der Gewinner nur einen Platzhalter ("Location siehe Beschreibung") hat
-    und das Duplikat den echten Ort kennt."""
-    conn.execute("UPDATE events SET venue = ? WHERE uid = ?", (venue, uid))
+    und das Duplikat den echten Ort kennt. Loest den neuen Rohstring wie beim
+    Insert ueber venue_aliases auf, damit venue_id nicht stehenbleibt."""
+    now = datetime.utcnow().isoformat()
+    venue_id = resolve_venue(conn, venue, now)
+    conn.execute("UPDATE events SET raw_venue = ?, venue_id = ? WHERE uid = ?",
+                 (venue, venue_id, uid))
 
 
 def sources_for_event(conn, event_uid):
@@ -460,7 +490,7 @@ def shared_uid_events(conn, start_date, end_date):
     """Einträge, die mehr als eine Quelle identisch geliefert hat - die
     Doppelungen, die schon über die uid zusammenfallen (siehe event_sources)."""
     rows = conn.execute(
-        """SELECT e.uid, e.date, e.time, e.title, e.venue,
+        """SELECT e.uid, e.date, e.time, e.title, e.raw_venue AS venue,
                   GROUP_CONCAT(s.source, ',') AS sources, COUNT(*) AS n
            FROM events e JOIN event_sources s ON s.event_uid = e.uid
            WHERE e.date >= ? AND e.date <= ?
@@ -476,9 +506,9 @@ def duplicates_for_range(conn, start_date, end_date):
     rows = conn.execute(
         """SELECT d.duplicate_uid, d.canonical_uid, d.duplicate_source,
                   d.canonical_source, d.match_score, d.matched_on, d.first_seen,
-                  dup.title AS duplicate_title, dup.venue AS duplicate_venue,
+                  dup.title AS duplicate_title, dup.raw_venue AS duplicate_venue,
                   dup.date AS date, dup.time AS duplicate_time,
-                  can.title AS canonical_title, can.venue AS canonical_venue,
+                  can.title AS canonical_title, can.raw_venue AS canonical_venue,
                   can.time AS canonical_time
            FROM event_duplicates d
            JOIN events dup ON dup.uid = d.duplicate_uid
@@ -697,7 +727,7 @@ def find_orphaned_events(conn, today, threshold_runs=3):
         return {}
 
     rows = conn.execute(
-        """SELECT e.uid, e.title, e.date, e.time, e.venue, e.last_seen,
+        """SELECT e.uid, e.title, e.date, e.time, e.raw_venue AS venue, e.last_seen,
                   s.source AS es_source, s.last_seen AS es_last_seen
              FROM events e
              JOIN event_sources s ON s.event_uid = e.uid

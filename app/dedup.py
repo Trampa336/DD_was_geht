@@ -533,7 +533,7 @@ def _rows_for_range(conn, start_date, end_date):
     """
     rows = []
     for row in conn.execute(
-        """SELECT e.uid, e.source, e.date, e.time, e.title, e.venue, e.raw_category,
+        """SELECT e.uid, e.source, e.date, e.time, e.title, e.raw_venue AS venue, e.raw_category,
                   e.first_seen, e.duplicate_of, GROUP_CONCAT(s.source, ',') AS sources
            FROM events e LEFT JOIN event_sources s ON s.event_uid = e.uid
            WHERE e.date >= ? AND e.date <= ?

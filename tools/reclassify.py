@@ -28,20 +28,20 @@ def main():
     changes = []
     with db.get_conn() as conn:
         rows = conn.execute(
-            "SELECT uid, title, venue, raw_category, category FROM events"
+            "SELECT uid, title, raw_venue, raw_category, category_slug FROM events"
         ).fetchall()
 
         for row in rows:
             new_category = normalize.classify_category(
-                row["raw_category"] or "", row["title"], row["venue"]
+                row["raw_category"] or "", row["title"], row["raw_venue"]
             )
-            if new_category != row["category"]:
-                changes.append((row["uid"], row["title"], row["category"], new_category))
+            if new_category != row["category_slug"]:
+                changes.append((row["uid"], row["title"], row["category_slug"], new_category))
 
         if apply:
             for uid, _, _, new_category in changes:
                 conn.execute(
-                    "UPDATE events SET category = ? WHERE uid = ?", (new_category, uid)
+                    "UPDATE events SET category_slug = ? WHERE uid = ?", (new_category, uid)
                 )
 
     print(f"{len(rows)} Events geprüft, {len(changes)} würden sich ändern.\n")

@@ -13,7 +13,7 @@ def find_orphaned_events_legacy(conn, today, threshold_runs=3):
         if cutoff is None:
             continue
         rows = conn.execute(
-            """SELECT uid, title, date, time, venue, last_seen FROM events
+            """SELECT uid, title, date, time, raw_venue AS venue, last_seen FROM events
                WHERE source = ? AND date >= ? AND last_seen < ?
                ORDER BY date, time""",
             (source, today, cutoff),
@@ -29,7 +29,7 @@ def find_orphaned_events_vacuous(conn, today, threshold_runs=3):
     P3b's 9-vs-0 'aggregator down' delta; measured here only for the report."""
     healthy = db._healthy_sources(conn, threshold_runs)
     rows = conn.execute(
-        """SELECT e.uid, e.title, e.date, e.time, e.venue, e.last_seen,
+        """SELECT e.uid, e.title, e.date, e.time, e.raw_venue AS venue, e.last_seen,
                   s.source AS es_source, s.last_seen AS es_last_seen
              FROM events e JOIN event_sources s ON s.event_uid = e.uid
             WHERE e.date >= ? ORDER BY e.date, e.time, e.uid""", (today,)).fetchall()
