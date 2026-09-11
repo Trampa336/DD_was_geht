@@ -160,8 +160,9 @@
 
   var listEl = document.getElementById('list');
   var pickRow = document.getElementById('fuer-dich-row');
-  var currentRange = 'heute';
-  var selectedDate = null;  // gesetzt ueberstimmt currentRange: ein konkreter Tag statt Rollfenster
+  // Keine Persistenz ueber einen Reload hinweg (wie zuvor bei den Reitern) -
+  // "keine Auswahl" heisst also bei jedem Aufruf wieder "heute".
+  var selectedDate = isoDay(new Date());
   var selectedCats = [];  // leer = "Alle" (ohne die per EXCLUDED_CATEGORIES ausgeblendeten)
 
   // Sichtbarkeits-Schalter. Anders als die Kategorien laufen die NICHT gegen die
@@ -263,13 +264,13 @@
       + '-' + String(d.getDate()).padStart(2, '0');
   }
 
-  // Dieselben rollierenden Fenster wie app/ranges.py: ab heute, nicht ab
-  // Wochen-/Monatsanfang.
-  function rangeDays(range) {
+  // Dasselbe rollierende Fenster wie week_range() in app/ranges.py: sieben
+  // Tage ab heute, nicht ab Wochenanfang. Nur noch fuer die Empfehlungszeile
+  // gebraucht (staticPicks) - die Liste selbst zeigt seit dem Kalender-Umbau
+  // immer genau einen Tag.
+  function weekDays() {
     var today = new Date(); today.setHours(0, 0, 0, 0);
-    var last = new Date(today);
-    if (range === 'woche') { last.setDate(last.getDate() + 6); }
-    else if (range === 'monat') { last = new Date(today.getFullYear(), today.getMonth() + 1, 0); }
+    var last = new Date(today); last.setDate(last.getDate() + 6);
     var days = [], cur = new Date(today);
     while (cur <= last) { days.push(isoDay(cur)); cur.setDate(cur.getDate() + 1); }
     return days;
@@ -454,7 +455,7 @@
      Events der naechsten sieben Tage. Der Score kommt fertig aus den
      Tagesdateien, gerechnet auf dem Pi - hier wird nur sortiert. */
   function staticPicks() {
-    return staticEvents(rangeDays('woche'), selectedCats).then(function (events) {
+    return staticEvents(weekDays(), selectedCats).then(function (events) {
       events.sort(function (a, b) { return b.score - a.score; });
       return { events: events.slice(0, 8) };
     });
@@ -471,14 +472,12 @@
   function eventSource(what) {
     if (MODE === 'static') {
       if (what === 'picks') { return staticPicks(); }
-      var days = selectedDate ? [selectedDate] : rangeDays(currentRange);
-      return staticEvents(days, selectedCats).then(function (events) { return { events: events }; });
+      return staticEvents([selectedDate], selectedCats).then(function (events) { return { events: events }; });
     }
     if (what === 'picks') {
       return fetchJson('/api/fuer-dich?cat=' + encodeURIComponent(catQuery()));
     }
-    var query = selectedDate ? 'date=' + selectedDate : 'range=' + currentRange;
-    return fetchJson('/api/events?' + query + '&cat=' + encodeURIComponent(catQuery()));
+    return fetchJson('/api/events?date=' + selectedDate + '&cat=' + encodeURIComponent(catQuery()));
   }
 
   function loadPicks() {
@@ -617,31 +616,36 @@
     refresh();
   }
 
-  // Die Reiter melden ihren Zustand als aria-selected, nicht als aria-pressed:
-  // eine Auswahl aus dreien, kein Schalter. Deshalb nicht ueber press().
-  onClick('.tab[data-range]', function (tab) {
-    document.querySelectorAll('.tab[data-range]').forEach(function (other) {
-      other.setAttribute('aria-selected', other === tab ? 'true' : 'false');
-    });
-    currentRange = tab.dataset.range;
-    // Ein Reiter waehlt wieder ein Rollfenster - ein vorher gesetztes Datum
-    // gilt dann nicht mehr, sonst wuerden Reiter und Datumsfeld widersprechen.
-    selectedDate = null;
-    datePickEl.value = '';
-    datePickEl.classList.remove('is-active');
-    loadList();
-  });
+  // Kalender-Popover statt der frueheren Reiter: ein Klick auf einen Tag
+  // uebernimmt ihn, schliesst das Panel und laedt nur die Liste neu (die
+  // Empfehlungszeile haengt nicht am gewaehlten Tag, siehe staticPicks/
+  // /api/fuer-dich - das war bei den Reitern genauso).
+  var dateBtn = document.getElementById('date-btn');
+  var dateBtnLabel = document.getElementById('date-btn-label');
+  var datePanel = document.getElementById('date-panel');
 
-  var datePickEl = document.getElementById('date-pick');
-  datePickEl.addEventListener('change', function () {
-    if (!datePickEl.value) { return; }
-    document.querySelectorAll('.tab[data-range]').forEach(function (tab) {
-      tab.setAttribute('aria-selected', 'false');
+  function setSelectedDate(iso) {
+    selectedDate = iso;
+    dateBtnLabel.textContent = formatDay(selectedDate);
+  }
+
+  if (window.flatpickr) {
+    if (window.flatpickr.l10ns && window.flatpickr.l10ns.de) {
+      window.flatpickr.localize(window.flatpickr.l10ns.de);
+    }
+    window.flatpickr('#date-calendar', {
+      inline: true,
+      defaultDate: selectedDate,
+      onChange: function (dates, dateStr) {
+        setSelectedDate(dateStr);
+        datePanel.hidden = true;
+        dateBtn.setAttribute('aria-expanded', 'false');
+        loadList();
+      }
     });
-    selectedDate = datePickEl.value;
-    datePickEl.classList.add('is-active');
-    loadList();
-  });
+  }
+
+  if (window.ddRegisterMenu) { window.ddRegisterMenu(datePanel, dateBtn); }
 
   onClick('.chip[data-cat]', function (chip) {
     if (chip.dataset.cat === 'alle') { selectedCats = []; }
@@ -687,6 +691,7 @@
   syncChips();
   syncFilterChips();
   syncChipFade();
+  setSelectedDate(selectedDate);
   loadPicks();
   loadList();
 })();

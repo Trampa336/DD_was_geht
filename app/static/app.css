@@ -107,16 +107,40 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 .pick-title { font-weight:600; font-size:13.5px; margin:4px 0 2px; line-height:1.3; }
 .pick-meta { font-size:11.5px; color:var(--ink-soft); }
 
-.tabs { display:flex; gap:2px; background:var(--line); border:1px solid var(--line); border-radius:10px; padding:3px; margin-bottom:14px; }
-.tab { flex:1; appearance:none; border:none; background:transparent; color:var(--ink-soft); font-family:var(--font-body); font-weight:600; font-size:14px; padding:10px 8px; border-radius:7px; cursor:pointer; transition:background .15s ease,color .15s ease; }
-.tab:hover { color:var(--ink); }
-.tab[aria-selected="true"] { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
+/* Ersetzt die frueheren Heute/Woche/Monat-Reiter: ein Knopf, der einen
+   Kalender aufklappt (flatpickr), Aufbau wie .filter-menu/.filter-panel.
+   Eigene Zeile statt Teil der .filterbar - behaelt so dieselbe optische
+   Prominenz wie vorher die Reiterleiste. */
+.date-picker { position:relative; margin-bottom:14px; }
+.date-btn { appearance:none; cursor:pointer; display:flex; align-items:center; gap:7px; width:100%; padding:10px 14px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:var(--font-body); font-weight:600; font-size:14px; border-radius:10px; transition:border-color .15s ease,color .15s ease; }
+.date-btn:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+.date-btn[aria-expanded="true"] { color:var(--elbe-strong); border-color:var(--elbe); background:var(--elbe-soft); box-shadow:var(--shadow); }
+.date-panel { position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:min(300px,calc(100vw - 40px)); padding:10px; background:var(--surface-raised); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+.date-panel[hidden] { display:none; }
 
-/* Natives Datumsfeld statt Reiter-Button: color-scheme sorgt dafuer, dass der
-   Browser das Kalendersymbol hell zeichnet (der Seitenhintergrund ist in jedem
-   Farbschema dunkel), sonst waere es auf dunklem Grund unsichtbar. */
-.tab-date { flex:0 0 auto; color-scheme:dark; min-width:132px; text-align:center; }
-.tab-date.is-active { background:var(--surface); color:var(--elbe-strong); box-shadow:var(--shadow); }
+/* Flatpickr-Skin: die Bibliothek liefert nur das Grundlayout (Groessen,
+   Abstaende, Grid), jede Farbe kommt von hier - so zieht der Kalender mit
+   jedem der fuenf Dark-Themes automatisch mit, statt wie ein Fremdteil aus
+   einer der Vorlagen der Bibliothek auszusehen. */
+.flatpickr-calendar { background:transparent; box-shadow:none; border-radius:0; width:100%; font-family:var(--font-body); }
+.flatpickr-month, .flatpickr-current-month, .cur-month, .cur-year { color:var(--ink); fill:var(--ink); font-family:var(--font-body); font-weight:600; }
+.flatpickr-monthDropdown-months { color:var(--ink); }
+.flatpickr-monthDropdown-months option { background:var(--surface-raised); color:var(--ink); }
+.flatpickr-prev-month, .flatpickr-next-month { color:var(--ink-soft); fill:var(--ink-soft); }
+.flatpickr-prev-month:hover, .flatpickr-next-month:hover { color:var(--elbe-strong); fill:var(--elbe-strong); }
+.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill:var(--elbe-strong); }
+.flatpickr-weekday { color:var(--ink-faint); background:transparent; font-family:var(--font-mono); text-transform:uppercase; font-size:10.5px; }
+.flatpickr-day { color:var(--ink); font-family:var(--font-mono); }
+.flatpickr-day:hover { color:var(--elbe-strong); background:var(--surface); }
+.flatpickr-day.today { border-color:var(--elbe); }
+.flatpickr-day.selected, .flatpickr-day.selected:hover, .flatpickr-day.selected:focus {
+  background:var(--elbe-soft); border-color:var(--elbe); color:var(--elbe-strong);
+}
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover,
+.flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay,
+.flatpickr-day.notAllowed, .flatpickr-day.notAllowed.prevMonthDay, .flatpickr-day.notAllowed.nextMonthDay {
+  color:var(--ink-faint);
+}
 
 /* Eine Zeile Kategorien, rechts daneben das Filter-Menue. Die Kategorien
    brechen bewusst NICHT um: sonst waechst der Kopf der Seite je nach

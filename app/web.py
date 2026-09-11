@@ -11,7 +11,7 @@ from datetime import date
 from flask import Flask, jsonify, render_template, request
 
 from . import config, db, feed, scoring
-from .ranges import day_range, month_range, week_range
+from .ranges import day_range, week_range
 from .scrapers import detail_fetch
 
 app = Flask(__name__)
@@ -21,7 +21,8 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 # Nur diese Dateien darf die oeffentliche Kopie mitnehmen. rating.js fehlt hier
 # mit Absicht: dort gibt es keinen Server, an den eine Bewertung ginge, also
 # soll auch der Code dafuer nicht dabei sein (siehe tools/export_static.py).
-PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js")
+PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js",
+                  "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
 
 
 def asset_version():
@@ -39,26 +40,17 @@ def asset_version():
 ASSET_VERSION = asset_version()
 
 
-def _range_bounds(range_key):
-    today = date.today()
-    if range_key == "woche":
-        return week_range(today)
-    if range_key == "monat":
-        return month_range(today)
-    return today, today
-
-
 def _requested_day():
-    """?date=YYYY-MM-DD fuer die Tagesauswahl im Kalender. Ungueltige oder
-    fehlende Werte fallen zurueck auf None, damit api_events() dann ganz normal
-    ueber range_key entscheidet."""
+    """?date=YYYY-MM-DD aus dem Kalender. Fehlt der Parameter oder ist er
+    ungueltig, gilt heute - das deckt sowohl den ersten Seitenaufruf (noch
+    keine Auswahl) als auch einen kaputten/manipulierten Wert ab."""
     raw = request.args.get("date")
-    if not raw:
-        return None
-    try:
-        return date.fromisoformat(raw)
-    except ValueError:
-        return None
+    if raw:
+        try:
+            return date.fromisoformat(raw)
+        except ValueError:
+            pass
+    return date.today()
 
 
 def _selected_categories():
@@ -83,12 +75,9 @@ def index():
 
 @app.route("/api/events")
 def api_events():
-    range_key = request.args.get("range", "heute")
     categories = _selected_categories()
-    # Ein konkretes Datum sticht einen Reiter - der Kalender waehlt einen Tag,
-    # unabhaengig davon, welcher Reiter zuletzt aktiv war.
     day = _requested_day()
-    start, end = day_range(day) if day else _range_bounds(range_key)
+    start, end = day_range(day)
 
     # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
     # anklickt, soll sie auch dann sehen, wenn sie in EXCLUDED_CATEGORIES steht.
@@ -100,8 +89,7 @@ def api_events():
                                    exclude_categories=exclude, with_reactions=True)
 
     return jsonify({
-        "range": range_key,
-        "date": day.isoformat() if day else None,
+        "date": day.isoformat(),
         "categories": categories,
         "category": categories[0] if len(categories) == 1 else "alle",
         "events": events,

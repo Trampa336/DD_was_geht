@@ -42,6 +42,7 @@ window.DD = {
 {# boot.js setzt das Theme, bevor irgendetwas gezeichnet wird - deshalb steht es
    blockierend im Kopf und nicht unten bei den anderen Skripten. #}
 <script src="static/boot.js?v={{ asset_v }}"></script>
+<link rel="stylesheet" href="static/flatpickr.min.css?v={{ asset_v }}">
 <link rel="stylesheet" href="static/app.css?v={{ asset_v }}">
 </head>
 <body>
@@ -83,13 +84,17 @@ window.DD = {
     <div class="fuer-dich-row" id="fuer-dich-row"><div class="loading">Lädt …</div></div>
   </section>
 
-  <div class="tabs" role="tablist">
-    <button class="tab" data-range="heute" aria-selected="true">Heute</button>
-    <button class="tab" data-range="woche" aria-selected="false">Diese Woche</button>
-    <button class="tab" data-range="monat" aria-selected="false">Diesen Monat</button>
-    {# Eigener Tag statt Reiter: kein Rollfenster, sondern gezielt ein Datum -
-       deshalb ein natives Datumsfeld statt eines weiteren Reiters. #}
-    <input type="date" class="tab tab-date" id="date-pick" aria-label="Datum wählen">
+  <div class="date-picker">
+    <button class="date-btn" id="date-btn" aria-haspopup="dialog" aria-expanded="false">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+        <path d="M3 10h18M8 3v4M16 3v4"></path>
+      </svg>
+      <span id="date-btn-label"></span>
+    </button>
+    <div class="date-panel" id="date-panel" role="dialog" aria-label="Datum wählen" hidden>
+      <div id="date-calendar"></div>
+    </div>
   </div>
 
   <div class="filterbar">
@@ -167,6 +172,8 @@ window.DD = {
    kopiert rating.js dementsprechend nicht mit (tools/export_static.py). #}
 <script src="static/rating.js?v={{ asset_v }}"></script>
 {% endif %}
+<script src="static/flatpickr.min.js?v={{ asset_v }}"></script>
+<script src="static/flatpickr-de.js?v={{ asset_v }}"></script>
 <script src="static/app.js?v={{ asset_v }}"></script>
 <script src="static/background.js?v={{ asset_v }}"></script>
 </body>
