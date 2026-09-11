@@ -73,9 +73,24 @@ CREATE TABLE venues (
 
     -- --- ab hier fuellt P4, alles bewusst NULL-bar ---
     homepage_url    TEXT,
+    -- scheme://netloc von homepage_url, zusaetzlich zur vollen URL (P5a/P4c-
+    -- Carry-in): 45 von 123 gespeicherten Homepages sind keine Site-Wurzeln,
+    -- sondern /veranstaltungen/, /programm/, /spielplan/ - der Pfad, den die
+    -- Venue beim Kulturkalender hinterlegt hat. Ein "Homepage"-Knopf, der auf
+    -- der eigenen Terminliste der Venue landet, ist schlechte UX. Beide
+    -- Spalten bleiben nebeneinander stehen, keine ersetzt die andere.
+    homepage_root   TEXT,
     meta_title      TEXT,
     meta_description TEXT,
     og_image_url    TEXT,
+    -- Welche Quelle das Cover geliefert hat - og_image_url selbst haelt nur
+    -- das Ergebnis des Fallbacks (tools/load_enrichment.py: kk_cover_url ODER
+    -- homepage-og:image), nicht welche der beiden Seiten gewonnen hat.
+    -- NICHT die Reihenfolge des Fallbacks aendern: KK zuerst, Homepage-
+    -- og:image nur als zweite Wahl - eine Umkehr wuerde sofort kaputte Bilder
+    -- zeigen (og_image_audit.py: nur 13 von 34 Homepage-og:image-Treffern
+    -- taugen ueberhaupt als Cover).
+    cover_source    TEXT CHECK (cover_source IN ('kulturkalender', 'homepage') OR cover_source IS NULL),
     -- Wann zuletzt geholt und mit welchem Ergebnis. Ohne Status-Spalte
     -- versucht P4 bei jedem Lauf erneut die 300 Venues ohne Homepage.
     meta_fetched_at TEXT,

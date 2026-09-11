@@ -27,7 +27,20 @@ COVER. Reihenfolge kk_cover_url -> og:image der Homepage. Gemessen in
 tools/og_image_audit.py: von 34 og:image-Treffern sind nur 13 als Cover
 brauchbar (Rest Logos, Favicons, CMS-Standardbilder, tote Links), waehrend
 der KK-Medienslider fuer 104 von 104 Venues mit KK-Seite ein eigenes,
-haustypisches Foto liefert.
+haustypisches Foto liefert. NICHT umkehren - siehe venues.cover_source unten.
+
+ZWEI ABGELEITETE SPALTEN (P5a, ohne einen einzigen neuen Request):
+  - homepage_root: scheme://netloc von homepage_url. 45 von 123 gespeicherten
+    Homepages sind keine Site-Wurzeln, sondern /veranstaltungen/, /programm/,
+    /spielplan/ - der Pfad, den die Venue selbst beim Kulturkalender
+    hinterlegt hat. Ein "Homepage"-Knopf soll auf der echten Startseite
+    landen; homepage_url bleibt daneben stehen fuer alles, was den vollen Pfad
+    braucht.
+  - cover_source: welche der beiden Quellen og_image_url tatsaechlich
+    geliefert hat ('kulturkalender' | 'homepage' | NULL) - og_image_url
+    selbst haelt nur das Ergebnis des Fallbacks, nicht die Herkunft.
+Beide Spalten werden bei --apply automatisch angelegt, falls sie in der
+Ziel-DB noch fehlen (ALTER TABLE, idempotent).
 
 Aufruf:
     ../.venv/bin/python tools/load_enrichment.py <db> [--apply]
@@ -38,16 +51,43 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 CACHE = Path(__file__).resolve().parent.parent / "data" / "venue_cache" / "enrichment.json"
 
 # Felder, die dieses Skript verwaltet - und nur diese.
-FIELDS = ("homepage_url", "meta_title", "meta_description", "og_image_url",
-          "meta_status")
+FIELDS = ("homepage_url", "homepage_root", "meta_title", "meta_description",
+          "og_image_url", "cover_source", "meta_status")
+
+# Spalten, die dieses Skript bei --apply selbst nachruestet, falls die
+# Ziel-DB noch auf dem Stand vor P5a ist (ALTER TABLE, idempotent - siehe
+# migrations/001_schema_v2.sql fuer die Spalten einer frischen Installation).
+_NEW_COLUMNS = {
+    "homepage_root": "TEXT",
+    "cover_source": "TEXT CHECK (cover_source IN ('kulturkalender', 'homepage') OR cover_source IS NULL)",
+}
+
+
+def _ensure_columns(conn):
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(venues)")}
+    for name, ddl in _NEW_COLUMNS.items():
+        if name not in existing:
+            conn.execute(f"ALTER TABLE venues ADD COLUMN {name} {ddl}")
+
+
+def _homepage_root(homepage_url):
+    """scheme://netloc, oder None ohne homepage_url. Reine Stringzerlegung
+    einer schon gespeicherten URL - kein Request, kein neuer Fetch."""
+    if not homepage_url:
+        return None
+    parts = urlsplit(homepage_url)
+    if not parts.scheme or not parts.netloc:
+        return None
+    return f"{parts.scheme}://{parts.netloc}"
 
 
 def payload(rec):
-    """Cache-Datensatz -> die fuenf Spaltenwerte. Ohne meta_fetched_at, das
+    """Cache-Datensatz -> die sieben Spaltenwerte. Ohne meta_fetched_at, das
     haengt davon ab, OB geschrieben wird."""
     meta = rec.get("meta") or {}
     status = rec.get("status", "error:unbekannt")
@@ -61,16 +101,34 @@ def payload(rec):
     else:
         db_status = f"error:{status}"[:60]
 
+    kk_cover = rec.get("kk_cover_url")
+    homepage_og = meta.get("og_image_url")
+    # Dieselbe Reihenfolge wie og_image_url unten - NICHT umkehren (siehe
+    # Docstring: eine Umkehr wuerde sofort kaputte Bilder zeigen).
+    if kk_cover:
+        cover_source = "kulturkalender"
+    elif homepage_og:
+        cover_source = "homepage"
+    else:
+        cover_source = None
+
     return {
         "homepage_url": rec.get("homepage_url"),
+        "homepage_root": _homepage_root(rec.get("homepage_url")),
         "meta_title": meta.get("meta_title"),
         "meta_description": meta.get("meta_description"),
-        "og_image_url": rec.get("kk_cover_url") or meta.get("og_image_url"),
+        "og_image_url": kk_cover or homepage_og,
+        "cover_source": cover_source,
         "meta_status": db_status,
     }
 
 
 def load(conn, recs, apply):
+    # Idempotent, und lebt in derselben Transaktion wie der Rest: bleibt ein
+    # Probelauf (kein --apply), macht main()s conn.rollback() auch die neuen
+    # Spalten wieder rueckgaengig - "nichts geschrieben" bleibt wahr.
+    _ensure_columns(conn)
+
     rows = {r["id"]: r for r in conn.execute(
         "SELECT id, name, " + ", ".join(FIELDS) + " FROM venues")}
 
@@ -118,6 +176,11 @@ def main():
     recs = json.loads(CACHE.read_text("utf-8"))
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
+    # Explizit noetig: sqlite3 haengt DDL (ALTER TABLE) NICHT automatisch in
+    # eine Transaktion wie INSERT/UPDATE - ohne dieses BEGIN wuerde
+    # _ensure_columns() sofort committen, und ein Probelauf ohne --apply
+    # haette trotzdem die Tabelle veraendert.
+    conn.execute("BEGIN")
 
     print(f"{len(recs)} Datensaetze im Cache.")
     stats = load(conn, recs, apply)
