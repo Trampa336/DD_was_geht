@@ -79,6 +79,16 @@ def init_db():
         if not exists:
             conn.executescript(SCHEMA_V2_PATH.read_text(encoding="utf-8"))
         conn.executescript(REACTIONS_ADDENDUM)
+        _seed_tags(conn)
+
+
+# P4e: die fuenf Start-Tags (Begruendung + Liste in normalize.TAG_LABELS,
+# NICHT hier verdoppelt). INSERT OR IGNORE, damit ein spaeter von Hand
+# ergaenzter Tag bei jedem init_db()-Lauf stehen bleibt - dieselbe Vorsicht
+# wie venue_aliases.origin='manuell'.
+def _seed_tags(conn):
+    for slug, label in normalize.TAG_LABELS.items():
+        conn.execute("INSERT OR IGNORE INTO tags (slug, label) VALUES (?, ?)", (slug, label))
 
 
 # --- Venue-Aufloesung (P3, siehe migrations/001_schema_v2.sql §1) ----------
@@ -146,6 +156,61 @@ def resolve_venue(conn, raw_venue, now):
         (raw_venue, venue_id, now),
     )
     return venue_id
+
+
+# --- Stufe 3 der Kategorie-Vergabe: venues.kind (P4e) -----------------------
+# Reihenfolge (siehe normalize.classify_category-Docstring fuer Stufe 1+2):
+#   1. raw_category (normalize.RAW_CATEGORY_MAP)
+#   2. Titel-Stichwort (normalize.KEYWORD_CATEGORY_MAP + Tour-Erkennung)
+#   3. venues.kind - NUR wenn die Venue selbst zuverlaessig genau EINE echte
+#      Kategorie zeigt (David: "guess from the venue only where the venue
+#      does one thing")
+#   4. sonstiges
+#
+# Lebt bewusst hier und nicht in normalize.py: normalize.classify_category()
+# wird unveraendert von allen 10 Scrapern aufgerufen, BEVOR venue_id ueberhaupt
+# aufgeloest ist (die Scraper liefern nur Freitext-venue). Stufe 3 braucht
+# venue_id -> venues.kind -> die bisherige Kategorie-Historie DIESER Venue -
+# das ist ausschliesslich hier verfuegbar (in upsert_events, nach
+# resolve_venue) und in tools/reclassify.py (das venue_id schon aus den
+# gespeicherten Zeilen hat). normalize.classify_category()s Signatur bleibt
+# fuer die Scraper unveraendert; Stufe 3 wird von den ZWEI Aufrufern, die
+# venue_id haben, als Fallback NACH classify_category angewendet.
+#
+# Bewusst KEIN statisches kind->Kategorie-Woerterbuch: die kind-Werte streuen
+# selbst zu stark, um pauschal zu gelten (gemessen, P4e 2026-09-11, ueber ALLE
+# Venues eines kind hinweg): "museum" 316 fuehrungen vs. 280 kultur ueber alle
+# Museums-Venues, "theater" und "buehne" beide mehrheitlich noch sonstiges.
+# Ein Mehrheits-Label pro kind waere fuer einen erheblichen Teil der
+# einzelnen Haeuser falsch. Die empirische Mehrheitskategorie JE VENUE trifft
+# das genauer - und faellt automatisch weg, sobald eine Venue mehr als eine
+# echte (nicht-sonstiges) Kategorie zeigt ("macht mehrere Dinge", siehe
+# Docstring unten).
+def venue_category_hints(conn):
+    """venue_id -> category_slug, nur fuer Venues mit kuratiertem kind
+    (kind != 'sonstiges', siehe migrations/001_schema_v2.sql §1), deren
+    BISHERIGE Events (aus Stufe 1+2, category_slug != 'sonstiges') sich auf
+    GENAU EINE echte Kategorie einigen. Eine Venue mit zwei oder mehr
+    verschiedenen echten Kategorien ("macht mehrere Dinge") taucht hier
+    absichtlich NICHT auf und bleibt sonstiges - siehe P4e-Messung: von 76
+    kuratierten Venues sind nur 17 so einheitlich, 55 sind Mehrfach-Kategorie
+    und 4 haben noch keine einzige echte Kategorie als Beleg.
+    """
+    rows = conn.execute(
+        """SELECT e.venue_id AS venue_id, e.category_slug AS category_slug, COUNT(*) AS n
+           FROM events e JOIN venues v ON e.venue_id = v.id
+           WHERE v.kind != 'sonstiges'
+           GROUP BY e.venue_id, e.category_slug"""
+    ).fetchall()
+    by_venue = {}
+    for row in rows:
+        by_venue.setdefault(row["venue_id"], {})[row["category_slug"]] = row["n"]
+    hints = {}
+    for venue_id, cats in by_venue.items():
+        real = [c for c in cats if c != "sonstiges"]
+        if len(real) == 1:
+            hints[venue_id] = real[0]
+    return hints
 
 
 def identity_key(source, url, date):
@@ -229,6 +294,9 @@ def upsert_events(conn, events):
     # steht, faellt auf 'sonstiges' - das darf die Transaktion nie killen
     # (CUTOVER.md §4.3).
     valid_categories = {row["slug"] for row in conn.execute("SELECT slug FROM categories")}
+    # Stufe 3 (venue_category_hints, siehe Kommentar dort) einmal pro Lauf
+    # berechnen statt pro Event - dieselbe Begruendung wie bei valid_categories.
+    venue_hints = venue_category_hints(conn)
     new_count = 0
     for e in events:
         existing = conn.execute(
@@ -242,6 +310,12 @@ def upsert_events(conn, events):
             venue_id = resolve_venue(conn, e.get("venue"), now)
             ikey = identity_key(e["source"], e.get("url"), e["date"])
             category_slug = e["category"] if e["category"] in valid_categories else "sonstiges"
+            # Stufe 3: raw_category und Titel-Stichwort (in e["category"],
+            # von normalize.classify_category() in den Scrapern berechnet)
+            # hatten keinen Treffer - letzter Versuch ueber die Venue, siehe
+            # venue_category_hints() oben.
+            if category_slug == "sonstiges" and venue_id in venue_hints:
+                category_slug = venue_hints[venue_id]
             conn.execute(
                 """INSERT INTO events
                    (uid, identity_key, source, date, time, title, venue_id, raw_venue,
@@ -255,6 +329,26 @@ def upsert_events(conn, events):
                     e.get("description"), e.get("detail_fetched_at"), now, now,
                 ),
             )
+            # Tags (Kontext, siehe normalize.derive_tags) - wie category_slug
+            # NUR beim Insert gesetzt, nicht bei jedem erneuten Scrape neu
+            # berechnet (dieselbe Begruendung wie oben: eine Regeländerung
+            # gilt erst nach tools/tag_events.py). Insert NACH der events-Zeile,
+            # event_tags.event_uid traegt eine FK darauf.
+            venue_row = (
+                conn.execute("SELECT name, kind FROM venues WHERE id = ?", (venue_id,)).fetchone()
+                if venue_id else None
+            )
+            tags = normalize.derive_tags(
+                e["title"],
+                venue_row["name"] if venue_row else e.get("venue"),
+                venue_row["kind"] if venue_row else None,
+            )
+            for tag_slug in tags:
+                conn.execute(
+                    """INSERT INTO event_tags (event_uid, tag_slug) VALUES (?, ?)
+                       ON CONFLICT(event_uid, tag_slug) DO NOTHING""",
+                    (e["uid"], tag_slug),
+                )
             _record_source(conn, e["uid"], e["source"], now)
             continue
 

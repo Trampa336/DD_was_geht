@@ -28,13 +28,19 @@ def main():
     changes = []
     with db.get_conn() as conn:
         rows = conn.execute(
-            "SELECT uid, title, raw_venue, raw_category, category_slug FROM events"
+            "SELECT uid, title, raw_venue, venue_id, raw_category, category_slug FROM events"
         ).fetchall()
+        # Stufe 3 (P4e): venue_id -> Kategorie, nur fuer Venues, die laut
+        # ihrer eigenen Events zuverlaessig genau eine Kategorie zeigen.
+        # Siehe db.venue_category_hints() fuer die Begruendung.
+        venue_hints = db.venue_category_hints(conn)
 
         for row in rows:
             new_category = normalize.classify_category(
                 row["raw_category"] or "", row["title"], row["raw_venue"]
             )
+            if new_category == "sonstiges" and row["venue_id"] in venue_hints:
+                new_category = venue_hints[row["venue_id"]]
             if new_category != row["category_slug"]:
                 changes.append((row["uid"], row["title"], row["category_slug"], new_category))
 
