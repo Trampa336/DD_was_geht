@@ -20,18 +20,9 @@ logger = logging.getLogger("dd-was-geht.scheduler")
 # Nur Slugs, keine Modul-Importe: ein fehlender Dependency-Import darf beim
 # Programmstart nicht den ganzen Container mitreissen. Der Import passiert
 # jetzt innerhalb des try/except in run_scrape, pro Quelle isoliert.
-SOURCES = [
-    "kulturkalender",
-    "rauze",
-    "ra",
-    "cybersax",
-    "azconni",
-    "sektor",
-    "derlude",
-    "strassee",
-    "groovestation",
-    "zentralwerk",
-]
+# Die Liste selbst steht in app/registry.py - hier bleibt nur der Zugriff,
+# damit Quelle und Reihenfolge nicht zweimal gepflegt werden.
+SOURCES = config.SOURCES
 
 
 def run_scrape(days_ahead=31):

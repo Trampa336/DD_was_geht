@@ -5,7 +5,7 @@ from app import config, db
 
 def find_orphaned_events_legacy(conn, today, threshold_runs=3):
     result = {}
-    for source in config.SOURCE_LABELS:
+    for source in config.SOURCES:
         latest = db._last_run(conn, source)
         if not latest or not latest["ok"]:
             continue

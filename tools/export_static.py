@@ -127,7 +127,7 @@ def export(out_dir, days_ahead=45, today=None):
     index_payload = {
         "days": index_days,
         "categories": config.CATEGORY_LABELS,
-        "sources": config.SOURCE_LABELS,
+        "sources": config.SOURCE_GROUP_LABELS,
         "excluded": config.EXCLUDED_CATEGORIES,
     }
     # generated_at wird nur hochgezaehlt, wenn sich am Bestand wirklich etwas
@@ -161,7 +161,7 @@ def export(out_dir, days_ahead=45, today=None):
         html = flask_app.jinja_env.get_template("index.html").render(
             categories=config.CATEGORY_LABELS,
             categories_short=config.CATEGORY_SHORT_LABELS,
-            sources=config.SOURCE_LABELS,
+            sources=config.SOURCE_GROUP_LABELS,
             mode="static",
             excluded=config.EXCLUDED_CATEGORIES,
             highlight_score=config.HIGHLIGHT_SCORE,

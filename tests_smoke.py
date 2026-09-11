@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 os.environ["DB_PATH"] = os.path.join(tempfile.mkdtemp(), "test.db")
 
-from app import config, db, normalize, scoring  # noqa: E402
+from app import config, db, normalize, registry, scoring  # noqa: E402
 
 
 def check(label, cond):
@@ -99,6 +99,39 @@ check(
     set(config.CATEGORY_LABELS) == set(config.CATEGORY_SHORT_LABELS),
 )
 check("Sport ist nicht aus dem Newsletter gefiltert", "sport" not in config.EXCLUDED_CATEGORIES)
+
+# --- Quellen-Registry: die abgeleitete Reihenfolge gegen das alte Literal ----
+# app/registry.py hat die vier Quellen-Listen zusammengefuehrt. Die eine, bei
+# der Menge nicht reicht, ist SOURCE_PRIORITY: db._source_rank ist ein
+# list.index(), und db._best_source und db._keeps_own_url kommen ohne
+# Gleichstands-Regel aus, weil jede Quelle genau einen Rang hat. Eine still
+# verschobene Quelle wuerde Events neu zuschreiben und events.url bei jedem
+# Lauf kippen lassen - data/days/*.json bekaeme alle sechs Stunden einen
+# sinnlosen Commit. Deshalb steht hier die Liste, wie sie vor der Ableitung im
+# Klartext in app/config.py stand, und wird Element fuer Element verglichen.
+_SOURCE_PRIORITY_LITERAL = ["derlude", "strassee", "groovestation", "zentralwerk",
+                            "sektor", "azconni", "rauze", "ra", "kulturkalender",
+                            "cybersax"]
+check("SOURCE_PRIORITY: abgeleitet == Literal, in genau dieser Reihenfolge",
+      config.SOURCE_PRIORITY == _SOURCE_PRIORITY_LITERAL)
+check("SOURCE_PRIORITY: jede Quelle genau einmal (Rang ist eindeutig)",
+      len(set(config.SOURCE_PRIORITY)) == len(config.SOURCE_PRIORITY))
+# Scrape-Reihenfolge und Label-Reihenfolge sind dieselbe wie vorher - die
+# Reihenfolge von SOURCE_LABELS ist die Reihenfolge der /api/health-Antwort.
+_SOURCES_LITERAL = ["kulturkalender", "rauze", "ra", "cybersax", "azconni",
+                    "sektor", "derlude", "strassee", "groovestation", "zentralwerk"]
+check("config.SOURCES: abgeleitet == frueheres scheduler.SOURCES",
+      config.SOURCES == _SOURCES_LITERAL)
+check("SOURCE_LABELS: Reihenfolge unveraendert", list(config.SOURCE_LABELS) == _SOURCES_LITERAL)
+check("SOURCE_PRIORITY und SOURCES beschreiben dieselbe Menge",
+      set(config.SOURCE_PRIORITY) == set(config.SOURCES))
+# Die zwei Aufgaben sind getrennt, der Inhalt ist heute noch identisch. Sobald
+# Venue-Eintraege dazukommen, darf das auseinanderlaufen - dann faellt dieser
+# Check weg, nicht die Trennung.
+check("SOURCE_GROUP_LABELS deckt sich heute noch mit SOURCE_LABELS",
+      config.SOURCE_GROUP_LABELS == config.SOURCE_LABELS)
+check("Registry ohne tier-Feld (Tiers erzeugen erst Gleichstaende)",
+      not any("tier" in e for e in registry.SOURCES.values()))
 
 # --- Sport: verbreiterte Stichwoerter und ihre Gegenproben ---
 # "Scheliga" endet auf "liga": die Zuschauersport-Regex hat den Kurs frueher aus

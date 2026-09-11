@@ -239,7 +239,7 @@ docker compose exec dd-was-geht python3 tools/show_duplicates.py --tage 7
 docker compose exec dd-was-geht python3 tools/show_duplicates.py --neu-berechnen
 ```
 
-Die Ausgabe zeigt zu jedem Paar beide Fassungen, den Grund des Treffers und die Ähnlichkeit – gut geeignet, um zu prüfen, ob die Erkennung zu großzügig oder zu streng ist. Fehlt ein Ortsname in der Alias-Liste, steht sie als `VENUE_ALIASES` oben in `app/dedup.py`.
+Die Ausgabe zeigt zu jedem Paar beide Fassungen, den Grund des Treffers und die Ähnlichkeit – gut geeignet, um zu prüfen, ob die Erkennung zu großzügig oder zu streng ist. Fehlt ein Ortsname in der Alias-Liste, gehört er nach `app/registry.py` – entweder als `aliases` beim Haus, zu dem er gehört, oder, solange das Haus noch keine eigene Quelle hat, nach `EXTRA_VENUE_ALIASES`. `dedup.VENUE_ALIASES` wird daraus abgeleitet.
 
 Die Erkennung läuft automatisch nach jedem Scrape über den kompletten Zeitraum (nicht nur über die frisch geholten Events) und ist idempotent: Ändert eine Quelle ihren Titel so, dass die Paarung nicht mehr trägt, löst sich die Verknüpfung von selbst wieder.
 
@@ -381,7 +381,7 @@ Falls der Kulturkalender sein Markup ändert und Beschreibungen leer bleiben: di
 
 Der Kulturkalender ist stark bei Hochkultur und Tagesprogramm, Rauze bei Nightlife (Ostpol, objekt klein a, GrooveStation, Sektor Evolution, Chemiefabrik, Scheune). **Resident Advisor überschneidet sich fast vollständig mit Rauze** – im Live-Abgleich über zwei Wochen war jeder RA-Termin auch bei Rauze zu finden. Der Gewinn liegt deshalb weniger in zusätzlichen Terminen als in den besseren Daten: Line-up, Preis und Flyer, die über die Doppelungs-Erkennung in den Rauze-Eintrag einfließen (siehe „Doppelungen zwischen den Quellen“). Über einen längeren Vorlauf listet RA außerdem Termine, die bei Rauze noch nicht eingetragen sind.
 
-Eine weitere Quelle hinzuzufügen heißt: eine Datei nach dem Vorbild von `app/scrapers/rauze.py` (HTML) oder `app/scrapers/ra.py` (API) anlegen, in `app/scheduler.py:run_scrape()` eintragen und in `SOURCE_PRIORITY` einsortieren.
+Eine weitere Quelle hinzuzufügen heißt: eine Datei nach dem Vorbild von `app/scrapers/rauze.py` (HTML) oder `app/scrapers/ra.py` (API) anlegen und **einen Eintrag in `app/registry.py`** ergänzen – Slug, Name, `status: "live"` und eine noch freie `priority`. Scrape-Liste, Beschriftungen, `/api/health` und `SOURCE_PRIORITY` leiten sich daraus ab; die `priority` muss eindeutig sein, sonst bricht der Import.
 
 ## Grenzen (Stand jetzt, bewusst offen dokumentiert)
 

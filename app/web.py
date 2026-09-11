@@ -75,7 +75,7 @@ def index():
     # das ist die oeffentliche Kopie ohne Server (siehe README).
     return render_template("index.html", categories=config.CATEGORY_LABELS,
                            categories_short=config.CATEGORY_SHORT_LABELS,
-                           sources=config.SOURCE_LABELS, mode="api",
+                           sources=config.SOURCE_GROUP_LABELS, mode="api",
                            excluded=[], generated_at="",
                            highlight_score=config.HIGHLIGHT_SCORE,
                            asset_v=ASSET_VERSION)

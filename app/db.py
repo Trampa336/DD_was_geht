@@ -548,12 +548,13 @@ def scrape_health(conn):
     eine Quelle seit Tagen, steht der letzte Erfolg mit Datum und Anzahl daneben
     und zeigt, wie alt die ausgelieferten Daten dieser Quelle inzwischen sind.
 
-    Es wird über SOURCE_LABELS iteriert und nicht über die Tabelle: eine Quelle,
+    Es wird über config.SOURCES iteriert und nicht über die Tabelle: eine Quelle,
     die noch nie gelaufen ist, muss auftauchen - genau das ist ja der Ausfall,
     den man sehen will.
     """
     health = {}
-    for source, label in config.SOURCE_LABELS.items():
+    for source in config.SOURCES:
+        label = config.SOURCE_LABELS[source]
         latest = _last_run(conn, source)
         success = last_successful_run(conn, source)
         health[source] = {
@@ -635,7 +636,7 @@ def _healthy_sources(conn, threshold_runs):
       seit kurzem" unterscheiden - dann urteilt diese Quelle gar nicht.
     """
     healthy = {}
-    for source in config.SOURCE_LABELS:
+    for source in config.SOURCES:
         latest = _last_run(conn, source)
         if not latest or not latest["ok"]:
             continue

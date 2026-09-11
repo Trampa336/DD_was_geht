@@ -35,7 +35,7 @@ import difflib
 import logging
 import re
 
-from . import config, db, normalize
+from . import config, db, normalize, registry
 # Sammel-Eintraege entstehen ausschliesslich in diesem Scraper; von dort kommt
 # auch das Wissen, welche Abschnittsueberschrift eine Rubrik ist und welche ein
 # Veranstaltungsname (siehe _festival_groups).
@@ -84,33 +84,9 @@ TITLE_MIN_UNKNOWN_VENUE = 0.85
 TITLE_MIN_OTHER_VENUE = 0.9
 
 # Ortsnamen, die dieselbe Location meinen. Links steht, was slugify() aus der
-# jeweiligen Schreibweise macht, rechts der gemeinsame Schlüssel.
-VENUE_ALIASES = {
-    "oka": "objekt-klein-a",
-    "objektkleina": "objekt-klein-a",
-    "objekt-klein-a-oka": "objekt-klein-a",
-    "groove-station": "groovestation",
-    "chemo": "chemiefabrik",
-    "chemiefabrik-dresden": "chemiefabrik",
-    "sektor": "sektor-evolution",
-    # Das Haus selbst schreibt sich auf seiner Seite ohne Leerzeichen.
-    "sektorevolution": "sektor-evolution",
-    "beatpol-ehemals-starclub": "beatpol",
-    "starclub": "beatpol",
-    "kraftwerk-mitte-dresden": "kraftwerk-mitte",
-    "tante-ju-dresden": "tante-ju",
-    "puschkin-club": "puschkin",
-    "blauer-salon-puschkin": "puschkin",
-    # AZ Conni schreibt sich selbst "AZ Conni", rauze.de listet es genauso,
-    # umgangssprachlich heisst es nur "Conni".
-    "az-conni": "conni",
-    "conni-club": "conni",
-    "azc": "conni",
-    # CyberSAX schreibt "Kafe Zeitlos", andere Quellen "Cafe Zeitlos".
-    "kafe-zeitlos": "cafe-zeitlos",
-    "kafe-saite": "cafe-saite",
-    "blaue-fabrik-im-alten-leipziger-bahnhof": "blaue-fabrik",
-}
+# jeweiligen Schreibweise macht, rechts der gemeinsame Schlüssel. Gepflegt wird
+# das in app/registry.py - beim Haus, zu dem es gehoert.
+VENUE_ALIASES = registry.venue_aliases()
 
 # Füllwörter in Ortsnamen: "Club Paula" (RA) und "Paula" (Rauze) sind derselbe
 # Laden, "Chemiefabrik e.V." und "Chemiefabrik" auch.

@@ -9,6 +9,8 @@ gesetzt ist.
 import os
 from dotenv import load_dotenv
 
+from . import registry
+
 load_dotenv()
 
 
@@ -68,7 +70,12 @@ RA_AREA_ID = 150
 # nachtragen, weil die Tagesseite das url-Feld ja schon belegt. Der Gewinn
 # dieser Quelle ist ihre Abdeckung (Laeden, die sonst niemand listet), nicht
 # die Qualitaet der einzelnen Zeile - und Abdeckung braucht keine Prioritaet.
-SOURCE_PRIORITY = ["derlude", "strassee", "groovestation", "zentralwerk", "sektor", "azconni", "rauze", "ra", "kulturkalender", "cybersax"]
+# Die Reihenfolge selbst ist tragend, nicht nur die Menge: db._source_rank ist
+# ein list.index(), und db._best_source und db._keeps_own_url kommen genau
+# deshalb ohne Gleichstands-Regel aus. Eine stille Umsortierung schriebe
+# events.source und events.url um - also wird sie in tests_smoke.py gegen die
+# frueher hier stehende Literal-Liste geprueft, nicht nur begutachtet.
+SOURCE_PRIORITY = registry.priority_order()
 
 # Kategorien, die im Web-UI als Filter angeboten werden.
 CATEGORY_LABELS = {
@@ -94,20 +101,22 @@ CATEGORY_SHORT_LABELS = {
     "sonstiges": "Weiteres",
 }
 
-# Quellen, die im Web-UI als Filter angeboten werden. Der Schlüssel ist der
+# SOURCE_LABELS hatte zwei Aufgaben, die nur zufaellig dieselbe Liste waren:
+# "alle Quellen, die es gibt" (Vollstaendigkeit in /api/health und in der
+# Verwaisungs-Erkennung) und "die Chips in der Quellen-Zeile des Web-UI".
+# Solange jede Quelle ihren eigenen Chip hat, sind beide gleich; sobald viele
+# Haeuser dazukommen, ist das nicht mehr gewollt. Deshalb stehen sie jetzt
+# getrennt - heute mit identischem Inhalt.
+
+# Alle Quellen-Slugs, in Scrape-Reihenfolge. Vollstaendigkeitsliste.
+SOURCES = registry.live_slugs()
+
+# Slug -> Beschriftung, fuer /api/health und die Protokollzeilen des Scrapers.
+SOURCE_LABELS = registry.labels()
+
+# Chip-Beschriftung in der Quellen-Zeile des Web-UI. Der Schlüssel ist der
 # Wert in events.source, wie ihn die Scraper schreiben.
-SOURCE_LABELS = {
-    "kulturkalender": "Kulturkalender",
-    "rauze": "Rauze",
-    "ra": "Resident Advisor",
-    "cybersax": "SAX Terminal",
-    "azconni": "AZ Conni",
-    "sektor": "Sektor Evolution",
-    "derlude": "Der Lude",
-    "strassee": "Straße E",
-    "groovestation": "GrooveStation",
-    "zentralwerk": "Zentralwerk",
-}
+SOURCE_GROUP_LABELS = registry.labels()
 
 # Kategorien, die standardmäßig aus der Web-Startansicht rausgefiltert werden -
 # im Web-UI aber weiterhin über den Kategorie-Chip erreichbar.
