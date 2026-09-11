@@ -1411,13 +1411,18 @@ def _bundle(html, asset_dir):
 
 _page_all = _bundle(_page, os.path.join(_ROOT, "app", "static"))
 
-# Die Vorlage verlinkt genau diese vier plus rating.js - fehlt eine davon im
-# Container, ist die Seite weiss, ohne dass irgendwo ein Fehler steht.
-for _asset in ("boot.js", "app.css", "app.js", "background.js", "rating.js"):
+# Die Vorlage verlinkt genau diese Dateien - fehlt eine davon im Container,
+# ist die Seite weiss, ohne dass irgendwo ein Fehler steht. Seit c27a84a
+# (Kalender-Popover) kommen die drei flatpickr-Dateien dazu; die Liste ist die
+# einzige Stelle, die eine neue Datei kennen muss - Serve-Check und Anzahl
+# leiten sich beide von ihr ab, damit sie nie wieder auseinanderlaufen.
+_LINKED_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "rating.js",
+                  "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
+for _asset in _LINKED_ASSETS:
     check(f"Flask liefert static/{_asset} aus",
           _client_web.get("/static/" + _asset).status_code == 200)
-check("Seite verlinkt alle fuenf Dateien",
-      len(re.findall(r'(?:src|href)="static/', _page)) == 5)
+check(f"Seite verlinkt alle {len(_LINKED_ASSETS)} Dateien",
+      len(re.findall(r'(?:src|href)="static/', _page)) == len(_LINKED_ASSETS))
 # Ohne Cache-Buster holte der Browser nach einem Deploy weiter die alte Datei.
 check("Verweise tragen eine Version", '?v=' in _page and len(web.asset_version()) == 8)
 check("Highlight: Flask-Seite setzt die Schwelle als Zahl",
