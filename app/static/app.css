@@ -344,6 +344,11 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 }
 .venue-homepage-btn:hover { background:var(--elbe); color:var(--bg); }
 
+/* P5v: Adresse/Telefon/Oeffnungszeiten aus der cybersax-Adressseite. */
+.venue-contact { margin:4px 0 12px; }
+.venue-contact p { font-size:13.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 3px; }
+.venue-hours-date { color:var(--ink-faint); font-size:12px; }
+
 .venue-events h3, .venues-index-title { font-family:var(--font-display); font-weight:500; font-style:var(--display-style); font-size:19px; margin:0 0 14px; }
 .venues-index-title { font-size:24px; font-weight:600; font-style:normal; margin-bottom:6px; }
 .venues-index-hint { font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0 0 18px; }

@@ -41,6 +41,19 @@
          "Homepage"-Knopf. #}
       <a class="venue-homepage-btn" href="{{ venue.homepage_root }}" target="_blank" rel="noopener noreferrer">Homepage &#8599;</a>
       {% endif %}
+      {% if venue.address or venue.phone or venue.opening_hours %}
+      {# P5v: Adresse/Telefon aus der cybersax-Adressseite, unveraendert wie
+         auf der Quelle. Adresse/Telefon veralten kaum, deshalb ohne Datum;
+         Oeffnungszeiten aendern sich - siehe Bericht zu P5v -, deshalb IMMER
+         mit dem Erfassungsdatum, unstrukturiert (Rohtext der Quelle). #}
+      <div class="venue-contact">
+        {% if venue.address %}<p class="venue-address">{{ venue.address }}</p>{% endif %}
+        {% if venue.phone %}<p class="venue-phone">Telefon: {{ venue.phone }}</p>{% endif %}
+        {% if venue.opening_hours %}
+        <p class="venue-hours">Öffnungszeiten: {{ venue.opening_hours }}{% if venue.contact_fetched_at %} <span class="venue-hours-date">(Stand: {{ venue.contact_fetched_at | de_date }})</span>{% endif %}</p>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
   </article>
 
@@ -76,8 +89,13 @@
   </section>
 
   <p class="footnote">
-    {% if venue.meta_status %}Aus Dresdner Veranstaltungskalendern und der Homepage der Venue.
-    {% else %}Aus Dresdner Veranstaltungskalendern - für diesen Ort wurde noch keine eigene Homepage geprüft.{% endif %}
+    {# P5v: venue.meta_status wird auch auf 'not_found'/'error:*' gesetzt,
+       wenn eine Homepage GESUCHT, aber keine gefunden wurde (siehe
+       tools/enrich_venues_cybersax.py/tools/load_enrichment.py) - das ist
+       nicht "und der Homepage der Venue". Nur meta_status == 'ok' bedeutet,
+       dass tatsaechlich eine Homepage gelesen wurde. #}
+    {% if venue.meta_status == 'ok' %}Aus Dresdner Veranstaltungskalendern und der Homepage der Venue.
+    {% else %}Aus Dresdner Veranstaltungskalendern - für diesen Ort wurde keine eigene Homepage gefunden oder noch keine geprüft.{% endif %}
   </p>
 </div>
 </body>

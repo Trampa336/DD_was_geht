@@ -2238,6 +2238,176 @@ check("KIND_AUS_TEXT: jede Einstufung traegt ein Zitat der Belegstelle",
       all(isinstance(beleg, str) and len(beleg) > 20
           for _, beleg in csx.KIND_AUS_TEXT.values()))
 
+# --- P5v: Adresse/Telefon/Oeffnungszeiten speichern -------------------------
+# Die zu pruefende Annahme des Pakets war, ob cs_sections (aus P5u) die drei
+# Felder ueberhaupt traegt. Verifiziert an den echten 74 Cache-Eintraegen:
+# 56/74 'Adresse', 22/74 'Telefon:', 8/74 'Oeffnungszeiten' - jede der beiden
+# letzteren Gruppen ist eine Teilmenge der ersten. Diese Faelle bilden die
+# Fixtures unten nach.
+
+check("extract_contact: Adresse verliert die Namensdopplung der Quelle",
+      csx.extract_contact({"Adresse": "Testklub Teststraße 1 01099 Dresden"},
+                           "Testklub") ==
+      {"address": "Teststraße 1 01099 Dresden", "phone": None, "opening_hours": None})
+check("extract_contact: Name stimmt NICHT mit dem Anfang ueberein -> Text bleibt "
+      "unangetastet (nichts wird erraten)",
+      csx.extract_contact({"Adresse": "Irgendwas 1 01099 Dresden"}, "Testklub")
+      ["address"] == "Irgendwas 1 01099 Dresden")
+check("extract_contact: Telefon aus dem Kontakt-Block, Kontaktperson davor und "
+      "Fax danach werden abgeschnitten (echter Fall 'Haus der Architekten')",
+      csx.extract_contact(
+          {"Kontakt": "Olaf Doehler Telefon: +49 (0) 351/3 17 46-0 Fax: +49 (0) 351/3 17 46 44"},
+          "Testklub")["phone"] == "+49 (0) 351/3 17 46-0")
+check("extract_contact: Kontakt-Block nur mit 'Web:' liefert kein Telefon",
+      csx.extract_contact({"Kontakt": "Web: https://tonkunstraum.de"}, "tonkunstraum")
+      ["phone"] is None)
+check("extract_contact: Oeffnungszeiten roh und unveraendert (keine Struktur, "
+      "kein Normalisieren)",
+      csx.extract_contact(
+          {"Öffnungszeiten": "Mittwoch und Freitag 15.00 – 19.00 Uhr Samstag 11.00 – 15.00 Uhr"},
+          "X")["opening_hours"]
+      == "Mittwoch und Freitag 15.00 – 19.00 Uhr Samstag 11.00 – 15.00 Uhr")
+check("extract_contact: 'Anfahrt' (nur Linktext, keine echte Angabe) wird nie gelesen",
+      csx.extract_contact(
+          {"Adresse": "X Teststraße 1 Dresden",
+           "Anfahrt": "» Stadtplan » Verkehrsverbindung"}, "X") ==
+      {"address": "Teststraße 1 Dresden", "phone": None, "opening_hours": None})
+check("extract_contact: leere/fehlende sections -> alle drei Felder None",
+      csx.extract_contact({}, "X") ==
+      {"address": None, "phone": None, "opening_hours": None}
+      and csx.extract_contact(None, "X") ==
+      {"address": None, "phone": None, "opening_hours": None})
+
+# --- Schema-Deklaration: address/phone/opening_hours/contact_fetched_at ----
+check("Schema: address ist in migrations/001_schema_v2.sql deklariert",
+      "address              TEXT" in _schema_sql)
+check("Schema: phone ist in migrations/001_schema_v2.sql deklariert",
+      "phone                TEXT" in _schema_sql)
+check("Schema: opening_hours ist in migrations/001_schema_v2.sql deklariert",
+      "opening_hours        TEXT" in _schema_sql)
+check("Schema: contact_fetched_at ist in migrations/001_schema_v2.sql deklariert",
+      "contact_fetched_at   TEXT" in _schema_sql)
+_p5v_fresh_conn = sqlite3.connect(os.path.join(tempfile.mkdtemp(), "fresh.db"))
+_p5v_fresh_conn.executescript(_schema_sql)
+_p5v_fresh_cols = {row[1] for row in _p5v_fresh_conn.execute("PRAGMA table_info(venues)")}
+_p5v_fresh_conn.close()
+check("Schema: eine frische DB aus der DDL hat alle vier P5v-Spalten ohne ALTER TABLE",
+      {"address", "phone", "opening_hours", "contact_fetched_at"} <= _p5v_fresh_cols)
+
+# --- tools/load_cybersax_contact.py: laedt NUR aus dem Cache, holt nichts --
+from tools import load_cybersax_contact as lcc  # noqa: E402
+
+_lcc_db_path = os.path.join(tempfile.mkdtemp(), "lcc.db")
+_lcc_conn = sqlite3.connect(_lcc_db_path)
+_lcc_conn.row_factory = sqlite3.Row
+_lcc_conn.executescript(_schema_sql)
+_lcc_conn.execute(
+    """INSERT INTO venues (id, slug, name, meta_fetched_at, first_seen, last_seen)
+       VALUES (1, 'voll', 'Volle Venue', '2026-01-15T09:00:00', '2026-01-01', '2026-01-01')""")
+_lcc_conn.execute(
+    """INSERT INTO venues (id, slug, name, meta_fetched_at, first_seen, last_seen)
+       VALUES (2, 'leer', 'Leere Venue', '2026-01-15T09:00:00', '2026-01-01', '2026-01-01')""")
+_lcc_conn.commit()
+_lcc_cache = {
+    "1": {"name": "Volle Venue", "cs_name": "Volle Venue",
+          "cs_sections": {"Adresse": "Volle Venue Teststraße 1 01099 Dresden",
+                           "Kontakt": "Telefon: 0351 123 Web: http://x.example",
+                           "Öffnungszeiten": "Mo-Fr 10-18 Uhr"}},
+    "2": {"name": "Leere Venue", "cs_name": "Leere Venue",
+          "cs_sections": {"Kontakt": "Web: http://y.example"}},
+    "3": {"name": "Verwaist", "cs_sections": {}},
+    "4": {"name": "Falscher Name", "cs_sections": {"Adresse": "Z Teststraße 2 Dresden"}},
+}
+_lcc_conn.execute(
+    """INSERT INTO venues (id, slug, name, meta_fetched_at, first_seen, last_seen)
+       VALUES (4, 'anders', 'Der echte Name', '2026-01-15T09:00:00', '2026-01-01', '2026-01-01')""")
+_lcc_conn.commit()
+_lcc_stats = lcc.load(_lcc_conn, _lcc_cache, apply=True)
+check("load_cybersax_contact: zugeordnet zaehlt nur existierende, namensgleiche Zeilen "
+      "(id 1+2 - id 3 hat keine Zeile, id 4 hat einen abweichenden Namen)",
+      _lcc_stats["matched"] == 2)
+check("load_cybersax_contact: Venue ohne DB-Zeile wird gemeldet, nicht stillschweigend uebersprungen",
+      len(_lcc_stats["no_row"]) == 1 and _lcc_stats["no_row"][0][0] == "3")
+check("load_cybersax_contact: Namensabweichung wird gemeldet und NICHT geschrieben",
+      len(_lcc_stats["name_mismatch"]) == 1 and _lcc_stats["name_mismatch"][0][0] == 4)
+check("load_cybersax_contact: Venue ohne jedes Kontaktfeld (nur 'Web:') bleibt leer",
+      _lcc_stats["no_contact_data"] == 1)
+check("load_cybersax_contact: geschrieben genau fuer die eine Venue mit echten Daten",
+      _lcc_stats["written"] == 1)
+_lcc_row1 = _lcc_conn.execute("SELECT * FROM venues WHERE id = 1").fetchone()
+check("load_cybersax_contact: Adresse verliert die Namensdopplung",
+      _lcc_row1["address"] == "Teststraße 1 01099 Dresden")
+check("load_cybersax_contact: Telefon gespeichert", _lcc_row1["phone"] == "0351 123")
+check("load_cybersax_contact: Oeffnungszeiten roh gespeichert",
+      _lcc_row1["opening_hours"] == "Mo-Fr 10-18 Uhr")
+check("load_cybersax_contact: contact_fetched_at kommt aus meta_fetched_at DIESER Zeile "
+      "(Datum der tatsaechlichen Erfassung), NICHT aus der Laufzeit dieses Skripts",
+      _lcc_row1["contact_fetched_at"] == "2026-01-15")
+_lcc_row2 = _lcc_conn.execute("SELECT * FROM venues WHERE id = 2").fetchone()
+check("load_cybersax_contact: Venue ohne Kontaktfelder bleibt ohne contact_fetched_at",
+      _lcc_row2["address"] is None and _lcc_row2["contact_fetched_at"] is None)
+_lcc_stats2 = lcc.load(_lcc_conn, _lcc_cache, apply=True)
+check("load_cybersax_contact: zweiter Lauf ohne neue Daten aendert nichts (idempotent)",
+      _lcc_stats2["written"] == 0 and _lcc_stats2["unchanged"] == 1)
+_lcc_conn.close()
+
+_lcc_old_path = os.path.join(tempfile.mkdtemp(), "old.db")
+_lcc_old_conn = sqlite3.connect(_lcc_old_path)
+_lcc_old_conn.row_factory = sqlite3.Row
+_lcc_old_conn.execute(
+    """CREATE TABLE venues (id INTEGER PRIMARY KEY, slug TEXT, name TEXT,
+                            meta_fetched_at TEXT, first_seen TEXT, last_seen TEXT)""")
+lcc._ensure_columns(_lcc_old_conn)
+_lcc_old_cols = {row[1] for row in _lcc_old_conn.execute("PRAGMA table_info(venues)")}
+_lcc_old_conn.close()
+check("load_cybersax_contact._ensure_columns: ruestet alle vier Spalten auf einer "
+      "DB von vor P5v nach (ALTER TABLE, idempotent - wie load_enrichment.py)",
+      {"address", "phone", "opening_hours", "contact_fetched_at"} <= _lcc_old_cols)
+
+# --- Vorlage: Adresse/Telefon plain, Oeffnungszeiten datiert (Bericht zu P5v) -
+with db.get_conn() as conn:
+    db.upsert_events(conn, [
+        {"uid": "p5v-kontakt", "source": "cybersax", "date": "2026-09-25", "time": "20:00",
+         "title": "Konzert im Kontakthaus", "venue": "P5v Kontakthaus", "category": "musik",
+         "url": "https://example.org/p5v-kontakthaus"},
+        {"uid": "p5v-notfound", "source": "cybersax", "date": "2026-09-25", "time": "20:00",
+         "title": "Termin ohne Homepage", "venue": "P5v Ohne Homepage", "category": "musik",
+         "url": "https://example.org/p5v-ohne-homepage"},
+    ])
+    _kontakt_slug = db.venue_slug("P5v Kontakthaus")
+    _notfound_slug = db.venue_slug("P5v Ohne Homepage")
+    conn.execute(
+        """UPDATE venues SET meta_status = 'ok', homepage_root = 'https://kontakthaus.example',
+               address = ?, phone = ?, opening_hours = ?, contact_fetched_at = ?
+           WHERE slug = ?""",
+        ("Teststraße 1 01099 Dresden", "0351 123", "Mo-Fr 10-18 Uhr", "2026-01-15", _kontakt_slug))
+    # 'not_found': eine Homepage WURDE gesucht, keine gefunden - kein Kontaktfeld,
+    # kein meta_description/og_image_url (sonst waere sie nicht "bare").
+    conn.execute("UPDATE venues SET meta_status = 'not_found' WHERE slug = ?", (_notfound_slug,))
+
+_kontakt_page = _client_web.get(f"/orte/{_kontakt_slug}").get_data(as_text=True)
+check("/orte/<slug>: Adresse wird plain angezeigt", "Teststraße 1 01099 Dresden" in _kontakt_page)
+check("/orte/<slug>: Telefon wird plain angezeigt", "Telefon: 0351 123" in _kontakt_page)
+check("/orte/<slug>: Oeffnungszeiten stehen MIT sichtbarem Erfassungsdatum da "
+      "(Bericht zu P5v: Oeffnungszeiten veralten, das Datum macht das Alter sichtbar)",
+      "Mo-Fr 10-18 Uhr" in _kontakt_page and "Stand: 15.01.2026" in _kontakt_page)
+check("/orte/<slug>: Adresse/Telefon tragen KEIN Datum (veralten kaum, siehe DDL-Kommentar)",
+      "Teststraße 1 01099 Dresden (Stand:" not in _kontakt_page
+      and "Telefon: 0351 123 (Stand:" not in _kontakt_page)
+
+_notfound_page = _client_web.get(f"/orte/{_notfound_slug}").get_data(as_text=True)
+check("/orte/<slug>: ohne Kontaktfelder erscheint kein venue-contact-Block",
+      "venue-contact" not in _notfound_page)
+check("/orte/<slug>: Fussnote behauptet KEINE Homepage-Quelle, wenn meta_status "
+      "= 'not_found' ist (vorher: jedes gesetzte meta_status reichte, auch "
+      "'not_found'/'error:*' - das war falsch fuer alle 43 der 74 P5u-Venues "
+      "ohne Homepage)",
+      "und der Homepage der Venue" not in _notfound_page
+      and "keine eigene Homepage gefunden oder noch keine geprüft" in _notfound_page)
+check("/orte/<slug>: Fussnote behauptet die Homepage-Quelle weiterhin korrekt, "
+      "wenn meta_status = 'ok' ist",
+      "und der Homepage der Venue" in _kontakt_page)
+
 # --- Regressionsschutz: die falsche Null in venue_readiness_report.py ------
 # Abschnitt 4 zaehlte die "wirklich kargen" Venues nur innerhalb von
 # meta_status IS NULL. Sobald ein Anreicherungsversuch sie auf 'not_found'

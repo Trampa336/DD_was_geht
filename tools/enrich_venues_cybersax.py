@@ -241,6 +241,59 @@ def parse_address_page(html):
             "sections": sections, "n_images": len(block.find_all("img"))}
 
 
+# --- P5v: Adresse/Telefon/Oeffnungszeiten aus denselben Adressseiten -------
+#
+# P5u hat `sections` nur fuer den Bericht gelesen und nirgends gespeichert
+# (Zitat aus parse_address_page oben: "Postanschrift und Oeffnungszeiten
+# haben in `venues` keine Spalte"). Das stimmt jetzt nicht mehr, siehe
+# migrations/001_schema_v2.sql.
+#
+# GEPRUEFT AN DEN ECHTEN 74 CACHE-EINTRAEGEN (data/venue_cache/
+# cybersax_enrichment.json, Stand 12.09.2026, VOR jedem neuen Request - das
+# war genau die zu pruefende Annahme dieses Pakets): 56/74 haben eine
+# nichtleere 'Adresse', 22/74 ein 'Telefon:' im Kontakt-Block, 8/74 eine
+# nichtleere 'Oeffnungszeiten'. Jede der 22/8 hat auch eine Adresse - 56 ist
+# die Vereinigung, nicht die Summe. 'Anfahrt' ist bei allen Faellen nur
+# Linktext ("» Stadtplan » Verkehrsverbindung") und wird nie gelesen.
+_PHONE_RE = re.compile(r"Telefon:\s*(.+?)(?=\s+(?:Fax|Email|Web):|$)")
+
+
+def extract_contact(sections, cs_name):
+    """cs_sections + der <h2>-Seitenname -> dict(address, phone, opening_hours).
+
+    address: Die Adressseite wiederholt den Hausnamen vor der Strasse (siehe
+    CYBERSAX_ADDRESS_FIXTURE: "Testklub Teststrasse 1 01099 Dresden") - bei
+    allen 56 gepruesten Faellen identisch mit dem <h2>. Der Name wird nur
+    gestrichen, wenn er tatsaechlich am Anfang steht; sonst bleibt der Text
+    unangetastet stehen (nichts wird erraten, lieber die Dopplung sichtbar
+    als eine falsche Trennstelle).
+
+    phone: aus dem Kontakt-Block, der auch eine Kontaktperson und Fax/Email/
+    Web in derselben Zeile tragen kann (echter Fall: "Olaf Doehler Telefon:
+    +49 (0) 351/3 17 46-0 Fax: ..."). Nur der Wert hinter 'Telefon:' wird
+    uebernommen.
+
+    opening_hours: unveraendert aus 'Oeffnungszeiten' - keine Struktur, kein
+    Normalisieren (Bericht zu P5v: das wuerde der Quelle eine Praezision
+    unterstellen, die sie nicht hat).
+    """
+    sections = sections or {}
+    address = (sections.get("Adresse") or "").strip() or None
+    if address and cs_name and address.startswith(cs_name):
+        address = address[len(cs_name):].strip() or None
+
+    phone = None
+    kontakt = (sections.get("Kontakt") or "").strip()
+    if kontakt:
+        match = _PHONE_RE.search(kontakt)
+        if match:
+            phone = match.group(1).strip() or None
+
+    opening_hours = (sections.get("Öffnungszeiten") or "").strip() or None
+
+    return {"address": address, "phone": phone, "opening_hours": opening_hours}
+
+
 def fetch_address_page(url):
     try:
         html = base.fetch_html(url)

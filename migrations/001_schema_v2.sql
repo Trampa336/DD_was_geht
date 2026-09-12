@@ -96,6 +96,21 @@ CREATE TABLE venues (
     meta_fetched_at TEXT,
     meta_status     TEXT,                       -- 'ok' | 'not_found' | 'error:<kurz>'
 
+    -- --- ab hier fuellt P5v, ebenfalls NULL-bar ---
+    -- Adresse/Telefon/Oeffnungszeiten aus den cybersax-Adressseiten (74 Venues,
+    -- siehe tools/load_cybersax_contact.py). Rohtext der Quelle, unveraendert:
+    -- Oeffnungszeiten insbesondere NICHT in ein Stunden/Wochentag-Schema
+    -- zerlegt - das wuerde der Quelle eine Praezision unterstellen, die sie
+    -- nicht hat, und die Seite ist oeffentlich (echte Dresdner Adressen).
+    address              TEXT,
+    phone                TEXT,
+    opening_hours        TEXT,
+    -- Datum (nicht Uhrzeit) der cybersax-Adressseite, aus der die drei obigen
+    -- Felder stammen. Oeffnungszeiten veralten, eine Adresse/Telefonnummer
+    -- kaum - app/templates/venue.html zeigt dieses Datum deshalb NUR neben
+    -- opening_hours, nicht neben address/phone (siehe Bericht zu P5v).
+    contact_fetched_at   TEXT,
+
     first_seen      TEXT NOT NULL,
     last_seen       TEXT NOT NULL
 );
