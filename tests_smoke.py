@@ -2102,4 +2102,180 @@ check("Strasse E: echtes ISO-8859-1 (\u00df, \u00f6) bleibt unangetastet",
       _strassee_by_id["102"]["title"] == "Gr\u00f6\u00dfer Bahnhof"
       and _strassee_by_id["102"]["description"] == "Gr\u00f6\u00dfer als sonst")
 
+# --- P5u: Anreicherung ueber die cybersax-Adressseiten ---------------------
+# Das Fixture bildet die echte Seite nach, und zwar samt der Links, die NICHT
+# die Haus-Homepage sind: die feste Werbeleiste (motel-one.com &Co.), die
+# Social-Buttons von cybersax selbst und der Google-Maps-Link aus dem
+# Anfahrt-Block. Genau daran waere ein "nimm den einzigen auswaertigen Link"
+# gescheitert - gelesen wird ausschliesslich der Kontakt-Block.
+from tools import enrich_venues_cybersax as csx  # noqa: E402
+
+CYBERSAX_DAY_FIXTURE = """<html><body>
+<div class="tx-usercybersax-pi2"><table>
+<tr><td colspan="3"><h4>Musik</h4></td></tr>
+<tr><td class="td1">20:00 Uhr</td>
+    <td class="td2"><a href="/terminal/adressen/address/testklub-dresden/">Testklub</a></td>
+    <td class="td3">Konzert</td></tr>
+<tr><td class="td1">21:00 Uhr</td><td class="td2">Ort ohne Link</td>
+    <td class="td3">Lesung</td></tr>
+</table></div></body></html>"""
+
+CYBERSAX_ADDRESS_FIXTURE = """<html><body>
+<div class="user-cybersax"><div class="container"><div class="row">
+  <div class="col-12"><h2>Testklub</h2><p></p>
+    <p>Der Testklub ist seit 1999 die Bühne für laute Musik.</p><hr/></div>
+  <div class="col-3"><h3>Adresse</h3><p>Testklub<br/>Teststraße 1<br/>01099 Dresden</p></div>
+  <div class="col-3"><h3>Kontakt</h3><p>Telefon: 0351 123<br/>
+    Web: <a href="http://www.testklub.example/">http://www.testklub.example/</a></p></div>
+  <div class="col-3"><h3>Anfahrt</h3>
+    <p>» <a href="http://maps.google.de/?q=Teststraße">Stadtplan</a></p></div>
+  <div class="col-12"><hr/><h3>Termine</h3><table><tr><td>20:00</td><td>Konzert</td></tr></table></div>
+</div></div></div>
+<div class="werbung">
+  <a href="http://www.motel-one.com/de/hotels/frankfurt/">Hotels Frankfurt</a>
+  <a href="http://www.flyer-druck-muenchen.de">Druckerei München</a>
+  <a href="https://de-de.facebook.com/saxdresden">cybersax on facebook</a>
+</div></body></html>"""
+
+_csx_links = csx.parse_address_links(
+    CYBERSAX_DAY_FIXTURE, "https://www.cybersax.de/terminal/day/2026/9/13/")
+check("cybersax-Adressen: Ortszelle mit Link wird absolut aufgeloest",
+      _csx_links == {"Testklub":
+                     "https://www.cybersax.de/terminal/adressen/address/testklub-dresden/"})
+
+_csx_page = csx.parse_address_page(CYBERSAX_ADDRESS_FIXTURE)
+check("Adressseite: Name aus <h2>", _csx_page["name"] == "Testklub")
+check("Adressseite: Freitext ist der erste NICHT leere <p> im Kopf",
+      _csx_page["description"].startswith("Der Testklub ist seit 1999"))
+check("Adressseite: Homepage kommt aus dem Kontakt-Block, nicht aus der Werbeleiste",
+      _csx_page["web_url"] == "http://www.testklub.example/")
+check("Adressseite: Spaltenbloecke werden mit Ueberschrift gelesen",
+      set(_csx_page["sections"]) == {"Adresse", "Kontakt", "Anfahrt"})
+check("Adressseite: die Quelle liefert kein Bild (deshalb nie cover_source='cybersax')",
+      _csx_page["n_images"] == 0)
+
+check("classify_web_url: eigene Domain -> homepage",
+      csx.classify_web_url("http://www.east-club.example/") == "homepage")
+check("classify_web_url: Facebook -> social (als Cover-Quelle unbrauchbar)",
+      csx.classify_web_url("https://www.facebook.com/Irgendwas/") == "social")
+check("classify_web_url: Kartendienst -> unbrauchbar",
+      csx.classify_web_url("http://maps.google.de/?q=Teststrasse") == "unbrauchbar")
+
+# --- Bildpruefung: die vier Ausschussgruende aus P4c/P5u -------------------
+check("bild_verdikt: logo.png am Dateinamen erkannt",
+      csx.bild_verdikt({"url": "https://x.example/logo.png", "http": 200,
+                        "ctype": "image/png", "bytes": 90000,
+                        "width": 800, "height": 600}) == "logo:dateiname")
+check("bild_verdikt: kleines Quadrat ist ein Logo",
+      csx.bild_verdikt({"url": "https://x.example/bild.png", "http": 200,
+                        "ctype": "image/png", "bytes": 90000,
+                        "width": 300, "height": 300}) == "logo:quadratisch_300")
+check("bild_verdikt: 2400x560 ist ein Kopfstreifen, kein Motiv",
+      csx.bild_verdikt({"url": "https://x.example/header_hp.png", "http": 200,
+                        "ctype": "image/png", "bytes": 559137,
+                        "width": 2400, "height": 560}) == "kopfstreifen:2400x560")
+check("bild_verdikt: 404 ist tot",
+      csx.bild_verdikt({"url": "https://x.example/a.jpg", "http": 404,
+                        "ctype": "image/jpeg"}) == "tot:http404")
+check("bild_verdikt: og:image, das auf HTML zeigt, ist kein Bild",
+      csx.bild_verdikt({"url": "https://x.example/", "http": 200,
+                        "ctype": "text/html"}).startswith("kein_bild:"))
+check("bild_verdikt: echtes Querformat-Foto ist brauchbar",
+      csx.bild_verdikt({"url": "https://x.example/haus.jpg", "http": 200,
+                        "ctype": "image/jpeg", "bytes": 230042,
+                        "width": 1920, "height": 1280}) == "brauchbar")
+check("_image_size liest PNG-Masse aus dem Dateikopf",
+      csx._image_size(b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0d" + b"IHDR"
+                      + (1920).to_bytes(4, "big") + (1280).to_bytes(4, "big"))
+      == (1920, 1280))
+
+# --- payload(): Beschreibungen nur mit Handpruefung ------------------------
+# Der Kern der Regel aus dem Paket: ohne Eintrag in BESCHREIBUNG_PRUEFUNG wird
+# KEIN Text gespeichert, auch wenn welcher da ist.
+_csx_rec = {
+    "name": "Testklub",
+    "homepage_url": "http://www.testklub.example/",
+    "cs_description": "Freitext der Adressseite.",
+    "meta": {"status": "ok", "meta_title": "Testklub",
+             "meta_description": "meta-description der Homepage.",
+             "og_image_url": "https://x.example/haus.jpg"},
+    "bild": {"verdikt": "brauchbar"},
+    "status": "ok",
+}
+_csx_ungeprueft = csx.payload(_csx_rec, 999999)
+check("payload: ohne Eintrag in BESCHREIBUNG_PRUEFUNG bleibt meta_description leer",
+      _csx_ungeprueft["meta_description"] is None
+      and _csx_ungeprueft["description_source"] is None)
+check("payload: Homepage und Cover haengen NICHT an der Textpruefung",
+      _csx_ungeprueft["homepage_root"] == "http://www.testklub.example"
+      and _csx_ungeprueft["og_image_url"] == "https://x.example/haus.jpg")
+check("payload: cover_source ist 'homepage' - eine cybersax-Herkunft "
+      "wird nie behauptet",
+      _csx_ungeprueft["cover_source"] == "homepage")
+check("payload: verworfenes Bild wird nicht gespeichert",
+      csx.payload(dict(_csx_rec, bild={"verdikt": "logo:dateiname"}),
+                  999999)["og_image_url"] is None)
+check("payload: 'homepage_meta' in der Pruefliste nimmt den Homepage-Text",
+      csx.payload(_csx_rec, 580)["meta_description"]
+      == "meta-description der Homepage.")
+check("payload: 'cybersax_adressseite' in der Pruefliste schlaegt den "
+      "Homepage-Text (Fall Eastclub: dort ist die meta-description ein Ticker)",
+      csx.payload(_csx_rec, 657)["meta_description"] == "Freitext der Adressseite.")
+check("payload: als verworfen eingetragene Venue bekommt keinen Text",
+      csx.payload(_csx_rec, 559)["meta_description"] is None)
+check("payload: ohne erreichbare Homepage wird keine tote URL gespeichert "
+      "(der Homepage-Knopf haengt allein an homepage_root)",
+      csx.payload({"name": "X", "homepage_url": "http://tot.example/",
+                   "meta": {"status": "error:http:404"},
+                   "status": "error:http:404"}, 1)["homepage_root"] is None)
+check("P5u fasst enrichment.json nicht an (eigene Cache-Dateien)",
+      csx.RESULTS_CACHE.name == "cybersax_enrichment.json"
+      and csx.LINKS_CACHE.name == "cybersax_address_urls.json")
+check("BESCHREIBUNG_PRUEFUNG: jede Ablehnung traegt eine Begruendung",
+      all(isinstance(why, str) and len(why) > 20
+          for _, why in csx.BESCHREIBUNG_PRUEFUNG.values()))
+check("KIND_AUS_TEXT: jede Einstufung traegt ein Zitat der Belegstelle",
+      all(isinstance(beleg, str) and len(beleg) > 20
+          for _, beleg in csx.KIND_AUS_TEXT.values()))
+
+# --- Regressionsschutz: die falsche Null in venue_readiness_report.py ------
+# Abschnitt 4 zaehlte die "wirklich kargen" Venues nur innerhalb von
+# meta_status IS NULL. Sobald ein Anreicherungsversuch sie auf 'not_found'
+# setzte, fielen sie aus dem Nenner und der Bericht druckte "0/726 wirklich
+# karg", obwohl sich an den Seiten nichts geaendert hatte. Das Fixture ist
+# genau dieser Fall: eine karge Venue MIT meta_status='not_found'.
+import io  # noqa: E402
+import contextlib  # noqa: E402
+
+from tools import venue_readiness_report  # noqa: E402
+
+_rep_dir = tempfile.mkdtemp()
+_rep_path = os.path.join(_rep_dir, "readiness.db")
+_rep_conn = sqlite3.connect(_rep_path)
+_rep_conn.executescript(_schema_sql)
+_rep_conn.execute(
+    """INSERT INTO venues (id, slug, name, meta_status, first_seen, last_seen)
+       VALUES (1, 'karg', 'Karge Venue', 'not_found', '2026-09-01', '2026-09-01')""")
+_rep_conn.execute(
+    """INSERT INTO venues (id, slug, name, og_image_url, first_seen, last_seen)
+       VALUES (2, 'reich', 'Reiche Venue', 'https://x.example/c.jpg',
+               '2026-09-01', '2026-09-01')""")
+for _vid, _uid in ((1, "karg-1"), (2, "reich-1")):
+    _rep_conn.execute(
+        """INSERT INTO events (uid, identity_key, source, date, title, venue_id,
+                               raw_venue, category_slug, first_seen, last_seen)
+           VALUES (?, ?, 'cybersax', date('now', '+3 day'), 'Termin', ?, 'V',
+                   'musik', '2026-09-01', '2026-09-01')""", (_uid, _uid, _vid))
+_rep_conn.commit()
+_rep_conn.close()
+_rep_out = io.StringIO()
+with contextlib.redirect_stdout(_rep_out):
+    venue_readiness_report.report(_rep_path)
+_rep_text = _rep_out.getvalue()
+check("Bericht Abschnitt 4b zaehlt karge Venues unabhaengig von meta_status "
+      "(vorher: falsche Null)",
+      "=== 4b." in _rep_text and "unabhaengig von meta_status: 1/2" in _rep_text)
+check("Bericht Abschnitt 4b weist den meta_status der kargen Venues aus",
+      "davon meta_status = not_found: 1" in _rep_text)
+
 print("\nAlle Smoke-Tests erfolgreich.")

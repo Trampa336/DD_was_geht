@@ -109,22 +109,37 @@ def report(db_path):
         print("von den nie versuchten Venues hat mindestens 1 anstehendes Event "
               f"mit Bild: {_pct(with_img, len(never_attempted))}")
 
-        thin = [r for r in never_attempted if r["upcoming"] == 1]
-        if thin:
-            tids = [r["id"] for r in thin]
-            tq = ",".join("?" * len(tids))
-            single_events = conn.execute(
-                f"""SELECT venue_id, description, image_url FROM events
-                    WHERE venue_id IN ({tq}) AND duplicate_of IS NULL AND date >= date('now')""",
-                tids,
-            ).fetchall()
-            truly_bare = sum(
-                1 for e in single_events if not e["description"] and not e["image_url"]
-            )
-            print(f"\nvon den {len(thin)} nie-versuchten Venues mit GENAU 1 anstehendem "
-                  "Event: dessen einziges Event hat weder Bild noch Beschreibung "
-                  f"(wirklich karg): {_pct(truly_bare, len(thin))}"
-                  f" -- als Anteil aller {total} Venues: {_pct(truly_bare, total)}")
+    # --- 4b. "Wirklich karge" Venues ------------------------------------
+    # ACHTUNG, hier stand bis P5u eine FALSCHE NULL. Gemessen wurde nur
+    # innerhalb von meta_status IS NULL ("nie versucht"). Genau das ist aber
+    # kein Merkmal der Kargheit, sondern nur die Frage, ob ein Werkzeug die
+    # Venue schon einmal angefasst hat: P5t hat die 74 kargen Venues auf
+    # meta_status='not_found' gesetzt (Anreicherung versucht, nichts
+    # gefunden), womit sie aus dem Nenner fielen und der Bericht "0/726
+    # wirklich karg" druckte - obwohl sich an den 74 Seiten nichts geaendert
+    # hatte. Gezaehlt wird deshalb ueber ALLE adressierbaren Venues und
+    # allein an dem, was die Seite wirklich zeigen kann.
+    bare = []
+    for row in rows:
+        if row["og_image_url"] or row["meta_description"] or row["upcoming"] != 1:
+            continue
+        event = conn.execute(
+            """SELECT description, image_url FROM events
+               WHERE venue_id = ? AND duplicate_of IS NULL AND date >= date('now')""",
+            (row["id"],)).fetchone()
+        if event and not event["description"] and not event["image_url"]:
+            bare.append(row)
+
+    print("\n=== 4b. Wirklich karge Venue-Seiten (kein Cover, keine Beschreibung, "
+          "genau 1 anstehendes Event, und auch das ohne Bild und Text) ===")
+    print(f"ueber ALLE adressierbaren Venues, unabhaengig von meta_status: "
+          f"{_pct(len(bare), total)}")
+    by_status = {}
+    for row in bare:
+        key = row["meta_status"] or "nie versucht (NULL)"
+        by_status[key] = by_status.get(key, 0) + 1
+    for key, count in sorted(by_status.items(), key=lambda kv: -kv[1]):
+        print(f"  davon meta_status = {key}: {count}")
 
     # --- 5. Score-Konsum (zweiter Check aus dem Paket) -------------------
     reactions = conn.execute(

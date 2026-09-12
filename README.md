@@ -348,6 +348,7 @@ dd-was-geht/
   tools/show_duplicates.py   Zeigt, welche Doppelungen verbucht sind
   tools/reclassify.py        Kategorien im Bestand nachziehen (Backfill)
   tools/venue_readiness_report.py  Misst, wie viele Venues ueberhaupt etwas zum Zeigen haben (P5b)
+  tools/enrich_venues_cybersax.py  Anreicherung ueber die cybersax-Adressseiten - fuer Venues ohne Kulturkalender-Seite (P5u)
   tools/export_static.py     Statischer Export für GitHub Pages (siehe „Öffentliche Seite für Freunde")
   tools/publish_site.sh      Export + Push auf den Pi-Host (Cronjob)
   tests_smoke.py             Schnelltest der Kernlogik ohne Netzwerk

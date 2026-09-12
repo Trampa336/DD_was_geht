@@ -55,12 +55,19 @@ def venue_cover(venue, events):
 
     Reihenfolge (P5a, NICHT umkehren - siehe migrations/001_schema_v2.sql §1):
     venues.og_image_url zuerst (das ist bereits das Ergebnis des kk_cover_url-
-    vor-Homepage-og:image-Fallbacks aus tools/load_enrichment.py). Fehlt sie -
-    569 der 726 adressierbaren Venues (ohne Treffpunkte) wurden nie angefragt,
-    siehe tools/venue_readiness_report.py -, das Bild des naechsten
-    anstehenden Events, falls die Quelle eins mitgeliefert hat (67,7% dieser
-    569 haben mindestens ein anstehendes Event mit Bild). Erst wenn auch das
-    fehlt, bleibt die Flaeche leer (Platzhalter im Template)."""
+    vor-Homepage-og:image-Fallbacks aus tools/load_enrichment.py). Fehlt sie,
+    das Bild des naechsten anstehenden Events, falls die Quelle eins
+    mitgeliefert hat. Erst wenn auch das fehlt, bleibt die Flaeche leer
+    (Platzhalter im Template).
+
+    Wie viel dieser Fallback traegt, misst tools/venue_readiness_report.py,
+    Abschnitt 4 - hier steht bewusst KEINE Zahl mehr: die alte Fassung nannte
+    "569 nie angefragte Venues, davon 67,7% mit Event-Bild", und beide Werte
+    reproduzierten spaeter nicht mehr, weil jeder Anreicherungslauf Venues aus
+    der Gruppe herausnimmt - P5t verschob 74 Venues von "nie versucht" nach
+    'not_found', womit aus 569 495 wurden und aus 67,7% 77,8% (385/495, Stand
+    12.09.2026). Der Bericht rechnet die Quote bei jedem Lauf neu und nennt
+    dabei seinen Nenner."""
     if venue.get("og_image_url"):
         return venue["og_image_url"]
     for event in events:
