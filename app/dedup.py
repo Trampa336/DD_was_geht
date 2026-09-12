@@ -68,6 +68,30 @@ MAX_TIME_DELTA_STRONG_MINUTES = 150
 # Termine derselben Reihe am selben Abend dürfen nicht verschmelzen.
 STRONG_TITLE_OVERLAP = 0.8
 
+# Zweiter Weg zu derselben starken Evidenz, über die Zeichen-Ähnlichkeit.
+#
+# Warum es ihn braucht: die Wort-Überdeckung ist nicht immer definiert.
+# _title_tokens() wirft Wörter unter drei Zeichen weg, und es gibt Titel, von
+# denen danach NICHTS übrig bleibt - dann liefert _title_scores() zwangsläufig
+# overlap=0.0, ganz gleich wie ähnlich die Titel wirklich sind. Weil die erste
+# Zeile von _RULES bisher ausschliesslich die Wort-Überdeckung abfragte, war
+# das weite Zeitfenster für solche Titel unerreichbar - auch bei buchstäblich
+# identischem Text.
+#
+# Real am 12.09.2026 im Ostpol: kulturkalender "S.Y.N.T.H.E.T.I.C
+# S.I.G.N.A.L.S" 20:00 und rauze "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S" 22:00 -
+# gleicher Ortsschlüssel, Zeichen-Ähnlichkeit 1.00, Abstand 120 Minuten (also
+# innerhalb von MAX_TIME_DELTA_STRONG_MINUTES, Einlass gegen Beginn). Der
+# Klubabend stand trotzdem zweimal in der Liste, weil jedes Wort des Titels
+# nach dem Punkt-Aufbrechen nur ein Zeichen lang ist und die Wort-Überdeckung
+# damit auf 0.0 fiel.
+#
+# Warum 0.95 und nicht niedriger: dieser Weg soll NUR praktisch deckungsgleiche
+# Titel durchlassen. Alles Schwächere gehört weiter in die zweite Zeile von
+# _RULES mit dem engen 90-Minuten-Fenster. "MODUS: Akua" vs. "MODUS: Anetha"
+# liegt bei 0.72 und bleibt damit aussen vor - genau wie bisher.
+STRONG_TITLE_RATIO = 0.95
+
 # Titel-Ähnlichkeit (0-1), ab der zwei Einträge als dasselbe Event gelten.
 # Gleicher Ort + gleicher Tag + passende Zeit ist schon starke Evidenz, deshalb
 # darf der Titel dort stärker abweichen als bei unklarem Ort.
@@ -238,8 +262,13 @@ _RULES = (
     # Evidenz, die es hier gibt. Nur sie weitet das Zeitfenster: die Quellen
     # meinen dann Einlass und Beginn (Open Air, siehe
     # MAX_TIME_DELTA_STRONG_MINUTES).
+    #
+    # "Praktisch deckungsgleich" wird auf beiden Maßen gemessen, und eines
+    # genügt (_title_evidence_enough verodert sie): die Wort-Überdeckung deckt
+    # den Normalfall ab, die Zeichen-Ähnlichkeit die Titel, aus denen
+    # _title_tokens() gar kein Wort übriglässt (siehe STRONG_TITLE_RATIO).
     _Rule(venue=_SAME_VENUE,
-          min_overlap=STRONG_TITLE_OVERLAP, min_ratio=None,
+          min_overlap=STRONG_TITLE_OVERLAP, min_ratio=STRONG_TITLE_RATIO,
           max_delta=MAX_TIME_DELTA_STRONG_MINUTES,
           score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
     # Gleicher Ort, schwächerer Titel: eines der beiden Maße genügt, das enge

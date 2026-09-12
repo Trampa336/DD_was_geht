@@ -1345,6 +1345,33 @@ check("Dedup: schwacher Titel bekommt das weite Zeitfenster nicht",
       dedup.match(_ev("w3", "rauze", "MODUS: Akua", "objekt klein a", "22:00"),
                   _ev("w4", "ra", "MODUS: Anetha", "OKA", "00:15")) is None)
 
+# --- Titel, aus denen KEIN vergleichbares Wort uebrigbleibt (P5w) -----------
+# Der Fund aus P5w: David sah "a lot entries doubled", und genau ein Eintrag der
+# Liste war tatsaechlich eine uebersehene Doppelung - dieser hier, am 12.09.2026
+# im Ostpol. Beide Quellen schreiben den Titel ZEICHENGLEICH, der Ort ist
+# derselbe, und 120 Minuten Abstand liegen innerhalb des weiten Fensters
+# (Einlass gegen Beginn). Trotzdem blieb er stehen, weil _title_tokens() Woerter
+# unter drei Zeichen wegwirft: nach dem Aufbrechen an den Punkten ist jedes Wort
+# genau ein Zeichen lang, die Wort-Ueberdeckung faellt zwangslaeufig auf 0.0 -
+# und die erste Zeile von _RULES fragte nur sie ab. Deshalb hat sie jetzt
+# zusaetzlich STRONG_TITLE_RATIO (siehe dort).
+_SYNTH = "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S"
+check("Dedup: Titel ohne vergleichbares Wort liefert zwangslaeufig overlap 0.0",
+      dedup._title_scores(_SYNTH, _SYNTH) == (1.0, 0.0, 0))
+check("Dedup: zeichengleicher Titel am selben Ort ist starke Evidenz, auch ohne Wort-Ueberdeckung",
+      dedup.match(_ev("p1", "kulturkalender", _SYNTH, "Ostpol Dresden", "20:00"),
+                  _ev("p2", "rauze", _SYNTH, "Ostpol", "22:00")) is not None)
+# Die Uhrzeit bleibt die Gegenprobe: der neue Weg weitet das Fenster, er hebt
+# es nicht auf (Grundregel 2 im Modul-Docstring).
+check("Dedup: zeichengleicher Titel jenseits des weiten Fensters bleibt getrennt",
+      dedup.match(_ev("p3", "kulturkalender", _SYNTH, "Ostpol Dresden", "19:00"),
+                  _ev("p4", "rauze", _SYNTH, "Ostpol", "22:00")) is None)
+# Und der neue Weg laesst wirklich nur praktisch deckungsgleiche Titel durch:
+# die dritte Quelle schreibt denselben Abend ausgeschrieben, das reicht ihm
+# nicht (0.71). Die bleibt Sache der zweiten _RULES-Zeile mit dem engen Fenster.
+check("Dedup: STRONG_TITLE_RATIO ist eng genug fuer die ausgeschriebene Schreibweise",
+      dedup._title_scores(_SYNTH, "Synthetic Signals").ratio < dedup.STRONG_TITLE_RATIO)
+
 # --- Kino als Ort (app/normalize._is_film_venue) ---------------------------
 # Filmtitel enthalten kein Genre-Wort, und die Quellseite kennt fuer das
 # Open-Air-Kino nur die Rohkategorie "Festival". Ohne die Ortsregel landete das
