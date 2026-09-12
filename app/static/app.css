@@ -204,13 +204,14 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 .event-body { min-width:0; }
 .event-title { font-weight:600; font-size:15px; line-height:1.35; margin:0 0 3px; text-wrap:balance; }
 .event-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft); }
-/* Fuenf Marken, eine Form: Kategorie, Dauerangebot, Umgebung, Treffer, Preis.
-   Was sie unterscheidet, sind Farbe und Rahmen - der Rest steht einmal hier. */
-.tag, .tag-ongoing, .tag-region, .tag-pick, .price-tag { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; padding:2px 7px; border-radius:5px; }
-.tag, .tag-ongoing, .tag-region, .tag-pick { text-transform:uppercase; }
-/* Der Preis darf nicht umbrechen und wird notfalls abgeschnitten, die drei
+/* Sechs Marken, eine Form: Kategorie, Dauerangebot, Umgebung, Treffer, Preis,
+   Terminanzahl (P5x, nur an zusammengefassten Serien). Was sie unterscheidet,
+   sind Farbe und Rahmen - der Rest steht einmal hier. */
+.tag, .tag-ongoing, .tag-region, .tag-pick, .price-tag, .tag-run { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.02em; padding:2px 7px; border-radius:5px; }
+.tag, .tag-ongoing, .tag-region, .tag-pick, .tag-run { text-transform:uppercase; }
+/* Der Preis darf nicht umbrechen und wird notfalls abgeschnitten, die
    Marken daneben bleiben schlicht einzeilig. */
-.tag-ongoing, .tag-region, .tag-pick, .price-tag { white-space:nowrap; }
+.tag-ongoing, .tag-region, .tag-pick, .price-tag, .tag-run { white-space:nowrap; }
 .price-tag { max-width:150px; overflow:hidden; text-overflow:ellipsis; }
 .tag { background:var(--surface-raised); border:1px solid var(--line); color:var(--ink-faint); }
 
@@ -238,6 +239,25 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
    ohne Markierung liest sich das wie ein Fehler. */
 .tag-region { background:transparent; border:1px dashed var(--line); color:var(--ink-faint); }
 .tag-pick { background:color-mix(in srgb, var(--elbe) 26%, transparent); border:1px solid var(--elbe); color:var(--elbe-strong); }
+/* Zeigt an, dass eine Zeile eine zusammengefasste Serie ist (P5x) - ohne
+   diese Marke saehe "Domfuehrung" mit fuenf Uhrzeiten links davon wie ein
+   einzelnes, seltsam getaktetes Event aus statt wie eine Serie. */
+.tag-run { background:transparent; border:1px dashed var(--elbe); color:var(--elbe-strong); }
+
+/* Mehrere Uhrzeiten einer zusammengefassten Serie (P5x) - ersetzt die eine
+   Uhrzeit in der 58px-Spalte durch einen Knopf je Zeigung. Jeder Knopf
+   oeffnet das Popup GENAU dieser Zeigung (siehe buildRunRow in app.js) -
+   deshalb echte <button>-Elemente statt Text, das gibt Klick UND Tastatur
+   kostenlos mit. */
+.event-time-list { display:flex; flex-direction:column; gap:3px; }
+.event-time-btn { all:unset; cursor:pointer; font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:13px; color:var(--elbe-strong); padding:1px 3px; border-radius:4px; }
+.event-time-btn:hover, .event-time-btn:focus-visible { background:var(--elbe-soft); }
+.event-time-btn:focus-visible { outline:2px solid var(--elbe); outline-offset:1px; }
+/* Serienzeilen haben keinen Zeilen-Klick (mehrdeutig, welche Zeigung
+   gemeint waere - siehe buildRunRow-Kommentar) - der Zeigefinger-Cursor der
+   normalen Zeile waere hier irrefuehrend. */
+.event.event-run { cursor:default; }
+.event.event-run:hover { background:var(--row-bg); }
 
 /* Auf dem Handy ist neben Zeit, Titel und Buttons kein Platz mehr fuer das
    Cover - dort faellt die Spalte komplett weg. */

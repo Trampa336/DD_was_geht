@@ -564,6 +564,161 @@
     if (rowClass) { row.classList.add(rowClass); }
   }
 
+  /* Lange Serien am selben Tag zu einer Zeile falten - reine Anzeigesache
+     (P5x). Die Daten dahinter aendern sich nicht: /api/events und die
+     Tagesdateien liefern weiter jede einzelne Zeigung, hier wird nur
+     zusammengefasst, WAS gezeichnet wird - nie in der SQL, nie mit DISTINCT
+     (ein Query-Cut wuerde vier von fuenf echten Domfuehrungen von der Seite
+     tilgen, siehe P5w-Bericht).
+     Schluessel: gleicher Tag (kommt schon aus byDay) UND gleicher Ort UND
+     exakt derselbe normalisierte Titel - der Ort ist Pflicht, sonst wuerden
+     zwei Haeuser mit derselben "Fuehrung" am selben Tag verschmelzen.
+     Gemessen an 5026 Gewinner-Zeilen (duplicate_of IS NULL, heute..+45 Tage,
+     [V] 2026-09-12): 4394 Einzeltermine, 154 Gruppen zu zweit, 21 zu dritt,
+     32 zu viert, 22 zu fuenft, 3 mit 6 oder mehr (7 bzw. 8 - Tuerme/Dom zu
+     Meissen). Jede der 78 Gruppen ab Groesse 3 ist im Bestand eine
+     Fuehrung/Tour mit identischem Titel und mehreren Uhrzeiten am selben Tag
+     (Domfuehrung Meissen 5x, Turmfuehrung 4-8x, Wein-Fuehrung Wackerbarth 3x
+     ...) - keine einzige ist ein zufaelliges Zusammentreffen zweier
+     verschiedener Termine. Ab Groesse 2 ist das Bild gemischt (u.a. echte
+     Doppelvorstellungen im Kindertheater), deshalb bleibt es dort bei zwei
+     Zeilen - David's eigene Worte: "mehr als zwei oder drei mal".
+     RUN_MIN_SIZE ist damit aus der Verteilung gewaehlt, nicht geraten. */
+  var RUN_MIN_SIZE = 3;
+
+  /* Dieselbe Transliteration wie normalize.slugify() in Python (Kleinschrift,
+     Umlaute, Diakritika, Rest zu Bindestrichen) - aber OHNE Wortfilter.
+     dedup.py._title_tokens() wirft Woerter unter drei Zeichen weg und macht
+     z.B. "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S" zu gar nichts (siehe P5w-Bericht) -
+     fuer die Gruppierung hier zaehlt der volle normalisierte Text, nicht
+     einzelne Woerter, also bleibt so ein Titel vergleichbar. */
+  function runSlug(text) {
+    return (text || '').toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  // Ort UND Titel - siehe Kommentar oben, warum der Ort nicht optional ist.
+  function runKey(e) { return runSlug(e.venue) + '|' + runSlug(e.title); }
+
+  /* Eine einzelne Zeile - unveraendertes Verhalten von vor P5x, nur aus der
+     Schleife herausgezogen, damit buildRunRow() dieselben Bausteine nutzen
+     kann. */
+  function buildEventRow(e) {
+    var row = document.createElement('article');
+    row.className = 'event';
+    row.innerHTML = '<div class="event-time"></div><div class="event-cover"></div><div class="event-body"><p class="event-title"></p><div class="event-meta"><a class="event-venue-link"></a><span class="tag"></span><span class="tag-pick"></span><span class="tag-ongoing"></span><span class="tag-region"></span><span class="price-tag"></span></div></div><div class="event-actions"></div>';
+    row.querySelector('.event-time').textContent = e.time || '--:--';
+    fillCover(row.querySelector('.event-cover'), e, 'event-cover');
+    row.querySelector('.event-title').textContent = e.title;
+    var venueLink = row.querySelector('.event-venue-link');
+    venueLink.textContent = e.venue || '';
+    // Event -> Venue-Seite (decision #4), NICHT Kulturkalender. Nur ein
+    // echter Link, wenn die Venue eine Seite hat (kein Treffpunkt, siehe
+    // venueHref) - sonst bleibt es ein reiner Text wie vorher.
+    var rowVenueHref = venueHref(e);
+    if (rowVenueHref) {
+      venueLink.href = rowVenueHref;
+      venueLink.addEventListener('click', function (evt) { evt.stopPropagation(); });
+    }
+    row.querySelector('.tag').textContent = CAT_LABEL[e.category] || e.category;
+    /* Die vier Marken an der Zeile. Jede steht im Rohbau schon da und
+       wird entweder beschriftet oder wieder entfernt - eine leere Marke
+       wuerde als kleiner Kasten sichtbar bleiben.
+         Dauerangebot: laeuft die Reihe an vielen Tagen (db.ONGOING_MIN_DAYS),
+           wird sie eingefaerbt und beschriftet - Farbe allein waere nicht
+           lesbar.
+         Top-Treffer: passt das Event zum gelernten Geschmack, bekommt die
+           Zeile denselben Auftritt in Elbe-Tuerkis. Der Score kommt aus
+           scoring.score_events() - im api-Modus aus /api/events, im
+           statischen Modus vorgerechnet aus der Tagesdatei.
+         Umland/Weiter weg: steht nur an Eintraegen, die ohne den Schalter
+           "Auch Umland & Umgebung" gar nicht in der Liste waeren (P5b/
+           decision #12: Standard ist jetzt nur Dresden, siehe passesFilters).
+         Preis: nur, wenn die Quelle einen mitgeliefert hat. */
+    mark(row, '.tag-ongoing', e.ongoing && 'Dauerangebot', 'ongoing');
+    mark(row, '.tag-pick', Number(e.score) >= HIGHLIGHT_SCORE && 'Top-Treffer', 'top-pick');
+    mark(row, '.tag-region', e.region && e.region !== 'dresden'
+      && (e.region === 'weiter' ? 'Weiter weg' : 'Umland'));
+    mark(row, '.price-tag', e.price_text);
+    var actions = row.querySelector('.event-actions');
+    if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
+    // Statt eines eigenen Buttons oeffnet ein Klick auf die Zeile das
+    // Popup. Die Daumen-Buttons rechts stoppen ihr Event selbst nicht,
+    // deshalb hier pruefen, ob der Klick aus .event-actions kam.
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-haspopup', 'dialog');
+    row.addEventListener('click', function (evt) {
+      if (evt.target.closest('.event-actions')) { return; }
+      openModal(e);
+    });
+    row.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); openModal(e); }
+    });
+    return row;
+  }
+
+  /* Eine zusammengefasste Zeile fuer eine lange Serie (>= RUN_MIN_SIZE
+     Zeigungen). Titel/Ort/Kategorie stehen EINMAL (sie sind bei allen
+     Mitgliedern identisch, sonst waeren sie nicht gruppiert worden), aber
+     JEDE Uhrzeit ist ein eigener Knopf - ein Klick oeffnet das Popup genau
+     dieser Zeigung mit ihrer eigenen uid und ihrer eigenen Quelle
+     (openModal(m), nicht openModal(first)). Damit bleibt jede einzelne
+     Zeigung erreichbar, auch nach dem Zusammenfalten.
+     Bewusst OHNE Zeilen-Klick (waere mehrdeutig, welche Zeigung gemeint ist)
+     und OHNE Daumen-Buttons in der Zeile: reactions/apply_reaction haengen am
+     Showing-uid (siehe app/db.py REACTIONS_ADDENDUM), eine zusammengefasste
+     Zeile hat keinen einzelnen Uid mehr, auf den ein Klick zeigen koennte.
+     Wer bewerten will, oeffnet ueber eine Uhrzeit das Popup der jeweiligen
+     Zeigung und bewertet dort ganz normal (fbButtons(currentModalEvent) in
+     renderModalFooter, unveraendert). Was das fuer die kommenden Herzen
+     bedeutet (dieselbe Frage, ein Uid pro Zeigung), steht im P5x-Bericht -
+     das baut ein spaeteres Paket. */
+  function buildRunRow(members) {
+    var first = members[0];
+    var row = document.createElement('article');
+    row.className = 'event event-run';
+    row.innerHTML = '<div class="event-time event-time-list"></div><div class="event-cover"></div><div class="event-body"><p class="event-title"></p><div class="event-meta"><a class="event-venue-link"></a><span class="tag"></span><span class="tag-pick"></span><span class="tag-ongoing"></span><span class="tag-region"></span><span class="tag-run"></span><span class="price-tag"></span></div></div><div class="event-actions"></div>';
+
+    var timeList = row.querySelector('.event-time-list');
+    members.forEach(function (m) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'event-time-btn';
+      btn.textContent = m.time || '--:--';
+      btn.setAttribute('aria-haspopup', 'dialog');
+      btn.addEventListener('click', function (evt) { evt.stopPropagation(); openModal(m); });
+      timeList.appendChild(btn);
+    });
+
+    fillCover(row.querySelector('.event-cover'), first, 'event-cover');
+    row.querySelector('.event-title').textContent = first.title;
+    var venueLink = row.querySelector('.event-venue-link');
+    venueLink.textContent = first.venue || '';
+    var rowVenueHref = venueHref(first);
+    if (rowVenueHref) {
+      venueLink.href = rowVenueHref;
+      venueLink.addEventListener('click', function (evt) { evt.stopPropagation(); });
+    }
+    row.querySelector('.tag').textContent = CAT_LABEL[first.category] || first.category;
+    // Score/Dauerangebot/Ort sind bei einer echten Serie an allen Mitgliedern
+    // gleich (gleicher Titel -> gleiches "ongoing", gleicher Ort -> gleiche
+    // Region) - nur beim Score wird sicherheitshalber das Maximum genommen,
+    // falls ein spaeteres Lernmodell einzelne Zeigungen doch unterschiedlich
+    // bewertet.
+    var maxScore = Math.max.apply(null, members.map(function (m) { return Number(m.score) || 0; }));
+    mark(row, '.tag-ongoing', first.ongoing && 'Dauerangebot', 'ongoing');
+    mark(row, '.tag-pick', maxScore >= HIGHLIGHT_SCORE && 'Top-Treffer', 'top-pick');
+    mark(row, '.tag-region', first.region && first.region !== 'dresden'
+      && (first.region === 'weiter' ? 'Weiter weg' : 'Umland'));
+    mark(row, '.tag-run', members.length + ' Termine');
+    var price = members.map(function (m) { return m.price_text; }).filter(Boolean)[0];
+    mark(row, '.price-tag', price);
+    return row;
+  }
+
   function loadList() {
     listEl.innerHTML = '<div class="loading">Lädt …</div>';
     eventSource('list').then(function (data) {
@@ -590,59 +745,26 @@
 
         var list = document.createElement('div');
         list.className = 'day-events';
+        // Serien vorab zaehlen (siehe RUN_MIN_SIZE oben). byDay[day] ist
+        // schon chronologisch sortiert (Server-/Export-Sortierung nach
+        // date, time) - eine Serie wird deshalb an der Stelle ihrer
+        // fruehesten Zeigung gezeichnet, renderedKeys verhindert, dass sie
+        // bei ihren spaeteren Zeigungen ein zweites Mal auftaucht. Einzelne
+        // Termine und Zweiergruppen durchlaufen unveraendert buildEventRow -
+        // ihre Reihenfolge in der Liste aendert sich nicht.
+        var membersByKey = {};
+        byDay[day].forEach(function (e) { (membersByKey[runKey(e)] = membersByKey[runKey(e)] || []).push(e); });
+        var renderedKeys = {};
         byDay[day].forEach(function (e) {
-          var row = document.createElement('article');
-          row.className = 'event';
-          row.innerHTML = '<div class="event-time"></div><div class="event-cover"></div><div class="event-body"><p class="event-title"></p><div class="event-meta"><a class="event-venue-link"></a><span class="tag"></span><span class="tag-pick"></span><span class="tag-ongoing"></span><span class="tag-region"></span><span class="price-tag"></span></div></div><div class="event-actions"></div>';
-          row.querySelector('.event-time').textContent = e.time || '--:--';
-          fillCover(row.querySelector('.event-cover'), e, 'event-cover');
-          row.querySelector('.event-title').textContent = e.title;
-          var venueLink = row.querySelector('.event-venue-link');
-          venueLink.textContent = e.venue || '';
-          // Event -> Venue-Seite (decision #4), NICHT Kulturkalender. Nur ein
-          // echter Link, wenn die Venue eine Seite hat (kein Treffpunkt, siehe
-          // venueHref) - sonst bleibt es ein reiner Text wie vorher.
-          var rowVenueHref = venueHref(e);
-          if (rowVenueHref) {
-            venueLink.href = rowVenueHref;
-            venueLink.addEventListener('click', function (evt) { evt.stopPropagation(); });
+          var key = runKey(e);
+          var members = membersByKey[key];
+          if (members.length >= RUN_MIN_SIZE) {
+            if (renderedKeys[key]) { return; }
+            renderedKeys[key] = true;
+            list.appendChild(buildRunRow(members));
+            return;
           }
-          row.querySelector('.tag').textContent = CAT_LABEL[e.category] || e.category;
-          /* Die vier Marken an der Zeile. Jede steht im Rohbau schon da und
-             wird entweder beschriftet oder wieder entfernt - eine leere Marke
-             wuerde als kleiner Kasten sichtbar bleiben.
-               Dauerangebot: laeuft die Reihe an vielen Tagen (db.ONGOING_MIN_DAYS),
-                 wird sie eingefaerbt und beschriftet - Farbe allein waere nicht
-                 lesbar.
-               Top-Treffer: passt das Event zum gelernten Geschmack, bekommt die
-                 Zeile denselben Auftritt in Elbe-Tuerkis. Der Score kommt aus
-                 scoring.score_events() - im api-Modus aus /api/events, im
-                 statischen Modus vorgerechnet aus der Tagesdatei.
-               Umland/Weiter weg: steht nur an Eintraegen, die ohne den Schalter
-                 "Auch Umland & Umgebung" gar nicht in der Liste waeren (P5b/
-                 decision #12: Standard ist jetzt nur Dresden, siehe passesFilters).
-               Preis: nur, wenn die Quelle einen mitgeliefert hat. */
-          mark(row, '.tag-ongoing', e.ongoing && 'Dauerangebot', 'ongoing');
-          mark(row, '.tag-pick', Number(e.score) >= HIGHLIGHT_SCORE && 'Top-Treffer', 'top-pick');
-          mark(row, '.tag-region', e.region && e.region !== 'dresden'
-            && (e.region === 'weiter' ? 'Weiter weg' : 'Umland'));
-          mark(row, '.price-tag', e.price_text);
-          var actions = row.querySelector('.event-actions');
-          if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
-          // Statt eines eigenen Buttons oeffnet ein Klick auf die Zeile das
-          // Popup. Die Daumen-Buttons rechts stoppen ihr Event selbst nicht,
-          // deshalb hier pruefen, ob der Klick aus .event-actions kam.
-          row.setAttribute('role', 'button');
-          row.setAttribute('tabindex', '0');
-          row.setAttribute('aria-haspopup', 'dialog');
-          row.addEventListener('click', function (evt) {
-            if (evt.target.closest('.event-actions')) { return; }
-            openModal(e);
-          });
-          row.addEventListener('keydown', function (evt) {
-            if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); openModal(e); }
-          });
-          list.appendChild(row);
+          list.appendChild(buildEventRow(e));
         });
         section.appendChild(list);
         listEl.appendChild(section);

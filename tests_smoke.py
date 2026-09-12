@@ -2475,4 +2475,178 @@ check("Bericht Abschnitt 4b zaehlt karge Venues unabhaengig von meta_status "
 check("Bericht Abschnitt 4b weist den meta_status der kargen Venues aus",
       "davon meta_status = not_found: 1" in _rep_text)
 
+# --- P5x: lange Serien werden nur in der Anzeige zusammengefasst ------------
+# Kernbehauptung des Pakets: die API/Tagesdatei liefert weiter JEDE Zeigung
+# einzeln (nie DISTINCT, nie ein Query-Cut) - nur app.js (loadList) fasst
+# gleicher Tag+Ort+Titel-Gruppen ab RUN_MIN_SIZE=3 zu einer Zeile zusammen.
+# Fixture: eine 5er-Serie wie die echte Domfuehrung Meissen (5x/Tag, siehe
+# P5x-Bericht), eine 2er-Gruppe (bleibt laut Entscheidung #24 zwei Zeilen),
+# und derselbe Titel an einem ANDEREN Ort am selben Tag (darf NICHT mit der
+# Serie verschmelzen - "Venue ist nicht optional").
+_p5x_date = _export_today + _dt.timedelta(days=7)
+_p5x_day = _p5x_date.isoformat()
+_p5x_events = [
+    {"uid": f"p5x-run-{i}", "source": "kulturkalender", "date": _p5x_day,
+     "time": t, "title": "P5x Testführung", "venue": "P5x Testkirche",
+     "category": "fuehrungen", "url": f"https://example.org/p5x-run-{i}"}
+    for i, t in enumerate(["10:00", "11:00", "12:00", "13:00", "14:00"], start=1)
+]
+_p5x_events += [
+    # Gleicher Titel, ANDERER Ort, selber Tag - Gegenprobe fuer die
+    # Gruppierung: darf trotz identischem Titel eine eigene Zeile bleiben.
+    {"uid": "p5x-other-venue", "source": "kulturkalender", "date": _p5x_day,
+     "time": "10:00", "title": "P5x Testführung", "venue": "P5x Andere Kirche",
+     "category": "fuehrungen", "url": "https://example.org/p5x-other-venue"},
+    # Doppelvorstellung, selber Ort+Titel, nur 2x - bleibt laut Entscheidung
+    # #24 unter RUN_MIN_SIZE und damit zwei Zeilen.
+    {"uid": "p5x-double-1", "source": "kulturkalender", "date": _p5x_day,
+     "time": "15:00", "title": "P5x Doppelvorstellung", "venue": "P5x Testkirche",
+     "category": "kultur", "url": "https://example.org/p5x-double-1"},
+    {"uid": "p5x-double-2", "source": "kulturkalender", "date": _p5x_day,
+     "time": "19:00", "title": "P5x Doppelvorstellung", "venue": "P5x Testkirche",
+     "category": "kultur", "url": "https://example.org/p5x-double-2"},
+    # Gepunkteter Titel ohne ein einziges Wort ab drei Zeichen - genau der
+    # Fall, an dem dedup.py._title_tokens() nichts mehr uebrig laesst (siehe
+    # P5w-Bericht, "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S"). Dieselbe Serie zaehlt
+    # trotzdem korrekt als 3er-Gruppe, weil die Gruppierung hier auf dem
+    # vollen normalisierten Text arbeitet statt auf Wort-Tokens.
+    {"uid": "p5x-dotted-1", "source": "kulturkalender", "date": _p5x_day,
+     "time": "20:00", "title": "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S", "venue": "P5x Club",
+     "category": "musik", "url": "https://example.org/p5x-dotted-1"},
+    {"uid": "p5x-dotted-2", "source": "rauze", "date": _p5x_day,
+     "time": "21:00", "title": "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S", "venue": "P5x Club",
+     "category": "musik", "url": "https://example.org/p5x-dotted-2"},
+    {"uid": "p5x-dotted-3", "source": "ra", "date": _p5x_day,
+     "time": "22:00", "title": "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S", "venue": "P5x Club",
+     "category": "musik", "url": "https://example.org/p5x-dotted-3"},
+]
+with db.get_conn() as conn:
+    db.upsert_events(conn, _p5x_events)
+    _p5x_all = db.events_for_range(conn, _p5x_day, _p5x_day)
+    _p5x_built = feed.build_events(conn, _p5x_date, _p5x_date)
+
+check("P5x: die Query liefert weiterhin ALLE 11 Zeigungen einzeln - kein "
+      "DISTINCT, kein Query-Cut (Gegenprobe zur harten Vorgabe des Pakets)",
+      len({e["uid"] for e in _p5x_all if e["uid"].startswith("p5x-")}) == 11
+      and sum(1 for e in _p5x_all if e["uid"].startswith("p5x-dotted-")) == 3)
+check("P5x: /api/events (build_events) liefert dieselben 11 p5x-Zeigungen mit "
+      "je eigener url - das ist der Vertrag, auf dem die Zusammenfassung im "
+      "Frontend aufbaut",
+      {e["uid"]: e["url"] for e in _p5x_built if e["uid"].startswith("p5x-")} ==
+      {e["uid"]: e["url"] for e in _p5x_events})
+
+
+def _js_run_slug(text):
+    """Python-Nachbau von runSlug() aus app/static/app.js - fuer den
+    Smoke-Test, der ohne JS-Laufzeit auskommen muss. Dieselbe Transliteration
+    wie normalize.slugify(), aber bewusst OHNE Wortfilter (siehe app.js-
+    Kommentar zu dedup.py._title_tokens())."""
+    import unicodedata as _ud
+    text = (text or "").lower()
+    for src, dst in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        text = text.replace(src, dst)
+    text = _ud.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not _ud.combining(ch))
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
+def _js_group_runs(events, min_size=3):
+    """Python-Nachbau von runKey()+der Gruppierungsschleife in loadList()
+    (app/static/app.js) - prueft die Anzeige-Logik, ohne einen Browser zu
+    brauchen. Gibt eine Liste von (ist_serie, mitglieder)-Paaren zurueck, in
+    der Reihenfolge, in der app.js sie zeichnen wuerde."""
+    by_key = {}
+    order = []
+    for e in events:
+        key = _js_run_slug(e.get("venue")) + "|" + _js_run_slug(e.get("title"))
+        if key not in by_key:
+            by_key[key] = []
+            order.append(key)
+        by_key[key].append(e)
+    rendered = set()
+    items = []
+    for e in events:
+        key = _js_run_slug(e.get("venue")) + "|" + _js_run_slug(e.get("title"))
+        members = by_key[key]
+        if len(members) >= min_size:
+            if key in rendered:
+                continue
+            rendered.add(key)
+            items.append((True, members))
+        else:
+            items.append((False, [e]))
+    return items
+
+
+_p5x_only = [e for e in _p5x_built if e["uid"].startswith("p5x-")]
+_p5x_items = _js_group_runs(_p5x_only)
+_p5x_run_items = [m for is_run, m in _p5x_items if is_run]
+check("P5x: von den 4 Titel-Gruppen im Fixture werden GENAU 2 als Serie "
+      "erkannt (die 5er-Fuehrung und die 3er-Dotted-Gruppe) - die 2er-"
+      "Doppelvorstellung und der Einzeltermin am anderen Ort bleiben aussen vor",
+      len(_p5x_run_items) == 2 and any(len(m) == 5 for m in _p5x_run_items))
+check("P5x: die zusammengefasste Zeile fuehrt alle 5 Uhrzeiten der Serie, "
+      "keine geht beim Zusammenfalten verloren",
+      sorted(e["time"] for e in next(m for m in _p5x_run_items if len(m) == 5)) ==
+      ["10:00", "11:00", "12:00", "13:00", "14:00"])
+check("P5x: jede Zeigung der Serie behaelt ihre eigene uid UND url in der "
+      "zusammengefassten Zeile (jede bleibt einzeln erreichbar)",
+      {e["uid"]: e["url"] for e in next(m for m in _p5x_run_items if len(m) == 5)} ==
+      {e["uid"]: e["url"] for e in _p5x_events if e["uid"].startswith("p5x-run-")})
+check("P5x: derselbe Titel an einem ANDEREN Ort verschmilzt NICHT mit der "
+      "Serie - Venue ist Teil des Gruppenschluessels, nicht optional",
+      any(len(m) == 1 and m[0]["uid"] == "p5x-other-venue" for is_run, m in _p5x_items if not is_run))
+check("P5x: eine Doppelvorstellung (2x, gleicher Ort+Titel) bleibt UNTER "
+      "RUN_MIN_SIZE und damit zwei einzelne Zeilen (Entscheidung #24: "
+      "'ein Doppel-Programm bleibt zwei Zeilen')",
+      sum(1 for is_run, m in _p5x_items if not is_run and m[0]["title"] == "P5x Doppelvorstellung") == 2)
+check("P5x: ein gepunkteter Titel ohne Woerter ab drei Zeichen "
+      "('S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S', derselbe Fall wie in "
+      "dedup.py._title_tokens(), siehe P5w-Bericht) gruppiert trotzdem "
+      "korrekt zu einer 3er-Serie, weil hier der volle normalisierte Text "
+      "zaehlt statt einzelner Wort-Tokens",
+      any(len(m) == 3 and m[0]["title"] == "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S" for is_run, m in _p5x_items if is_run))
+check("P5x: insgesamt geht dabei keine einzige der 11 Zeigungen verloren - "
+      "Summe der Mitglieder ueber alle gezeichneten Zeilen bleibt 11",
+      sum(len(m) for _, m in _p5x_items) == 11)
+
+# --- P5x: die Zusammenfassung lebt in app.js/app.css, nicht in der SQL -----
+check("app.js: RUN_MIN_SIZE ist 3 - aus der gemessenen Verteilung gewaehlt "
+      "(siehe Kommentar im Code und P5x-Bericht), nicht geraten",
+      "var RUN_MIN_SIZE = 3;" in _page_all)
+check("app.js: der Gruppenschluessel kombiniert Ort UND Titel (runKey) - "
+      "ohne Ort wuerden zwei Haeuser mit derselben Fuehrung verschmelzen",
+      "function runKey(e) { return runSlug(e.venue) + '|' + runSlug(e.title); }" in _page_all)
+check("app.js: jede Uhrzeit einer Serie oeffnet ihr EIGENES Popup "
+      "(openModal(m), nicht openModal(first)) - das haelt jede Zeigung "
+      "einzeln erreichbar",
+      "btn.addEventListener('click', function (evt) { evt.stopPropagation(); openModal(m); });" in _page_all)
+check("app.js: eine zusammengefasste Zeile bekommt KEINE Bewerten-Buttons "
+      "(reactions/apply_reaction haengen am einzelnen Showing-uid, siehe "
+      "app/db.py REACTIONS_ADDENDUM) - buildRunRow haengt fbButtons NICHT an",
+      "function buildRunRow" in _page_all
+      and "fbButtons" not in _page_all[_page_all.index("function buildRunRow"):_page_all.index("function loadList")])
+check("app.css: die Serien-Marke (.tag-run) ist ausgeliefert",
+      ".tag-run {" in _page_all)
+check("app.css: die Mehrfach-Uhrzeiten-Liste (.event-time-list) ist ausgeliefert",
+      ".event-time-list {" in _page_all)
+
+# --- P5x: auch der statische Export liefert weiterhin jede Zeigung einzeln -
+# (P5b/P5w-Vertrag: Flask und der Export teilen sich die Vorlage im Prozess -
+# hier zaehlt aber die Tagesdatei, die app.js im static-Modus laedt.)
+_p5x_export_dir = os.path.join(tempfile.mkdtemp(), "site-p5x")
+export_static.export(_p5x_export_dir, days_ahead=45, today=_export_today)
+_p5x_day_file = os.path.join(_p5x_export_dir, "data", "days", f"{_p5x_day}.json")
+if os.path.exists(_p5x_day_file):
+    with open(_p5x_day_file, encoding="utf-8") as _fh:
+        _p5x_static_day = json.load(_fh)
+    _p5x_static_run = [e for e in _p5x_static_day if e.get("uid", "").startswith("p5x-run-")]
+    check("P5x: die Tagesdatei des statischen Exports enthaelt weiterhin "
+          "alle 5 Zeigungen der Serie einzeln (dieselbe Vorgabe wie im "
+          "Flask-Modus, EIN Template/EINE Datenquelle fuer beide)",
+          len(_p5x_static_run) == 5
+          and {e["uid"] for e in _p5x_static_run} == {f"p5x-run-{i}" for i in range(1, 6)})
+else:
+    check("P5x: Tagesdatei fuer den Testtag wurde geschrieben", False)
+
 print("\nAlle Smoke-Tests erfolgreich.")
