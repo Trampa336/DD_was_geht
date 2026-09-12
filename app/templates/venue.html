@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if mode == 'static' %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>{{ venue.name }} · DD was geht</title>
+{# Venue-Seiten sind bewusst schlicht (P5b): kein Farbschema-Umschalter, keine
+   animierte Hintergrundflaeche wie auf der Startseite - das sind Zutaten fuer
+   die Liste, nicht fuer eine Content-Seite, die vor allem lesbar sein soll.
+   boot.js laeuft trotzdem: es setzt nur das zuletzt gewaehlte Farbschema
+   (data-theme), damit die Seite farblich zur Startseite passt. #}
+<script src="{{ urls.asset('boot.js') }}"></script>
+<link rel="stylesheet" href="{{ urls.asset('app.css') }}">
+</head>
+<body>
+<div class="page page-narrow">
+  <header class="masthead masthead-simple">
+    <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
+  </header>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a> · <a href="{{ urls.venues_index }}">Alle Orte</a></nav>
+
+  <article class="venue-head">
+    <div class="venue-cover{% if not cover %} placeholder{% endif %}"
+         {% if cover %}style="background-image:url('{{ cover }}')"{% endif %}>{% if not cover %}{{ (kind_labels.get(venue.kind, venue.kind) or '?')[0] }}{% endif %}</div>
+    <div class="venue-info">
+      <h2 class="venue-title">{{ venue.name }}</h2>
+      <div class="venue-meta">
+        <span class="tag">{{ kind_labels.get(venue.kind, venue.kind) }}</span>
+        {% if venue.region != 'dresden' %}<span class="tag-region">{{ region_labels.get(venue.region, venue.region) }}</span>{% endif %}
+      </div>
+      {% if venue.meta_description %}
+      <p class="venue-desc">{{ venue.meta_description }}</p>
+      {% endif %}
+      {% if venue.homepage_root %}
+      {# venues.homepage_root, NICHT homepage_url (P5a/decision aus dem P5b-
+         Paket): ein Teil der gespeicherten homepage_url-Werte sind Deep-Links
+         in die eigene Terminliste der Venue, kein Ziel fuer einen
+         "Homepage"-Knopf. #}
+      <a class="venue-homepage-btn" href="{{ venue.homepage_root }}" target="_blank" rel="noopener noreferrer">Homepage &#8599;</a>
+      {% endif %}
+    </div>
+  </article>
+
+  <section class="venue-events">
+    <h3>Anstehende Termine{% if events %} ({{ events | length }}){% endif %}</h3>
+    {% if events %}
+    <div class="day-events">
+      {% for e in events %}
+      <article class="event event-static">
+        <div class="event-time">{{ e.time or '--:--' }}</div>
+        <div class="event-cover{% if not e.image_url %} placeholder{% endif %}"
+             {% if e.image_url %}style="background-image:url('{{ e.image_url }}')"{% endif %}>{% if not e.image_url %}{{ venue.name[0] }}{% endif %}</div>
+        <div class="event-body">
+          <p class="event-title">{{ e.title }}</p>
+          <div class="event-meta">
+            <span>{{ e.date | de_date }}</span>
+            {% if e.price_text %}<span class="price-tag">{{ e.price_text }}</span>{% endif %}
+          </div>
+          {% if e.description %}<p class="venue-event-desc">{{ e.description }}</p>{% endif %}
+        </div>
+        <div class="event-actions">
+          {% if e.url %}<a class="modal-source-link" href="{{ e.url }}" target="_blank" rel="noopener noreferrer">zur Quelle &#8599;</a>{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      Keine bekannten anstehenden Termine.
+      {% if last_past %}<br>Zuletzt bekannt: „{{ last_past.title }}“ am {{ last_past.date | de_date }}.{% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  <p class="footnote">
+    {% if venue.meta_status %}Aus Dresdner Veranstaltungskalendern und der Homepage der Venue.
+    {% else %}Aus Dresdner Veranstaltungskalendern - für diesen Ort wurde noch keine eigene Homepage geprüft.{% endif %}
+  </p>
+</div>
+</body>
+</html>

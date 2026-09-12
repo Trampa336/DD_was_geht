@@ -77,7 +77,15 @@ RA_AREA_ID = 150
 # frueher hier stehende Literal-Liste geprueft, nicht nur begutachtet.
 SOURCE_PRIORITY = registry.priority_order()
 
-# Kategorien, die im Web-UI als Filter angeboten werden.
+# SEIT P5b NICHT MEHR DIE QUELLE FUER DIE WEB-OBERFLAECHE: das Chip-Menue,
+# der Export nach data/index.json und die Standard-Sichtbarkeit lesen jetzt
+# db.list_categories() (die categories-Tabelle, migrations/001_schema_v2.sql
+# §2). Grund: dieses Woerterbuch kennt 'nightlife' (seit P2 in der Tabelle)
+# gar nicht, und EXCLUDED_CATEGORIES unten widerspricht der Tabelle bei
+# 'familie' (dort default_visible=1, hier ausgeschlossen) - siehe Bericht zu
+# P5b. Bleibt trotzdem stehen, weil apply_reaction/scoring nichts damit zu tun
+# haben und dieses Paket scoring.py nicht anfasst; wird von der Web-Oberflaeche
+# nicht mehr gelesen.
 CATEGORY_LABELS = {
     "kultur": "Kultur & Bühne",
     "musik": "Musik & Nightlife",
@@ -118,6 +126,36 @@ SOURCE_LABELS = registry.labels()
 # Wert in events.source, wie ihn die Scraper schreiben.
 SOURCE_GROUP_LABELS = registry.labels()
 
+# Anzeige-Labels fuer venues.kind (siehe migrations/001_schema_v2.sql §1 fuer
+# die moeglichen Werte) - reine UI-Beschriftung der Venue-Seite (P5b). Die
+# Werte selbst pflegen tools/seed_venues.py und tools/reclassify.py.
+VENUE_KIND_LABELS = {
+    "museum": "Museum",
+    "club": "Club",
+    "kirche": "Kirche",
+    "theater": "Theater",
+    "kino": "Kino",
+    "weingut": "Weingut",
+    "galerie": "Galerie",
+    "buehne": "Bühne",
+    "treffpunkt": "Treffpunkt",
+    "park": "Park",
+    "sonstiges": "Veranstaltungsort",
+}
+
+# Anzeige-Labels fuer venues.region / geo.REGION_* - derselbe Zweck.
+REGION_LABELS = {"dresden": "Dresden", "umland": "Umland", "weiter": "Weiter weg"}
+
+# SEIT P5b NICHT MEHR VON DER WEB-OBERFLAECHE GELESEN (dieselbe Begruendung
+# wie bei CATEGORY_LABELS oben) - die Standard-Sichtbarkeit kommt jetzt aus
+# categories.default_visible. Diese Liste UND die Tabelle sagen fuer
+# 'familie' zwei verschiedene Dinge: hier ausgeschlossen, in der Tabelle seit
+# P2 default_visible=1 (also eigentlich sichtbar) - eine Drift, die nie
+# aufgefallen ist, weil bislang niemand die Tabelle tatsaechlich gelesen hat.
+# P5b loest sie zugunsten der Tabelle auf: 'familie' ist auf der neuen
+# Startseite sichtbar, wo es vorher (durch diese Liste) verborgen war. Nur
+# 'fuehrungen' bleibt wie vorher verborgen (dort sind sich beide einig).
+#
 # Kategorien, die standardmäßig aus der Web-Startansicht rausgefiltert werden -
 # im Web-UI aber weiterhin über den Kategorie-Chip erreichbar.
 #

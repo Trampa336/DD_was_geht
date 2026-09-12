@@ -4,6 +4,7 @@ Aufruf: python3 tests_smoke.py
 import json
 import os
 import re
+import sqlite3
 import sys
 import tempfile
 
@@ -1401,9 +1402,15 @@ _page = _client_web.get("/").get_data(as_text=True)
 def _bundle(html, asset_dir):
     """Seite PLUS die Dateien, die sie einbindet. Seit dem Umbau steht das
     Frontend nicht mehr in einer Datei; geprueft wird weiter genau das, was im
-    Browser ankommt - und nebenbei, dass jede verlinkte Datei auch da ist."""
+    Browser ankommt - und nebenbei, dass jede verlinkte Datei auch da ist.
+
+    P5b: die Flask-Seite verlinkt Assets seither ABSOLUT ("/static/...", ueber
+    web.api_urls()) statt relativ ("static/..."), damit sie auch von den neu
+    hinzugekommenen, tiefer liegenden Routen (/orte/<slug>) aus stimmen - der
+    statische Export bleibt bei relativen Pfaden (tools/export_static.py:
+    _static_urls), das Muster erlaubt deshalb beides."""
     parts = [html]
-    for name in re.findall(r'(?:src|href)="static/([A-Za-z0-9_.-]+)\?', html):
+    for name in re.findall(r'(?:src|href)="/?static/([A-Za-z0-9_.-]+)\?', html):
         with open(os.path.join(asset_dir, name), encoding="utf-8") as handle:
             parts.append(handle.read())
     return "\n".join(parts)
@@ -1422,7 +1429,7 @@ for _asset in _LINKED_ASSETS:
     check(f"Flask liefert static/{_asset} aus",
           _client_web.get("/static/" + _asset).status_code == 200)
 check(f"Seite verlinkt alle {len(_LINKED_ASSETS)} Dateien",
-      len(re.findall(r'(?:src|href)="static/', _page)) == len(_LINKED_ASSETS))
+      len(re.findall(r'(?:src|href)="/?static/', _page)) == len(_LINKED_ASSETS))
 # Ohne Cache-Buster holte der Browser nach einem Deploy weiter die alte Datei.
 check("Verweise tragen eine Version", '?v=' in _page and len(web.asset_version()) == 8)
 check("Highlight: Flask-Seite setzt die Schwelle als Zahl",
@@ -1469,8 +1476,16 @@ check("Export: eine Datei je Tag", _stats["days"] >= 2)
 _index = json.loads(open(os.path.join(_export_dir, "data", "index.json"), encoding="utf-8").read())
 check("Export: index.json listet die Tage mit Version",
       all({"date", "count", "v"} <= set(d) for d in _index["days"]))
-check("Export: index.json reicht die ausgeblendeten Kategorien mit",
-      _index["excluded"] == config.EXCLUDED_CATEGORIES)
+# P5b: die Quelle ist jetzt die categories-Tabelle (default_visible), nicht
+# mehr config.EXCLUDED_CATEGORIES - siehe Kommentar dort. Nur 'fuehrungen' hat
+# default_visible=0; 'familie' ist in der Tabelle sichtbar, obwohl die alte
+# Liste es ausschloss (die Drift, die P5b aufgeloest hat).
+with db.get_conn() as conn:
+    _db_hidden = [c["slug"] for c in db.list_categories(conn) if not c["default_visible"]]
+check("Export: index.json reicht die ausgeblendeten Kategorien mit (aus categories-Tabelle)",
+      _index["excluded"] == _db_hidden == ["fuehrungen"])
+check("Export: 'familie' ist NICHT mehr ausgeblendet (Drift zu EXCLUDED_CATEGORIES aufgeloest)",
+      "familie" not in _index["excluded"] and "familie" in config.EXCLUDED_CATEGORIES)
 
 _day = json.loads(open(os.path.join(_export_dir, "data", "days",
                                     f"{_export_today.isoformat()}.json"), encoding="utf-8").read())
@@ -1598,15 +1613,201 @@ check("Export markiert entfernte Events",
 check("Export markiert Dresden nicht",
       "region" not in feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
                                        "region": "dresden"}))
+# P5b/decision #12: seit dem neuen Regions-Schalter (Standard nur Dresden)
+# muss die Exportdatei 'umland' GENAUSO vom Normalfall unterscheiden koennen
+# wie 'weiter' - vorher liess slim_event Umland-Zeilen aussehen wie Dresden.
+check("Export markiert jetzt auch Umland (P5b, vorher wie Dresden behandelt)",
+      feed.slim_event({"uid": "x", "title": "t", "date": "2026-09-20",
+                       "region": "umland"}).get("region") == "umland")
 
 # Im Web haengt der Schalter im Filter-Menue und ist standardmaessig AUS.
-check("Web: Schalter 'Umgebung einschließen' ist da",
-      'data-toggle="umgebung"' in _page and "Umgebung einschließen" in _page)
-check("Web: Umgebung ist standardmaessig aus", "umgebung: false" in _page_all)
-check("Web: entfernte Events werden ohne Schalter ausgeblendet",
-      "e.region === 'weiter' && !filters.umgebung" in _page_all)
+# P5b/decision #12 aendert die Vorbelegung: vorher blieb Umland immer sichtbar
+# und nur "weiter weg" hing am Schalter, jetzt ist der Standard NUR Dresden -
+# Label und JS-Bedingung sind deshalb neu (siehe app/templates/index.html,
+# app/static/app.js).
+check("Web: Regions-Schalter ist da",
+      'data-toggle="umgebung"' in _page and "Auch Umland &amp; Umgebung" in _page)
+check("Web: Regions-Schalter ist standardmaessig aus (Standard: nur Dresden)",
+      "umgebung: false" in _page_all)
+check("Web: Umland UND 'weiter weg' werden ohne Schalter ausgeblendet",
+      "e.region && e.region !== 'dresden' && !filters.umgebung" in _page_all)
 check("Web: der Schalter gilt auch auf der oeffentlichen Kopie",
       'data-toggle="umgebung"' in _static_html)
+
+
+# --- P5b: Kategorien/Tags aus der Tabelle, Venue-Seiten -----------------------
+# Fixture: eine "angereicherte" Venue (Homepage/Cover/Beschreibung wie nach
+# tools/load_enrichment.py), eine unangereicherte mit einem Event-Bild (fuer
+# den Cover-Fallback), und ein Treffpunkt (bekommt laut Schema keine Seite).
+with db.get_conn() as conn:
+    db.upsert_events(conn, [
+        {"uid": "p5b-enriched", "source": "kulturkalender", "date": "2026-09-25",
+         "time": "20:00", "title": "Konzert im Testhaus", "venue": "P5b Testhaus",
+         "category": "musik", "url": "https://example.org/testhaus-event"},
+        {"uid": "p5b-thin", "source": "rauze", "date": "2026-09-26", "time": "21:00",
+         "title": "Party im Testclub", "venue": "P5b Testclub", "category": "musik",
+         "url": "https://example.org/testclub-event",
+         "image_url": "https://cdn.example/testclub-event.jpg"},
+        {"uid": "p5b-meeting", "source": "kulturkalender", "date": "2026-09-27",
+         "time": "10:00", "title": "Stadtrundfahrt Test", "venue": "P5b Treffpunkt Test",
+         "category": "fuehrungen", "url": "https://example.org/rundfahrt"},
+    ])
+    _enriched_slug = db.venue_slug("P5b Testhaus")
+    _thin_slug = db.venue_slug("P5b Testclub")
+    _meeting_slug = db.venue_slug("P5b Treffpunkt Test")
+    conn.execute(
+        """UPDATE venues SET homepage_url = ?, homepage_root = ?, og_image_url = ?,
+             meta_description = ?, cover_source = 'kulturkalender', meta_status = 'ok'
+           WHERE slug = ?""",
+        ("https://testhaus.example/veranstaltungen/", "https://testhaus.example",
+         "https://cdn.example/testhaus-cover.jpg", "Ein Testhaus fuer die Suite.",
+         _enriched_slug),
+    )
+    conn.execute("UPDATE venues SET is_meeting_point = 1 WHERE slug = ?", (_meeting_slug,))
+
+# --- categories/tags aus der Tabelle (ersetzt config.CATEGORY_LABELS/P4e) ---
+with db.get_conn() as conn:
+    _categories = db.list_categories(conn)
+    _tags = db.list_tags(conn)
+check("list_categories: enthaelt 'nightlife' (fehlte in config.CATEGORY_LABELS)",
+      "nightlife" in {c["slug"] for c in _categories})
+check("list_categories: sortiert nach sort_order",
+      [c["sort_order"] for c in _categories] == sorted(c["sort_order"] for c in _categories))
+check("list_categories: 'fuehrungen' hat default_visible=0, 'familie' hat 1",
+      {c["slug"]: c["default_visible"] for c in _categories}["fuehrungen"] == 0
+      and {c["slug"]: c["default_visible"] for c in _categories}["familie"] == 1)
+check("list_tags: alle 5 Seed-Tags in TAG_LABELS-Reihenfolge",
+      [t["slug"] for t in _tags] == list(normalize.TAG_LABELS))
+
+# --- Venue-Aufloesung / Lesezugriffe (db.py) --------------------------------
+with db.get_conn() as conn:
+    _venue = db.get_venue_by_slug(conn, _enriched_slug)
+    _thin_venue = db.get_venue_by_slug(conn, _thin_slug)
+    _upcoming = db.venue_upcoming_events(conn, _venue["id"], "2026-09-01")
+    _venues_list = db.list_venues(conn, "2026-09-01")
+    _unknown_venue = db.get_venue_by_slug(conn, "gibt-es-nicht")
+check("get_venue_by_slug findet die angereicherte Venue", _venue is not None)
+check("get_venue_by_slug: unbekannter Slug liefert None", _unknown_venue is None)
+check("venue_upcoming_events findet das anstehende Event",
+      [e["uid"] for e in _upcoming] == ["p5b-enriched"])
+check("list_venues laesst den Treffpunkt AUSSEN VOR (migrations §1)",
+      _meeting_slug not in {v["slug"] for v in _venues_list})
+check("list_venues zaehlt anstehende Termine mit",
+      next(v for v in _venues_list if v["slug"] == _enriched_slug)["upcoming_count"] == 1)
+
+# --- Events tragen venue_slug/tags, Treffpunkte keinen venue_slug -----------
+with db.get_conn() as conn:
+    _p5b_events = {e["uid"]: e for e in db.events_for_range(conn, "2026-09-25", "2026-09-27")}
+check("events_for_range: normale Venue liefert venue_slug",
+      _p5b_events["p5b-enriched"]["venue_slug"] == _enriched_slug)
+check("events_for_range: Treffpunkt liefert KEINEN venue_slug (keine Seite dafuer)",
+      _p5b_events["p5b-meeting"]["venue_slug"] is None)
+
+with db.get_conn() as conn:
+    _p5b_built = {e["uid"]: e for e in feed.build_events(
+        conn, _dt.date(2026, 9, 25), _dt.date(2026, 9, 27))}
+check("feed.build_events haengt tags als Liste an jedes Event",
+      all(isinstance(e["tags"], list) for e in _p5b_built.values()))
+
+# --- Cover-Reihenfolge (P5a: kk_cover_url/og_image_url vor Event-Bild-Fallback,
+# NICHT umkehren) -------------------------------------------------------------
+check("feed.venue_cover: og_image_url der Venue gewinnt, auch wenn ein Event ein Bild hat",
+      feed.venue_cover(_venue, _upcoming) == "https://cdn.example/testhaus-cover.jpg")
+with db.get_conn() as conn:
+    _thin_upcoming = db.venue_upcoming_events(conn, _thin_venue["id"], "2026-09-01")
+check("feed.venue_cover: ohne venues.og_image_url faellt es auf das Event-Bild zurueck",
+      feed.venue_cover(_thin_venue, _thin_upcoming) == "https://cdn.example/testclub-event.jpg")
+check("feed.venue_cover: ganz ohne Bild bleibt es None",
+      feed.venue_cover({"og_image_url": None}, [{"image_url": None}]) is None)
+
+# --- /orte und /orte/<slug> (Flask) ------------------------------------------
+_orte_page = _client_web.get("/orte").get_data(as_text=True)
+check("/orte listet die angereicherte Testvenue", "P5b Testhaus" in _orte_page)
+check("/orte listet auch die unangereicherte Testvenue", "P5b Testclub" in _orte_page)
+check("/orte laesst den Treffpunkt aussen vor", "P5b Treffpunkt Test" not in _orte_page)
+
+_venue_page_resp = _client_web.get(f"/orte/{_enriched_slug}")
+_venue_page = _venue_page_resp.get_data(as_text=True)
+check("/orte/<slug> antwortet 200", _venue_page_resp.status_code == 200)
+check("/orte/<slug>: Homepage-Knopf nutzt homepage_root, NICHT den Deep-Link aus homepage_url",
+      'href="https://testhaus.example"' in _venue_page
+      and "https://testhaus.example/veranstaltungen/" not in _venue_page)
+check("/orte/<slug>: Cover kommt aus og_image_url",
+      "https://cdn.example/testhaus-cover.jpg" in _venue_page)
+check("/orte/<slug>: meta_description wird gezeigt",
+      "Ein Testhaus fuer die Suite." in _venue_page)
+check("/orte/<slug>: anstehendes Event ist gelistet",
+      "Konzert im Testhaus" in _venue_page)
+
+_thin_venue_page = _client_web.get(f"/orte/{_thin_slug}").get_data(as_text=True)
+check("/orte/<slug> ohne Enrichment: kein Homepage-Knopf",
+      "venue-homepage-btn" not in _thin_venue_page)
+check("/orte/<slug> ohne Enrichment: Event-Bild fuellt das Cover (Fallback)",
+      "https://cdn.example/testclub-event.jpg" in _thin_venue_page)
+
+check("/orte/<Treffpunkt-slug> ist 404 (keine Seite fuer Treffpunkte)",
+      _client_web.get(f"/orte/{_meeting_slug}").status_code == 404)
+check("/orte/<unbekannt> ist 404", _client_web.get("/orte/gibt-es-nicht").status_code == 404)
+
+# --- Event -> Venue-Link in der Hauptliste (app.js/index.html) --------------
+check("index.html: Suchfeld ist da", 'id="search-input"' in _page)
+check("index.html: Merkmal-Chips (Tags) sind da",
+      all(f'data-tag="{slug}"' in _page for slug in normalize.TAG_LABELS))
+check("index.html: 'Alle Orte'-Navigation ist da", 'href="/orte"' in _page)
+check("app.js: Event-Zeile verlinkt auf die Venue-Seite (decision #4)",
+      "venueHref" in _page_all and "orte/" in _page_all)
+check("app.js: Suche filtert Titel UND Ort",
+      "(e.title || '') + ' ' + (e.venue || '')" in _page_all)
+
+# --- Statischer Export: Venue-Seiten fuer GitHub Pages ----------------------
+_venues_export_dir = os.path.join(tempfile.mkdtemp(), "site-venues")
+_venue_stats = export_static.export(_venues_export_dir, days_ahead=7, today=_export_today)
+with db.get_conn() as conn:
+    _expected_venue_count = len(db.list_venues(conn, _dt.date.today().isoformat()))
+check("Export: Anzahl Venue-Seiten passt zu list_venues (Treffpunkte ausgenommen)",
+      _venue_stats["venues"] == _expected_venue_count)
+check("Export: orte/index.html wurde geschrieben",
+      os.path.exists(os.path.join(_venues_export_dir, "orte", "index.html")))
+check("Export: eine einzelne Venue-Seite wurde geschrieben",
+      os.path.exists(os.path.join(_venues_export_dir, "orte", f"{_enriched_slug}.html")))
+check("Export: der Treffpunkt bekommt KEINE Datei",
+      not os.path.exists(os.path.join(_venues_export_dir, "orte", f"{_meeting_slug}.html")))
+
+_exported_venue_html = open(
+    os.path.join(_venues_export_dir, "orte", f"{_enriched_slug}.html"), encoding="utf-8"
+).read()
+check("Export: Venue-Seite laeuft im static-Modus (noindex)",
+      'name="robots" content="noindex, nofollow"' in _exported_venue_html)
+check("Export: Venue-Seite verlinkt CSS relativ (eine Ebene hoch)",
+      'href="../static/app.css' in _exported_venue_html)
+check("Export: Venue-Seite zeigt dasselbe Cover wie im Flask-Modus",
+      "https://cdn.example/testhaus-cover.jpg" in _exported_venue_html)
+
+# Zweiter Lauf ohne inhaltliche Aenderung darf keine Venue-Datei neu schreiben
+# (dieselbe _write()-Vorsicht wie bei den Tagesdateien).
+_venue_stats2 = export_static.export(_venues_export_dir, days_ahead=7, today=_export_today)
+check("Export: unveraenderte Venue-Seiten werden nicht neu geschrieben",
+      _venue_stats2["venues_written"] == 0)
+
+# --- Schema-Deklaration: homepage_root/cover_source (siehe Bericht zu P5b) --
+# P5a (commit b68c680) hat beide Spalten bereits in migrations/001_schema_v2.sql
+# deklariert - eine frische DB braucht KEIN ALTER TABLE mehr. Die Behauptung im
+# P5b-Paket ("nur per ALTER TABLE angelegt") reproduziert also nicht mehr.
+with open(os.path.join(_ROOT, "migrations", "001_schema_v2.sql"), encoding="utf-8") as _f:
+    _schema_sql = _f.read()
+check("Schema: homepage_root ist in migrations/001_schema_v2.sql deklariert",
+      "homepage_root   TEXT" in _schema_sql)
+check("Schema: cover_source ist in migrations/001_schema_v2.sql deklariert",
+      "cover_source    TEXT CHECK" in _schema_sql)
+_fresh_db_dir = tempfile.mkdtemp()
+_fresh_db_path = os.path.join(_fresh_db_dir, "fresh.db")
+_fresh_conn = sqlite3.connect(_fresh_db_path)
+_fresh_conn.executescript(_schema_sql)
+_fresh_cols = {row[1] for row in _fresh_conn.execute("PRAGMA table_info(venues)")}
+_fresh_conn.close()
+check("Schema: eine frische DB aus der DDL hat beide Spalten ohne ALTER TABLE",
+      {"homepage_root", "cover_source"} <= _fresh_cols)
+
 
 # --- Zustand der Scraper: scrape_runs und /api/health ----------------------
 # Der Nulltreffer ist der Fall, um den es geht: eine Quelle, die nach einer

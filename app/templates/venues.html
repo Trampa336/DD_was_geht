@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if mode == 'static' %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>Alle Orte · DD was geht</title>
+<script src="{{ urls.asset('boot.js') }}"></script>
+<link rel="stylesheet" href="{{ urls.asset('app.css') }}">
+</head>
+<body>
+<div class="page page-narrow">
+  <header class="masthead masthead-simple">
+    <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
+  </header>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a></nav>
+
+  <h2 class="venues-index-title">Alle Orte ({{ venues | length }})</h2>
+  <p class="venues-index-hint">
+    Jedes Event führt hierher statt direkt zum Kulturkalender. {{ enriched_count }} von {{ venues | length }}
+    Orten haben ein Foto und eine Homepage geprüft bekommen, der Rest zeigt Name, Art und anstehende Termine
+    aus den gesammelten Daten.
+  </p>
+
+  <div class="search-row">
+    <input type="search" id="venue-search" class="search-input" placeholder="Ort suchen …" aria-label="Ort suchen">
+  </div>
+
+  <div class="venues-table" id="venues-table">
+    {% for v in venues %}
+    <a class="venue-row{% if v.upcoming_count == 0 %} venue-row-empty{% endif %}"
+       href="{{ urls.venue(v.slug) }}" data-name="{{ v.name | lower }}">
+      <span class="venue-row-cover{% if not v.og_image_url %} placeholder{% endif %}"
+            {% if v.og_image_url %}style="background-image:url('{{ v.og_image_url }}')"{% endif %}>{% if not v.og_image_url %}{{ (kind_labels.get(v.kind, v.kind) or '?')[0] }}{% endif %}</span>
+      <span class="venue-row-name">{{ v.name }}</span>
+      <span class="tag">{{ kind_labels.get(v.kind, v.kind) }}</span>
+      {% if v.region != 'dresden' %}<span class="tag-region">{{ region_labels.get(v.region, v.region) }}</span>{% endif %}
+      <span class="venue-row-count">
+        {% if v.upcoming_count == 0 %}keine anstehenden Termine
+        {% elif v.upcoming_count == 1 %}1 anstehender Termin
+        {% else %}{{ v.upcoming_count }} anstehende Termine{% endif %}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="empty-state" id="venue-search-empty" hidden>Kein Ort passt zur Suche.</div>
+
+  <p class="footnote">Treffpunkte ohne eigene Spielstätte (z.B. Stadtrundfahrten) sind hier absichtlich nicht gelistet.</p>
+</div>
+<script src="{{ urls.asset('orte.js') }}"></script>
+</body>
+</html>

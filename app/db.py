@@ -382,6 +382,107 @@ def upsert_events(conn, events):
     return new_count
 
 
+# --- Kategorien/Tags fuer die Suchliste (P5b) -------------------------------
+# Beide sind seit P2 echte Tabellen (migrations/001_schema_v2.sql §2), aber bis
+# P5b las die Web-Oberflaeche Kategorien aus dem seit P2 nicht mehr gepflegten
+# config.CATEGORY_LABELS - der 'nightlife'-Slug (P2 in der Tabelle angelegt)
+# fehlte dort komplett, siehe Bericht zu P5b.
+
+def list_categories(conn):
+    """Kategorien fuer die Chip-Zeile, sortiert nach sort_order. Ersetzt
+    config.CATEGORY_LABELS als Quelle fuer die Web-Oberflaeche - die Tabelle
+    ist die eigentliche Wahrheit (default_visible/sort_order), config.py kannte
+    sie nie vollstaendig."""
+    rows = conn.execute(
+        "SELECT slug, label, default_visible, sort_order FROM categories "
+        "ORDER BY sort_order, slug"
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_tags(conn):
+    """Tags fuer den Filter, in derselben Reihenfolge wie normalize.TAG_LABELS
+    (die Seed-Reihenfolge) - eine SELECT ohne ORDER BY liefert das meistens
+    auch, ist aber nicht garantiert."""
+    order = list(normalize.TAG_LABELS)
+    rows = [dict(row) for row in conn.execute("SELECT slug, label FROM tags").fetchall()]
+    rows.sort(key=lambda r: order.index(r["slug"]) if r["slug"] in order else len(order))
+    return rows
+
+
+def tags_for_events(conn, uids):
+    """event_uid -> sortierte Liste von Tag-Slugs, fuer mehrere Events auf
+    einmal (eine Anfrage statt einer pro Event, siehe feed.build_events)."""
+    uids = list(uids)
+    if not uids:
+        return {}
+    placeholders = ",".join("?" for _ in uids)
+    rows = conn.execute(
+        f"SELECT event_uid, tag_slug FROM event_tags WHERE event_uid IN ({placeholders})",
+        uids,
+    ).fetchall()
+    order = list(normalize.TAG_LABELS)
+    by_uid = {}
+    for row in rows:
+        by_uid.setdefault(row["event_uid"], []).append(row["tag_slug"])
+    for tags in by_uid.values():
+        tags.sort(key=lambda t: order.index(t) if t in order else len(order))
+    return by_uid
+
+
+# --- Venues: Lesezugriffe fuer die Venue-Seiten (P5b) -----------------------
+
+def get_venue_by_slug(conn, slug):
+    row = conn.execute("SELECT * FROM venues WHERE slug = ?", (slug,)).fetchone()
+    return dict(row) if row else None
+
+
+def venue_upcoming_events(conn, venue_id, today):
+    """Gewinnende Events einer Venue ab heute, chronologisch - das ist, was die
+    Venue-Seite als 'anstehende Termine' zeigt."""
+    rows = conn.execute(
+        """SELECT * FROM events WHERE venue_id = ? AND duplicate_of IS NULL
+             AND date >= ? ORDER BY date ASC, time ASC""",
+        (venue_id, today),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def venue_last_past_event(conn, venue_id, today):
+    """Der juengste vergangene Auftritt einer Venue, oder None. Nur fuer die
+    Leerseite gebraucht (keine anstehenden Termine bekannt) - dort ist "zuletzt
+    X am Y" ehrlicher als eine leere Flaeche."""
+    row = conn.execute(
+        """SELECT * FROM events WHERE venue_id = ? AND duplicate_of IS NULL
+             AND date < ? ORDER BY date DESC, time DESC LIMIT 1""",
+        (venue_id, today),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def list_venues(conn, today):
+    """Alle Venues plus Anzahl anstehender Termine, fuer /orte und den
+    statischen Export.
+
+    is_meeting_point-Zeilen fehlen ABSICHTLICH (siehe migrations/001_schema_v2.sql
+    §1): 'Dresden City', 'Terrassenufer Dresden', 'Theaterplatz Dresden' sind
+    Treffpunkte fuer Stadtrundfahrten, keine Spielstaetten - "sie bekommen keine
+    Venue-Seite und sollen aus 'Orte in Dresden' heraus" steht so im Schema-
+    Kommentar. Gemessen (P5b): 3 Venues, aber 201 anstehende Gewinner-Events
+    haengen an ihnen - diese Events bekommen deshalb KEINEN Venue-Link, nur den
+    Quellen-Link (siehe feed.build_events/events_for_range)."""
+    rows = conn.execute(
+        """SELECT v.*,
+             (SELECT COUNT(*) FROM events e WHERE e.venue_id = v.id
+                AND e.duplicate_of IS NULL AND e.date >= ?) AS upcoming_count
+           FROM venues v
+           WHERE v.is_meeting_point = 0
+           ORDER BY v.name COLLATE NOCASE""",
+        (today,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def category_filter(category):
     """Normalisiert den Kategorie-Filter auf eine Liste von Keys.
     Akzeptiert None, "alle", einen einzelnen Key, "musik,kultur" oder eine
@@ -432,8 +533,12 @@ def events_for_range(conn, start_date, end_date, category=None, exclude_categori
     # anders in der Tabelle, aber jeder Aufrufer (feed.py, scoring.py, dedup.py,
     # Templates) erwartet weiter event["category"]/event["venue"] - das ist die
     # ganze Grenze, die P3s Umbau nach aussen unsichtbar macht.
+    #
+    # venue_slug/venue_is_meeting_point (P5b): der Griff auf die Venue-Seite
+    # bzw. die Absage daran, siehe list_venues()-Docstring.
     query = ("SELECT e.*, e.category_slug AS category, e.raw_venue AS venue, "
-             "v.region AS region "
+             "v.region AS region, v.slug AS venue_slug, "
+             "v.is_meeting_point AS venue_is_meeting_point "
              "FROM events e LEFT JOIN venues v ON v.id = e.venue_id "
              "WHERE e.date >= ? AND e.date <= ?")
     if not include_duplicates:
@@ -460,6 +565,10 @@ def events_for_range(conn, start_date, end_date, category=None, exclude_categori
         # Pro-Event-Berechnung zurueck.
         if event.get("region") is None:
             event["region"] = geo.classify_region(event.get("venue"))
+        # Treffpunkte (siehe list_venues()-Docstring) bekommen keine Venue-Seite -
+        # das Flag selbst verlaesst diese Funktion nicht, nur sein Effekt.
+        if event.pop("venue_is_meeting_point", None):
+            event["venue_slug"] = None
     if exclude_far:
         events = [e for e in events if e["region"] != geo.REGION_WEITER]
     return events

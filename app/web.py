@@ -8,7 +8,7 @@ import hashlib
 import os
 from datetime import date
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, abort, jsonify, render_template, request
 
 from . import config, db, feed, scoring
 from .ranges import day_range, week_range
@@ -16,12 +16,25 @@ from .scrapers import detail_fetch
 
 app = Flask(__name__)
 
+
+@app.template_filter("de_date")
+def de_date(iso):
+    """'2026-09-20' -> '20.09.2026', fuer die Venue-Seite (P5b). Genutzt vom
+    Flask-Template UND vom statischen Export - beide rendern app/templates/
+    venue.html ueber dieselbe Flask-App-Instanz (tools/export_static.py
+    importiert web.app), ein Filter reicht also fuer beide Modi."""
+    try:
+        return date.fromisoformat(iso).strftime("%d.%m.%Y")
+    except (TypeError, ValueError):
+        return iso
+
+
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 # Nur diese Dateien darf die oeffentliche Kopie mitnehmen. rating.js fehlt hier
 # mit Absicht: dort gibt es keinen Server, an den eine Bewertung ginge, also
 # soll auch der Code dafuer nicht dabei sein (siehe tools/export_static.py).
-PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js",
+PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "orte.js",
                   "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
 
 
@@ -53,11 +66,36 @@ def _requested_day():
     return date.today()
 
 
-def _selected_categories():
+def _selected_categories(valid_slugs):
     """Mehrfachauswahl aus ?cat=musik,kultur. Unbekannte Keys fliegen raus,
-    "alle" bzw. leer bedeutet: keine Auswahl (= alles, minus EXCLUDED)."""
+    "alle" bzw. leer bedeutet: keine Auswahl (= alles, minus den Kategorien mit
+    default_visible=0)."""
     raw = request.args.get("cat", "alle")
-    return [c for c in db.category_filter(raw) if c in config.CATEGORY_LABELS]
+    return [c for c in db.category_filter(raw) if c in valid_slugs]
+
+
+def api_urls():
+    """URLs, wie sie das Template braucht - hier absolut (Flask liefert unter
+    "/" aus, das gilt unabhaengig davon, wie tief eine Route liegt). Der
+    statische Export baut sich das Gegenstueck relativ zusammen (siehe
+    tools/export_static.py._static_urls), weil GitHub Pages auch aus einem
+    Unterverzeichnis des Repos ausgeliefert werden kann (siehe app/templates/
+    index.html, aeltere Fassung). EIN Template, ZWEI Aufrufer - das ist der von
+    P5a verifizierte Vertrag (tools/export_static.py:160-172)."""
+    return {
+        "index": "/",
+        "venues_index": "/orte",
+        "venue": lambda slug: f"/orte/{slug}",
+        "asset": lambda name: f"/static/{name}?v={ASSET_VERSION}",
+    }
+
+
+def _default_hidden(categories):
+    """Kategorie-Slugs mit default_visible=0 (categories-Tabelle) - was die
+    Startansicht ausblendet, bis jemand bewusst einen Kategorie-Chip anklickt.
+    Ersetzt seit P5b config.EXCLUDED_CATEGORIES als Quelle (siehe Kommentar
+    dort: die Liste und die Tabelle widersprachen sich bei 'familie')."""
+    return [c["slug"] for c in categories if not c["default_visible"]]
 
 
 @app.route("/")
@@ -65,33 +103,37 @@ def index():
     # mode="api": die Seite spricht mit dieser Flask-App. Dieselbe Vorlage wird
     # von tools/export_static.py ein zweites Mal mit mode="static" gerendert -
     # das ist die oeffentliche Kopie ohne Server (siehe README).
-    return render_template("index.html", categories=config.CATEGORY_LABELS,
-                           categories_short=config.CATEGORY_SHORT_LABELS,
+    with db.get_conn() as conn:
+        categories = db.list_categories(conn)
+        tags = db.list_tags(conn)
+    return render_template("index.html", categories=categories, tags=tags,
                            sources=config.SOURCE_GROUP_LABELS, mode="api",
-                           excluded=[], generated_at="",
+                           default_hidden=_default_hidden(categories),
+                           generated_at="",
                            highlight_score=config.HIGHLIGHT_SCORE,
-                           asset_v=ASSET_VERSION)
+                           asset_v=ASSET_VERSION, urls=api_urls())
 
 
 @app.route("/api/events")
 def api_events():
-    categories = _selected_categories()
     day = _requested_day()
     start, end = day_range(day)
 
-    # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
-    # anklickt, soll sie auch dann sehen, wenn sie in EXCLUDED_CATEGORIES steht.
-    exclude = None if categories else config.EXCLUDED_CATEGORIES
-    # Dieselbe Liste baut der statische Export (tools/export_static.py) - nur
-    # mit anderen Parametern, siehe feed.build_events.
     with db.get_conn() as conn:
-        events = feed.build_events(conn, start, end, categories=categories,
+        categories = db.list_categories(conn)
+        selected = _selected_categories({c["slug"] for c in categories})
+        # Nur die Startansicht ("Alle") filtert hart; wer eine Kategorie bewusst
+        # anklickt, soll sie auch dann sehen, wenn sie default_visible=0 hat.
+        exclude = None if selected else _default_hidden(categories)
+        # Dieselbe Liste baut der statische Export (tools/export_static.py) - nur
+        # mit anderen Parametern, siehe feed.build_events.
+        events = feed.build_events(conn, start, end, categories=selected,
                                    exclude_categories=exclude, with_reactions=True)
 
     return jsonify({
         "date": day.isoformat(),
-        "categories": categories,
-        "category": categories[0] if len(categories) == 1 else "alle",
+        "categories": selected,
+        "category": selected[0] if len(selected) == 1 else "alle",
         "events": events,
     })
 
@@ -114,14 +156,51 @@ def api_health():
 def api_fuer_dich():
     today = date.today()
     _, end = week_range(today)
-    categories = _selected_categories()
-    exclude = None if categories else config.EXCLUDED_CATEGORIES
     with db.get_conn() as conn:
+        categories_meta = db.list_categories(conn)
+        categories = _selected_categories({c["slug"] for c in categories_meta})
+        exclude = None if categories else _default_hidden(categories_meta)
         events = db.events_for_range(conn, today.isoformat(), end.isoformat(), categories, exclude_categories=exclude)
         top = scoring.top_picks(conn, events, limit=8)
         for e in top:
             e["reaction"] = db.get_reaction(conn, e["uid"])
     return jsonify({"categories": categories, "events": top})
+
+
+# --- Venue-Seiten (P5b) ------------------------------------------------------
+# Kernannahme des Pakets: ein Event fuehrt in die App hinein (auf die
+# Venue-Seite), nicht raus zum Kulturkalender (decision #4). Siehe
+# feed.venue_cover fuer die Cover-Reihenfolge/den Bild-Fallback und
+# db.list_venues fuer die Treffpunkt-Ausnahme (keine Seite fuer
+# "Dresden City"/"Terrassenufer"/"Theaterplatz").
+
+@app.route("/orte")
+def venues_index():
+    with db.get_conn() as conn:
+        venues = db.list_venues(conn, date.today().isoformat())
+    enriched_count = sum(1 for v in venues if v.get("og_image_url"))
+    return render_template("venues.html", venues=venues, mode="api",
+                           enriched_count=enriched_count,
+                           kind_labels=config.VENUE_KIND_LABELS,
+                           region_labels=config.REGION_LABELS,
+                           asset_v=ASSET_VERSION, urls=api_urls())
+
+
+@app.route("/orte/<slug>")
+def venue_detail(slug):
+    today = date.today().isoformat()
+    with db.get_conn() as conn:
+        venue = db.get_venue_by_slug(conn, slug)
+        if venue is None or venue["is_meeting_point"]:
+            abort(404)
+        events = db.venue_upcoming_events(conn, venue["id"], today)
+        last_past = db.venue_last_past_event(conn, venue["id"], today) if not events else None
+    cover = feed.venue_cover(venue, events)
+    return render_template("venue.html", venue=venue, events=events,
+                           last_past=last_past, cover=cover, mode="api",
+                           kind_labels=config.VENUE_KIND_LABELS,
+                           region_labels=config.REGION_LABELS,
+                           asset_v=ASSET_VERSION, urls=api_urls())
 
 
 def _detail_payload(event, status):

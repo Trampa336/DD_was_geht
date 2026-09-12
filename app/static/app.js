@@ -147,7 +147,11 @@
 
   applyAppearance();
 
-  var CAT_LABEL = DD.categories;
+  // Seit P5b eine Liste (categories-Tabelle, sort_order/default_visible statt
+  // dem alten config.CATEGORY_LABELS-Woerterbuch) - fuer die Label-Suche in
+  // dieser Datei reicht ein einfaches Nachschlage-Objekt daraus.
+  var CAT_LABEL = {};
+  (DD.categories || []).forEach(function (c) { CAT_LABEL[c.slug] = c.label; });
 
   // Die beiden Betriebsarten sind im Kopf der Vorlage beschrieben.
   var MODE = DD.mode;
@@ -176,11 +180,19 @@
   // Treffer hervorgehoben. Kommt aus der .env, damit die Schwelle mitwachsen
   // kann, waehrend das Lernmodell noch wenig Bewertungen kennt.
   var HIGHLIGHT_SCORE = DD.highlightScore;
-  /* umgebung=false ist der Standard: gezeigt wird Dresden samt Speckguertel
-     (Radebeul, Freital, Pirna, Moritzburg ...). Was weiter weg liegt - Meissen,
-     Saechsische Schweiz, Lausitz, Leipzig - traegt region='weiter' (siehe
-     app/geo.py) und kommt erst mit dem Schalter dazu. */
-  var filters = { ongoing: false, lowscore: false, umgebung: false, sources: Object.keys(SRC_LABEL) };
+  /* umgebung=false ist der Standard (P5b/decision #12): gezeigt wird NUR
+     Dresden. Umland (Radebeul, Freital, Pirna, Moritzburg ...) UND alles
+     weiter Weg (Meissen, Saechsische Schweiz, Lausitz, Leipzig - beides
+     region != 'dresden', siehe app/geo.py) kommen erst mit dem Schalter dazu.
+     Vorher blieb Umland immer sichtbar und nur "weiter" hing am Schalter -
+     das ist die Verhaltensaenderung aus dem P5b-Bericht.
+     tags=[] ist die neue Merkmal-Auswahl (kirche/museum/open-air/klassik/
+     techno, echte Tabelle seit P2) - leer heisst keine Einschraenkung, wie bei
+     den Kategorien. */
+  var filters = { ongoing: false, lowscore: false, umgebung: false, tags: [], sources: Object.keys(SRC_LABEL) };
+  // Die Suche ist bewusst NICHT gespeichert (wie die Datumsauswahl) - ein
+  // neuer Aufruf der Seite soll wieder bei "keine Suche" anfangen.
+  var searchQuery = '';
 
   function loadFilters() {
     try {
@@ -189,6 +201,10 @@
       filters.ongoing = !!saved.ongoing;
       filters.lowscore = !!saved.lowscore;
       filters.umgebung = !!saved.umgebung;
+      if (Array.isArray(saved.tags)) {
+        var knownTags = Array.prototype.map.call(document.querySelectorAll('.chip-tag'), function (c) { return c.dataset.tag; });
+        filters.tags = saved.tags.filter(function (t) { return knownTags.indexOf(t) !== -1; });
+      }
       if (Array.isArray(saved.sources)) {
         filters.sources = saved.sources.filter(function (s) { return s in SRC_LABEL; });
       }
@@ -199,18 +215,19 @@
 
   function syncFilterChips() {
     press('.chip-toggle', function (chip) { return filters[chip.dataset.toggle]; });
+    press('.chip-tag', function (chip) { return filters.tags.indexOf(chip.dataset.tag) !== -1; });
     press('.chip-src', function (chip) { return filters.sources.indexOf(chip.dataset.src) !== -1; });
     syncFilterBadge();
   }
 
   /* Zaehlt, was vom Standard abweicht - zugeklappt sieht man dem Menue sonst
-     nicht an, dass es gerade etwas ausblendet. Die beiden Schalter zaehlen im
-     EIN-Zustand, weil sie standardmaessig aus sind; bei den Quellen zaehlt jede
-     abgewaehlte. */
+     nicht an, dass es gerade etwas ausblendet. Die Schalter und Merkmale
+     zaehlen im EIN-Zustand, weil sie standardmaessig aus sind; bei den
+     Quellen zaehlt jede abgewaehlte. */
   function syncFilterBadge() {
     var badge = document.getElementById('filter-badge');
     var n = (filters.ongoing ? 1 : 0) + (filters.lowscore ? 1 : 0)
-      + (filters.umgebung ? 1 : 0)
+      + (filters.umgebung ? 1 : 0) + filters.tags.length
       + (Object.keys(SRC_LABEL).length - filters.sources.length);
     badge.textContent = n;
     badge.hidden = n === 0;
@@ -220,11 +237,21 @@
     if (e.ongoing && !filters.ongoing) { return false; }
     // Ohne region-Feld gilt ein Event als Dresden - so bleibt eine Tagesdatei
     // aus einem aelteren Export lesbar (siehe tools/export_static.py).
-    if (e.region === 'weiter' && !filters.umgebung) { return false; }
+    if (e.region && e.region !== 'dresden' && !filters.umgebung) { return false; }
     if (!filters.lowscore && Number(e.score) < LOW_SCORE) { return false; }
     // Eine unbekannte Quelle (neuer Scraper, noch kein Label) bleibt sichtbar -
     // sonst verschwaende sie kommentarlos aus der Liste.
     if (e.source in SRC_LABEL && filters.sources.indexOf(e.source) === -1) { return false; }
+    // Merkmale: mindestens eines der ausgewaehlten muss zutreffen (ODER, wie
+    // bei den Kategorien) - keine Auswahl heisst keine Einschraenkung.
+    if (filters.tags.length) {
+      var eventTags = e.tags || [];
+      if (!filters.tags.some(function (t) { return eventTags.indexOf(t) !== -1; })) { return false; }
+    }
+    if (searchQuery) {
+      var haystack = ((e.title || '') + ' ' + (e.venue || '')).toLowerCase();
+      if (haystack.indexOf(searchQuery) === -1) { return false; }
+    }
     return true;
   }
 
@@ -346,6 +373,17 @@
     });
   }
 
+  /* Ziel der Venue-Seite (P5b/decision #4): "/orte/<slug>" unter Flask,
+     "orte/<slug>.html" (relativ, Seite liegt im selben Verzeichnis wie
+     index.html) im statischen Export - siehe tools/export_static.py.
+     null, wenn das Event keine Venue hat oder die Venue ein Treffpunkt ist
+     (venue_slug fehlt dann schon im Datensatz, siehe db.list_venues). */
+  function venueHref(ev) {
+    if (!ev.venue_slug) { return null; }
+    var slug = encodeURIComponent(ev.venue_slug);
+    return MODE === 'static' ? 'orte/' + slug + '.html' : '/orte/' + slug;
+  }
+
   /* Cover-Fuellung fuer Liste UND Popup. Gibt es kein Bild, uebernimmt der
      Anfangsbuchstabe der Kategorie den Platz - so bleibt die Flaeche in beiden
      Faellen gleich gross und die Spalten der Liste bleiben buendig. */
@@ -373,7 +411,13 @@
 
     document.getElementById('modal-title').textContent = ev.title;
     document.getElementById('modal-datetime').textContent = whenLabel(ev);
-    document.getElementById('modal-venue').textContent = ev.venue || '';
+    var venueEl = document.getElementById('modal-venue');
+    venueEl.textContent = ev.venue || '';
+    var vHref = venueHref(ev);
+    if (vHref) { venueEl.href = vHref; } else { venueEl.removeAttribute('href'); }
+
+    var pageLink = document.getElementById('modal-venue-page-link');
+    if (vHref) { pageLink.href = vHref; pageLink.hidden = false; } else { pageLink.hidden = true; }
 
     var tags = document.getElementById('modal-tags');
     tags.innerHTML = '';
@@ -381,6 +425,13 @@
     catTag.className = 'tag';
     catTag.textContent = CAT_LABEL[ev.category] || ev.category;
     tags.appendChild(catTag);
+    (ev.tags || []).forEach(function (slug) {
+      var chip = document.querySelector('.chip-tag[data-tag="' + slug + '"]');
+      var span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = chip ? chip.textContent : slug;
+      tags.appendChild(span);
+    });
     if (ev.price_text) {
       var priceTag = document.createElement('span');
       priceTag.className = 'price-tag';
@@ -542,11 +593,20 @@
         byDay[day].forEach(function (e) {
           var row = document.createElement('article');
           row.className = 'event';
-          row.innerHTML = '<div class="event-time"></div><div class="event-cover"></div><div class="event-body"><p class="event-title"></p><div class="event-meta"><span></span><span class="tag"></span><span class="tag-pick"></span><span class="tag-ongoing"></span><span class="tag-region"></span><span class="price-tag"></span></div></div><div class="event-actions"></div>';
+          row.innerHTML = '<div class="event-time"></div><div class="event-cover"></div><div class="event-body"><p class="event-title"></p><div class="event-meta"><a class="event-venue-link"></a><span class="tag"></span><span class="tag-pick"></span><span class="tag-ongoing"></span><span class="tag-region"></span><span class="price-tag"></span></div></div><div class="event-actions"></div>';
           row.querySelector('.event-time').textContent = e.time || '--:--';
           fillCover(row.querySelector('.event-cover'), e, 'event-cover');
           row.querySelector('.event-title').textContent = e.title;
-          row.querySelector('.event-meta span:first-child').textContent = e.venue || '';
+          var venueLink = row.querySelector('.event-venue-link');
+          venueLink.textContent = e.venue || '';
+          // Event -> Venue-Seite (decision #4), NICHT Kulturkalender. Nur ein
+          // echter Link, wenn die Venue eine Seite hat (kein Treffpunkt, siehe
+          // venueHref) - sonst bleibt es ein reiner Text wie vorher.
+          var rowVenueHref = venueHref(e);
+          if (rowVenueHref) {
+            venueLink.href = rowVenueHref;
+            venueLink.addEventListener('click', function (evt) { evt.stopPropagation(); });
+          }
           row.querySelector('.tag').textContent = CAT_LABEL[e.category] || e.category;
           /* Die vier Marken an der Zeile. Jede steht im Rohbau schon da und
              wird entweder beschriftet oder wieder entfernt - eine leere Marke
@@ -558,12 +618,14 @@
                  Zeile denselben Auftritt in Elbe-Tuerkis. Der Score kommt aus
                  scoring.score_events() - im api-Modus aus /api/events, im
                  statischen Modus vorgerechnet aus der Tagesdatei.
-               Umgebung: steht nur an Eintraegen, die ohne den Schalter gar nicht
-                 in der Liste waeren (siehe passesFilters).
+               Umland/Weiter weg: steht nur an Eintraegen, die ohne den Schalter
+                 "Auch Umland & Umgebung" gar nicht in der Liste waeren (P5b/
+                 decision #12: Standard ist jetzt nur Dresden, siehe passesFilters).
                Preis: nur, wenn die Quelle einen mitgeliefert hat. */
           mark(row, '.tag-ongoing', e.ongoing && 'Dauerangebot', 'ongoing');
           mark(row, '.tag-pick', Number(e.score) >= HIGHLIGHT_SCORE && 'Top-Treffer', 'top-pick');
-          mark(row, '.tag-region', e.region === 'weiter' && 'Umgebung');
+          mark(row, '.tag-region', e.region && e.region !== 'dresden'
+            && (e.region === 'weiter' ? 'Weiter weg' : 'Umland'));
           mark(row, '.price-tag', e.price_text);
           var actions = row.querySelector('.event-actions');
           if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
@@ -658,6 +720,11 @@
     applyFilters();
   });
 
+  onClick('.chip-tag', function (chip) {
+    toggleIn(filters.tags, chip.dataset.tag);
+    applyFilters();
+  });
+
   onClick('.chip-src', function (chip) {
     toggleIn(filters.sources, chip.dataset.src);
     applyFilters();
@@ -667,6 +734,22 @@
     selectedCats = [];
     applySelection();
   });
+
+  /* Suche ueber Titel und Ort (P5b) - filtert client-seitig innerhalb des
+     bereits geladenen Zeitraums, genau wie die Sichtbarkeits-Schalter oben.
+     Eine kleine Verzoegerung reicht, damit nicht jeder Tastenanschlag sofort
+     neu rendert. */
+  var searchInput = document.getElementById('search-input');
+  var searchTimer = null;
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      window.clearTimeout(searchTimer);
+      searchTimer = window.setTimeout(function () {
+        searchQuery = searchInput.value.trim().toLowerCase();
+        refresh();
+      }, 150);
+    });
+  }
 
   // Das Filter-Menue haengt sich in dieselbe Menue-Verwaltung wie Theme- und
   // Animationsmenue (registerMenu im Block darueber): ein Klick daneben oder

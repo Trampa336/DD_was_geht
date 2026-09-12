@@ -27,11 +27,15 @@ window.DD = {
                   Score steht schon in den Dateien (tools/export_static.py), die
                   Empfehlungszeile zeigt also dieselbe Auswahl wie im Heimnetz. */
   mode: {{ mode | tojson }},
+  // Liste statt Woerterbuch (seit P5b): categories.sort_order entscheidet die
+  // Chip-Reihenfolge, categories.default_visible die Startsichtbarkeit - beides
+  // kommt jetzt aus der categories-Tabelle (db.list_categories), nicht mehr aus
+  // dem seit P2 nicht mehr gepflegten config.CATEGORY_LABELS.
   categories: {{ categories | tojson }},
   sources: {{ sources | tojson }},
   /* Im api-Modus filtert der Server (web._selected_categories/
-     EXCLUDED_CATEGORIES), im static-Modus muss das der Browser uebernehmen. */
-  excluded: {{ excluded | tojson }},
+     _default_hidden), im static-Modus muss das der Browser uebernehmen. */
+  excluded: {{ default_hidden | tojson }},
   // Cache-Buster fuer data/index.json: aendert sich mit jedem Export.
   dataVersion: {{ generated_at | tojson }},
   /* Ab diesem Score wird eine Zeile als Treffer hervorgehoben
@@ -41,16 +45,17 @@ window.DD = {
 </script>
 {# boot.js setzt das Theme, bevor irgendetwas gezeichnet wird - deshalb steht es
    blockierend im Kopf und nicht unten bei den anderen Skripten. #}
-<script src="static/boot.js?v={{ asset_v }}"></script>
-<link rel="stylesheet" href="static/flatpickr.min.css?v={{ asset_v }}">
-<link rel="stylesheet" href="static/app.css?v={{ asset_v }}">
+<script src="{{ urls.asset('boot.js') }}"></script>
+<link rel="stylesheet" href="{{ urls.asset('flatpickr.min.css') }}">
+<link rel="stylesheet" href="{{ urls.asset('app.css') }}">
 </head>
 <body>
 <canvas id="bg-canvas" aria-hidden="true"></canvas>
 <div class="page">
   <header class="masthead">
-    <h1 class="wordmark">Dresden <em>was geht?!</em></h1>
+    <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
     <div class="masthead-right">
+      <nav class="site-nav"><a href="{{ urls.venues_index }}">Alle Orte</a></nav>
       <div class="masthead-meta"><div class="city">Elbflorenz · Sachsen</div><div id="today-label"></div></div>
       <div class="switches">
         <div class="theme-switch">
@@ -97,11 +102,16 @@ window.DD = {
     </div>
   </div>
 
+  <div class="search-row">
+    <input type="search" id="search-input" class="search-input"
+           placeholder="Suche nach Titel oder Ort …" aria-label="Suche nach Titel oder Ort">
+  </div>
+
   <div class="filterbar">
     <div class="chips" role="group" aria-label="Kategorien (Mehrfachauswahl)">
       <button class="chip" data-cat="alle" aria-pressed="true">Alle</button>
-      {% for key, label in categories.items() %}
-      <button class="chip" data-cat="{{ key }}" aria-pressed="false">{{ categories_short.get(key, label) }}</button>
+      {% for c in categories %}
+      <button class="chip" data-cat="{{ c.slug }}" aria-pressed="false">{{ c.label }}</button>
       {% endfor %}
     </div>
     <div class="filter-menu">
@@ -118,10 +128,25 @@ window.DD = {
           <div class="filter-row">
             <button class="chip chip-toggle" data-toggle="ongoing" aria-pressed="false">Dauerangebote</button>
             <button class="chip chip-toggle" data-toggle="lowscore" aria-pressed="false">Wenig relevant</button>
+            {# P5b/decision #12: Standard ist jetzt NUR Dresden - vorher blieb
+               "Umland" (Radebeul, Freital, Pirna ...) immer sichtbar und nur
+               "weiter weg" (Meissen, Saechsische Schweiz ...) hing am Schalter.
+               Ein Klick zeigt jetzt beides zusammen; nichts davon ist geloescht,
+               siehe app/geo.py. #}
             <button class="chip chip-toggle" data-toggle="umgebung" aria-pressed="false"
-                    title="Auch Veranstaltungen außerhalb von Dresden und Umland – Meißen, Sächsische Schweiz, Lausitz …">Umgebung einschließen</button>
+                    title="Auch Umland und weiter weg – Radebeul, Freital, Pirna, Meißen, Sächsische Schweiz …">Auch Umland &amp; Umgebung</button>
           </div>
         </div>
+        {% if tags %}
+        <div class="filter-group">
+          <span class="filters-label">Merkmale</span>
+          <div class="filter-row">
+            {% for t in tags %}
+            <button class="chip chip-tag" data-tag="{{ t.slug }}" aria-pressed="false">{{ t.label }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         <div class="filter-group">
           <span class="filters-label">Quellen</span>
           <div class="filter-row">
@@ -145,14 +170,21 @@ window.DD = {
         <h3 class="modal-title" id="modal-title"></h3>
         <div class="modal-meta">
           <span id="modal-datetime"></span>
-          <span id="modal-venue"></span>
+          <a id="modal-venue" class="modal-venue-link"></a>
         </div>
         <div class="modal-tags" id="modal-tags"></div>
         <div class="modal-description" id="modal-description"></div>
       </div>
       <div class="modal-footer">
         <div class="fb" id="modal-fb"></div>
-        <a class="modal-source-link" id="modal-source-link" target="_blank" rel="noopener noreferrer">zur Quelle &#8599;</a>
+        <div class="modal-links">
+          {# Zwei verschiedene Links, absichtlich beide da (decision #11):
+             die Venue-Seite ist die neue, interne Zieladresse (decision #4),
+             der Quellen-Link bleibt daneben stehen - "zur Ortsseite" ersetzt
+             nichts, sondern kommt dazu. #}
+          <a class="modal-venue-page-link" id="modal-venue-page-link" hidden>zur Ortsseite</a>
+          <a class="modal-source-link" id="modal-source-link" target="_blank" rel="noopener noreferrer">zur Quelle &#8599;</a>
+        </div>
       </div>
     </div>
   </div>
@@ -170,11 +202,11 @@ window.DD = {
    warum in der oeffentlichen Kopie nicht einmal der Code fuer eine Bewertung
    liegt - nicht nur ein abgeschalteter Knopf, sondern gar keiner. Der Exporter
    kopiert rating.js dementsprechend nicht mit (tools/export_static.py). #}
-<script src="static/rating.js?v={{ asset_v }}"></script>
+<script src="{{ urls.asset('rating.js') }}"></script>
 {% endif %}
-<script src="static/flatpickr.min.js?v={{ asset_v }}"></script>
-<script src="static/flatpickr-de.js?v={{ asset_v }}"></script>
-<script src="static/app.js?v={{ asset_v }}"></script>
-<script src="static/background.js?v={{ asset_v }}"></script>
+<script src="{{ urls.asset('flatpickr.min.js') }}"></script>
+<script src="{{ urls.asset('flatpickr-de.js') }}"></script>
+<script src="{{ urls.asset('app.js') }}"></script>
+<script src="{{ urls.asset('background.js') }}"></script>
 </body>
 </html>

@@ -275,3 +275,99 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 
 .empty-state, .loading { padding:30px 14px; text-align:center; color:var(--ink-faint); font-size:13.5px; }
 .footnote { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-faint); line-height:1.6; }
+
+/* ===========================================================================
+   P5b: Suche, Merkmal-Chips, Venue-Link im Modal, Venue-/Orte-Seiten
+   =========================================================================== */
+
+.wordmark-link { color:inherit; text-decoration:none; }
+.wordmark-link:hover em { text-decoration:underline; }
+
+.site-nav { font-family:var(--font-mono); font-size:12.5px; }
+.site-nav a { color:var(--ink-soft); text-decoration:none; border-bottom:1px dashed var(--stone-dark); }
+.site-nav a:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+
+.search-row { margin-bottom:14px; }
+.search-input {
+  width:100%; padding:10px 14px; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink); font-family:var(--font-body); font-size:14px; border-radius:10px;
+  transition:border-color .15s ease;
+}
+.search-input::placeholder { color:var(--ink-faint); }
+.search-input:focus { outline:none; border-color:var(--elbe); }
+
+.chip-tag { font-family:var(--font-mono); font-size:11.5px; }
+
+/* Venue-Link in der Listenzeile (Event -> Venue-Seite, decision #4). Ohne
+   href sieht er aus wie der bisherige reine Text (Treffpunkte, siehe
+   db.list_venues) - erst mit href wird er als Link erkennbar. */
+.event-venue-link { color:inherit; text-decoration:none; }
+.event-venue-link[href] { border-bottom:1px dashed var(--stone-dark); cursor:pointer; }
+.event-venue-link[href]:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+
+/* Venue-Link im Detail-Popup, neben "zur Quelle" (siehe index.html-Kommentar
+   an derselben Stelle - zwei Links, zwei Ziele, decision #11). */
+.modal-venue-link { color:var(--ink-soft); text-decoration:none; }
+.modal-venue-link[href] { border-bottom:1px dashed var(--stone-dark); cursor:pointer; }
+.modal-venue-link[href]:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+.modal-links { display:flex; align-items:center; gap:14px; }
+.modal-venue-page-link { font-size:11.5px; color:var(--elbe-strong); text-decoration:none; font-weight:600; }
+.modal-venue-page-link:hover { text-decoration:underline; }
+.modal-venue-page-link[hidden] { display:none; }
+
+/* --- Venue- und Orte-Seiten: bewusst schmaler und ruhiger als die Liste --- */
+.page-narrow { max-width:620px; }
+.masthead-simple { border-bottom:none; margin-bottom:6px; padding-bottom:0; }
+.masthead-simple .wordmark { font-size:26px; }
+.breadcrumb { font-family:var(--font-mono); font-size:12px; color:var(--ink-faint); margin-bottom:24px; }
+.breadcrumb a { color:var(--ink-soft); text-decoration:none; }
+.breadcrumb a:hover { color:var(--elbe-strong); }
+
+.venue-head { display:flex; gap:18px; margin-bottom:30px; flex-wrap:wrap; }
+.venue-cover {
+  flex:0 0 auto; width:150px; height:150px; border-radius:14px; background:var(--stone) center/cover no-repeat;
+  border:1px solid var(--line);
+}
+.venue-cover.placeholder, .venue-row-cover.placeholder {
+  display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--elbe-soft),var(--stone));
+  font-family:var(--font-display); font-style:var(--display-style); color:var(--elbe-strong);
+}
+.venue-cover.placeholder { font-size:52px; }
+.venue-info { flex:1 1 260px; min-width:0; }
+.venue-title { font-family:var(--font-display); font-weight:600; font-size:26px; margin:0 0 8px; text-wrap:balance; }
+.venue-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.venue-desc { font-size:14px; line-height:1.6; color:var(--ink-soft); margin:0 0 12px; }
+.venue-homepage-btn {
+  display:inline-block; padding:7px 14px; border:1px solid var(--elbe); border-radius:999px;
+  color:var(--elbe-strong); text-decoration:none; font-family:var(--font-mono); font-size:12.5px; font-weight:600;
+  background:var(--elbe-soft);
+}
+.venue-homepage-btn:hover { background:var(--elbe); color:var(--bg); }
+
+.venue-events h3, .venues-index-title { font-family:var(--font-display); font-weight:500; font-style:var(--display-style); font-size:19px; margin:0 0 14px; }
+.venues-index-title { font-size:24px; font-weight:600; font-style:normal; margin-bottom:6px; }
+.venues-index-hint { font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0 0 18px; }
+
+/* Zeilen wie in der Hauptliste (.event), nur ohne Klick-auf-oeffnet-Popup -
+   auf der Venue-Seite steht der Quellen-Link schon offen in der Zeile. */
+.event-static { cursor:default; }
+.event-static:hover { background:var(--row-bg); }
+.venue-event-desc { font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:4px 0 0; }
+
+.venues-table { display:flex; flex-direction:column; border-top:1px solid var(--line); margin-bottom:10px; }
+.venue-row {
+  display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line);
+  text-decoration:none; color:var(--ink); transition:background .12s ease;
+}
+.venue-row:hover { background:var(--surface); }
+.venue-row[hidden] { display:none; }
+.venue-row-cover { flex:0 0 auto; width:38px; height:38px; border-radius:8px; background:var(--stone) center/cover no-repeat; font-size:15px; }
+.venue-row-name { flex:1 1 auto; min-width:0; font-weight:500; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.venue-row-count { font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); white-space:nowrap; }
+.venue-row-empty .venue-row-count { color:var(--stone-dark); }
+
+@media (max-width:560px) {
+  .venue-head { flex-direction:column; }
+  .venue-cover { width:100%; height:180px; }
+  .venue-row .tag, .venue-row .tag-region { display:none; }
+}

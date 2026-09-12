@@ -51,6 +51,28 @@ def _dump(payload):
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 
+def _static_urls(asset_v, under_orte=False):
+    """Gegenstueck zu app/web.py:api_urls() fuer den Export: dort sind alle
+    URLs absolut (Flask liefert immer unter "/" aus), hier relativ - GitHub
+    Pages kann auch aus einem Unterverzeichnis des Repos ausgeliefert werden
+    (aeltere Begruendung in app/templates/index.html). Nur zwei Pfadtiefen
+    gibt es: die Wurzel (index.html) und "orte/" (venue.html-Instanzen UND der
+    Orte-Index orte/index.html liegen im selben Verzeichnis)."""
+    if under_orte:
+        return {
+            "index": "../index.html",
+            "venues_index": "index.html",
+            "venue": lambda slug: f"{slug}.html",
+            "asset": lambda name: f"../static/{name}?v={asset_v}",
+        }
+    return {
+        "index": "index.html",
+        "venues_index": "orte/index.html",
+        "venue": lambda slug: f"orte/{slug}.html",
+        "asset": lambda name: f"static/{name}?v={asset_v}",
+    }
+
+
 def _write(path, text):
     """Schreibt nur, wenn sich der Inhalt geaendert hat - sonst sieht Git eine
     Aenderung, wo keine ist, und jeder Push traegt unnoetige Blobs nach."""
@@ -99,6 +121,21 @@ def export(out_dir, days_ahead=45, today=None):
 
     with db.get_conn() as conn:
         by_day = collect(conn, today, end)
+        categories = db.list_categories(conn)
+        tags = db.list_tags(conn)
+        default_hidden = [c["slug"] for c in categories if not c["default_visible"]]
+        # Venue-Seiten (P5b): ungefenstert (nicht auf days_ahead begrenzt wie
+        # die Tagesdateien oben) - eine Venue-Seite soll den vollen bekannten
+        # Vorlauf zeigen, nicht nur die naechsten 45 Tage.
+        venues = db.list_venues(conn, today.isoformat())
+        venue_events = {}
+        venue_last_past = {}
+        for v in venues:
+            events = db.venue_upcoming_events(conn, v["id"], today.isoformat())
+            venue_events[v["slug"]] = events
+            venue_last_past[v["slug"]] = (
+                None if events else db.venue_last_past_event(conn, v["id"], today.isoformat())
+            )
 
     index_days = []
     written = 0
@@ -126,9 +163,14 @@ def export(out_dir, days_ahead=45, today=None):
     index_path = os.path.join(out_dir, "data", "index.json")
     index_payload = {
         "days": index_days,
-        "categories": config.CATEGORY_LABELS,
+        # categories/sources/excluded: app.js liest sie aus data/index.json
+        # nie (nur idx.days, siehe staticIndex()/staticEvents()) - die
+        # eigentliche Quelle ist das inline window.DD-Objekt in index.html.
+        # Bleiben trotzdem hier, konsistent mit der categories-Tabelle
+        # (P5b), statt sie in einem separaten Aufraeum-Schritt zu entfernen.
+        "categories": {c["slug"]: c["label"] for c in categories},
         "sources": config.SOURCE_GROUP_LABELS,
-        "excluded": config.EXCLUDED_CATEGORIES,
+        "excluded": default_hidden,
     }
     # generated_at wird nur hochgezaehlt, wenn sich am Bestand wirklich etwas
     # geaendert hat. Sonst waere jeder Lauf ein Commit: der Zeitstempel steckt
@@ -155,21 +197,66 @@ def export(out_dir, days_ahead=45, today=None):
         if name not in web.PUBLIC_ASSETS:
             os.remove(os.path.join(static_out, name))
 
+    asset_v = web.asset_version()
+
     # Dieselbe Vorlage wie die Flask-Seite, nur im anderen Modus - deshalb gibt
-    # es kein zweites Frontend, das mit der Zeit auseinanderlaeuft.
+    # es kein zweites Frontend, das mit der Zeit auseinanderlaeuft (von P5a
+    # verifiziert, tools/export_static.py:160-172 - diese Stelle hier).
     with flask_app.test_request_context("/"):
         html = flask_app.jinja_env.get_template("index.html").render(
-            categories=config.CATEGORY_LABELS,
-            categories_short=config.CATEGORY_SHORT_LABELS,
+            categories=categories,
+            tags=tags,
             sources=config.SOURCE_GROUP_LABELS,
             mode="static",
-            excluded=config.EXCLUDED_CATEGORIES,
+            default_hidden=default_hidden,
             highlight_score=config.HIGHLIGHT_SCORE,
             generated_at=generated_at,
             generated_at_label=datetime.fromisoformat(generated_at).strftime("%d.%m.%Y, %H:%M"),
-            asset_v=web.asset_version(),
+            asset_v=asset_v,
+            urls=_static_urls(asset_v),
         )
     _write(os.path.join(out_dir, "index.html"), html)
+
+    # --- Venue-Seiten (P5b) --------------------------------------------------
+    # Kernannahme des Pakets: ein Event fuehrt auf eine Venue-Seite INNERHALB
+    # der App, nicht zum Kulturkalender (decision #4) - das muss auch in der
+    # oeffentlichen, statischen Kopie gelten, nicht nur im Flask-Modus.
+    orte_dir = os.path.join(out_dir, "orte")
+    os.makedirs(orte_dir, exist_ok=True)
+    venue_urls = _static_urls(asset_v, under_orte=True)
+    venues_written = 0
+    for v in venues:
+        events = venue_events[v["slug"]]
+        cover = feed.venue_cover(v, events)
+        with flask_app.test_request_context("/"):
+            venue_html = flask_app.jinja_env.get_template("venue.html").render(
+                venue=v, events=events, last_past=venue_last_past[v["slug"]],
+                cover=cover, mode="static", kind_labels=config.VENUE_KIND_LABELS,
+                region_labels=config.REGION_LABELS, urls=venue_urls,
+            )
+        if _write(os.path.join(orte_dir, f"{v['slug']}.html"), venue_html):
+            venues_written += 1
+
+    enriched_count = sum(1 for v in venues if v.get("og_image_url"))
+    with flask_app.test_request_context("/"):
+        venues_index_html = flask_app.jinja_env.get_template("venues.html").render(
+            venues=venues, mode="static", enriched_count=enriched_count,
+            kind_labels=config.VENUE_KIND_LABELS, region_labels=config.REGION_LABELS,
+            urls=venue_urls,
+        )
+    _write(os.path.join(orte_dir, "index.html"), venues_index_html)
+
+    # Eine Venue-Zeile verschwindet praktisch nie (venues werden nie geloescht,
+    # nur Aliase umgehaengt - siehe migrations/001_schema_v2.sql §1), aber
+    # falls doch (manuelles Zusammenlegen, Umbenennen des Slugs), soll keine
+    # verwaiste Datei im oeffentlichen Repo liegen bleiben - dieselbe
+    # Vorsicht wie bei den Tagesdateien oben.
+    keep_venue_files = {f"{v['slug']}.html" for v in venues} | {"index.html"}
+    venues_removed = 0
+    for name in os.listdir(orte_dir):
+        if name.endswith(".html") and name not in keep_venue_files:
+            os.remove(os.path.join(orte_dir, name))
+            venues_removed += 1
 
     _write(os.path.join(out_dir, "robots.txt"), "User-agent: *\nDisallow: /\n")
     _write(os.path.join(out_dir, ".nojekyll"), "")
@@ -179,6 +266,9 @@ def export(out_dir, days_ahead=45, today=None):
         "events": sum(d["count"] for d in index_days),
         "days_written": written,
         "days_removed": removed,
+        "venues": len(venues),
+        "venues_written": venues_written,
+        "venues_removed": venues_removed,
         "bytes": sum(
             os.path.getsize(os.path.join(root, name))
             for root, _, names in os.walk(out_dir) for name in names
@@ -203,7 +293,9 @@ def main():
         print(f"{stats['events']} Events an {stats['days']} Tagen nach {args.out} "
               f"({stats['bytes'] / 1024 / 1024:.1f} MB, "
               f"{stats['days_written']} Tagesdateien neu/geaendert, "
-              f"{stats['days_removed']} entfernt).")
+              f"{stats['days_removed']} entfernt). "
+              f"{stats['venues']} Venue-Seiten ({stats['venues_written']} neu/geaendert, "
+              f"{stats['venues_removed']} entfernt).")
 
 
 if __name__ == "__main__":

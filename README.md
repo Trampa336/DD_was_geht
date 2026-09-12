@@ -271,9 +271,13 @@ Jedes 👍/👎 auf ein Event passt drei Arten von „Gewichten“ an: die **Kat
 
 **„Weiteres“ (`sonstiges`) zählt bewusst nicht als Geschmacksmerkmal.** Es ist das Restfach des Klassifikators – dort landet, was keine Regel erkannt hat. Als Lern-Feature ist es schädlich: In der Live-Datenbank stand `category:sonstiges` bei 0 Likes / 4 Skips, und die Laplace-Glättung drückte damit *alle* 1734 Einträge dieses Buckets dauerhaft auf 29–41 %, darunter reichlich nur falsch einsortierte Veranstaltungen. Vier Klicks dürfen nicht 40 % des Katalogs stummschalten, deshalb liefert `sonstiges` in `scoring._feature_keys()` keinen Kategorie-Schlüssel mehr (`NEUTRAL_CATEGORIES`). Ort und Schlüsselwörter wirken dort weiterhin ganz normal.
 
-Unabhängig vom Lern-Score gibt es zwei harte Filter. Der eine ist der Ort (siehe „Dresden oder Ausflug“ oben): Was weiter weg liegt als der Speckgürtel, wird standardmäßig nicht gezeigt. Der andere ist `EXCLUDED_CATEGORIES` (`app/config.py`, Standard `familie`, `fuehrungen`): er blendet Kategorien aus der Web-Startansicht komplett aus. Im Web-UI bleibt die Kategorie über den Filter-Chip trotzdem erreichbar.
+Unabhängig vom Lern-Score gibt es zwei harte Filter. Der eine ist der Ort: seit Paket P5b ist die Web-Startansicht **Dresden-only**, Umland und alles weiter Weg hängen zusammen an einem Schalter (`region` auf der Venue-Zeile, siehe unten). Der andere ist die **`categories`-Tabelle** (`migrations/001_schema_v2.sql`, gelesen über `db.list_categories()`): ihre Spalte `default_visible` blendet Kategorien aus der Web-Startansicht komplett aus (Stand: nur `fuehrungen`). Im Web-UI bleibt die Kategorie über den Filter-Chip trotzdem erreichbar. *(Bis P5b stand hier `config.EXCLUDED_CATEGORIES` mit `familie, fuehrungen` - das war seit P2 nie mit der `categories`-Tabelle abgeglichen worden und widersprach ihr bei `familie`; seit P5b zählt die Tabelle.)*
 
-Die Kategorien stehen im Web-UI als eine einzige, nicht umbrechende Chip-Zeile über der Liste (Kurzform aus `CATEGORY_SHORT_LABELS`; passt sie nicht, wird seitlich gewischt). Alles andere – „Dauerangebote", „Wenig relevant", die Quellen und „Auswahl zurücksetzen" – liegt rechts daneben im Klappmenü **Filter**, dessen Zähler anzeigt, wie viele Einstellungen vom Standard abweichen. Die Kategorie-Chips selbst sind eine **Mehrfachauswahl**: Jeder Chip lässt sich einzeln an- und abschalten, mehrere gewählte Kategorien werden zusammen angezeigt (`/api/events?cat=musik,kultur`, gleiches für `/api/fuer-dich`). „Alle“ setzt die Auswahl zurück – nur dann greift `EXCLUDED_CATEGORIES`; sobald mindestens ein Chip aktiv ist, zählt ausschließlich die Auswahl. Die Auswahl bleibt pro Browser im `localStorage` erhalten. „Familie & Kinder“ ist bewusst von „Führungen & Touren“ (Führungen, Rundgänge, Schiffsfahrten) und „Feste & Märkte“ getrennt, damit der Filter nicht versehentlich auch nicht-familienbezogene Events verschluckt.
+Die Kategorien stehen im Web-UI als eine einzige, nicht umbrechende Chip-Zeile über der Liste (Label direkt aus der `categories`-Tabelle, sortiert nach `sort_order`; passt sie nicht, wird seitlich gewischt). Alles andere – „Dauerangebote", „Wenig relevant", die Merkmal-Tags, die Quellen und „Auswahl zurücksetzen" – liegt rechts daneben im Klappmenü **Filter**, dessen Zähler anzeigt, wie viele Einstellungen vom Standard abweichen. Die Kategorie-Chips selbst sind eine **Mehrfachauswahl**: Jeder Chip lässt sich einzeln an- und abschalten, mehrere gewählte Kategorien werden zusammen angezeigt (`/api/events?cat=musik,kultur`, gleiches für `/api/fuer-dich`). „Alle“ setzt die Auswahl zurück – nur dann greifen die default_visible=0-Kategorien; sobald mindestens ein Chip aktiv ist, zählt ausschließlich die Auswahl. Die Auswahl bleibt pro Browser im `localStorage` erhalten. „Familie“ ist bewusst von „Führungen & Touren“ (Führungen, Rundgänge, Schiffsfahrten) und „Outdoor“ getrennt, damit der Filter nicht versehentlich auch nicht-familienbezogene Events verschluckt.
+
+**Suche und Merkmal-Tags (seit P5b):** ein Suchfeld über der Kategorienzeile filtert die aktuell geladene Liste live nach Titel und Ort (rein client-seitig, `app/static/app.js`). Fünf Merkmal-Tags (`kirche`, `museum`, `open-air`, `klassik`, `techno` - echte Tabelle `tags`/`event_tags`, `app/normalize.derive_tags()`) stehen als weitere Mehrfachauswahl im Filter-Menü.
+
+**Venue-Seiten (seit P5b):** jedes Event verlinkt zusätzlich zur Quelle (`zur Quelle`) auf die Seite seiner Venue (`/orte/<slug>`, statisch `orte/<slug>.html`) statt auf den Kulturkalender - das ist die eigentliche Ablöse-Absicht des Projekts. Cover-Reihenfolge: `venues.og_image_url` (kk_cover_url vor Homepage-og:image, `tools/load_enrichment.py`) zuerst, sonst das Bild des nächsten anstehenden Events (`feed.venue_cover()`). Homepage-Knopf nutzt `venues.homepage_root`, nicht `homepage_url` (ein Teil der gespeicherten Homepages sind Deep-Links in die eigene Terminliste). Treffpunkte ohne echte Spielstätte (`venues.is_meeting_point`, z.B. „Dresden City“) bekommen keine Seite. `/orte` listet alle Venues mit Suchfeld; `tools/venue_readiness_report.py` misst, wie viele Venues überhaupt etwas zum Zeigen haben.
 
 **„Sport & Bewegung“ meint Mitmachen, nicht Zuschauen:** Yoga, Pilates, offene Radausfahrten, Lauftreffs, Klettern, Wanderungen. Zuschauersport (Fußball, Liga- und Heimspiele, Public Viewing) ist ausdrücklich ausgenommen und bleibt in „Weiteres“. Weil Quellseiten solche Termine gern unter ihrer eigenen Rubrik führen – „Yoga im Alaunpark“ läuft auf rauze.de als Rohkategorie „Festival“ –, wird Sport in `normalize.classify_category()` als Titel-Vorprüfung **vor** `RAW_CATEGORY_MAP` ausgewertet, und mit Wortgrenzen statt Substring-Treffern: sonst würden „Weinbergswanderung“ (Weinprobe) oder „Der Wanderer über dem Nebelmeer“ (Musical) mitkommen.
 
@@ -331,15 +335,19 @@ dd-was-geht/
       azconni.py              Quelle 5: AZ Conni (einzelnes Haus)
       sektor.py               Quelle 6: Sektor Evolution (einzelnes Haus)
       detail_fetch.py         Beschreibung/Preis einzelner Events nachladen
-    templates/index.html     Web-UI, nur noch Markup; Konfiguration reicht window.DD durch
+    templates/index.html     Suchbare Liste, nur noch Markup; Konfiguration reicht window.DD durch
+    templates/venue.html     Venue-Seite (seit P5b): Cover/Homepage/Beschreibung/anstehende Termine
+    templates/venues.html    „Alle Orte" - Uebersicht aller Venue-Seiten mit Suchfeld
     static/boot.js           Theme setzen, bevor gezeichnet wird (blockierend im Kopf)
     static/app.css           Stylesheet
-    static/app.js            Liste, Filter, Popup, Empfehlungen
+    static/app.js            Liste, Filter, Suche, Popup, Empfehlungen (nur index.html)
+    static/orte.js           Suchfeld auf „Alle Orte" (nur venues.html)
     static/background.js     Hintergrund-Animationen
     static/rating.js         Bewerten mit 👍/👎
   tools/inspect_source.py    Debug-Helfer zur Scraper-Kalibrierung
   tools/show_duplicates.py   Zeigt, welche Doppelungen verbucht sind
   tools/reclassify.py        Kategorien im Bestand nachziehen (Backfill)
+  tools/venue_readiness_report.py  Misst, wie viele Venues ueberhaupt etwas zum Zeigen haben (P5b)
   tools/export_static.py     Statischer Export für GitHub Pages (siehe „Öffentliche Seite für Freunde")
   tools/publish_site.sh      Export + Push auf den Pi-Host (Cronjob)
   tests_smoke.py             Schnelltest der Kernlogik ohne Netzwerk
