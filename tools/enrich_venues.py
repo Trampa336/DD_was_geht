@@ -34,7 +34,9 @@ unveraendert uebernommen.
 
 Aufruf:
     ../.venv/bin/python tools/enrich_venues.py <db> [--limit N] [--apply]
-    (ohne --apply: nur Bericht, nichts geschrieben)
+    ../.venv/bin/python tools/enrich_venues.py <db> --ids=12,34,56 [--apply]
+    (ohne --apply: nur Bericht, nichts geschrieben; --ids ersetzt --limit durch
+    eine explizite Liste von venue_id - siehe target_venues_by_ids())
 
 Roh-HTML und Zwischenergebnisse landen in data/venue_cache/ (gitignored),
 damit ein zweiter Lauf und die Handpruefung keine neuen Requests kosten.
@@ -333,13 +335,29 @@ def target_venues(conn, limit):
            GROUP BY v.id ORDER BY n DESC LIMIT ?""", (limit,)).fetchall()
 
 
+def target_venues_by_ids(conn, ids):
+    """Wie target_venues(), aber fuer eine explizite Liste von venue_id statt
+    des Kopfs der Rangliste (P5t): Venues am unteren Ende der Eventzahl-
+    Rangliste kann target_venues() per LIMIT nicht gezielt treffen, ohne auch
+    den gesamten Kopf erneut mitzuschleppen."""
+    qmarks = ",".join("?" * len(ids))
+    return conn.execute(
+        f"""SELECT v.id, v.slug, v.name, v.kind, COUNT(e.uid) AS n
+           FROM venues v LEFT JOIN events e ON e.venue_id = v.id
+           WHERE v.id IN ({qmarks})
+           GROUP BY v.id ORDER BY n DESC""", ids).fetchall()
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     apply = "--apply" in sys.argv
     limit = 120
+    ids = None
     for a in sys.argv[1:]:
         if a.startswith("--limit"):
             limit = int(a.split("=", 1)[1])
+        elif a.startswith("--ids="):
+            ids = [int(x) for x in a.split("=", 1)[1].split(",") if x]
     if len(args) != 1:
         print(__doc__)
         sys.exit(1)
@@ -349,11 +367,22 @@ def main():
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     # Schritt 1
-    days = [r[0] for r in conn.execute(
+    all_days = [r[0] for r in conn.execute(
         "SELECT DISTINCT date FROM events ORDER BY date").fetchall()]
-    days = days[::3][:12]          # jeder dritte Tag reicht fuer die Abdeckung
+    if ids is None:
+        days = all_days[::3][:12]      # jeder dritte Tag reicht fuer die Abdeckung
+        cache_name = "kk_venue_urls.json"
+    else:
+        # --ids (P5t): Ziel-Venues haben oft genau EIN Event, dessen Datum
+        # vom Stichproben-Raster (jeder dritte Tag) verfehlt wird - eine
+        # Venue taucht nur auf der Tagesseite IHRES Events auf. Deshalb hier
+        # ALLE Tage ernten statt der Stichprobe, und in einen eigenen Cache,
+        # damit der Stichproben-Cache eines spaeteren Top-N-Sweeps unberuehrt
+        # bleibt.
+        days = all_days
+        cache_name = "kk_venue_urls_ids.json"
     print(f"Schritt 1: KK-Venue-Links aus {len(days)} Tagesseiten ernten ...")
-    venue_urls = harvest_venue_urls(days, CACHE_DIR / "kk_venue_urls.json")
+    venue_urls = harvest_venue_urls(days, CACHE_DIR / cache_name)
     print(f"-> {len(venue_urls)} Rohstrings mit KK-Venue-Link.\n")
 
     # Rohstring -> venue_id ueber die Alias-Tabelle (dieselbe Kollaps-Regel
@@ -366,8 +395,12 @@ def main():
         if vid is not None:
             by_venue.setdefault(vid, url)
 
-    venues = target_venues(conn, limit)
-    print(f"Schritt 2+3: {len(venues)} Venues (Top {limit} nach Eventzahl).")
+    if ids is None:
+        venues = target_venues(conn, limit)
+        print(f"Schritt 2+3: {len(venues)} Venues (Top {limit} nach Eventzahl).")
+    else:
+        venues = target_venues_by_ids(conn, ids)
+        print(f"Schritt 2+3: {len(venues)} Venues (explizite Liste, --ids, P5t).")
     matched = [v for v in venues if v["id"] in by_venue]
     print(f"-> {len(matched)} davon haben einen KK-Venue-Link, "
           f"{len(venues) - len(matched)} nicht.\n")
