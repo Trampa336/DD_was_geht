@@ -40,12 +40,12 @@ def slim_event(event):
     # ohnehin immer zeigte (siehe app/geo.py, Bericht zu P5b).
     if event.get("region") not in (None, "dresden"):
         out["region"] = event["region"]
-    # Der Score aus dem persoenlichen Lernmodell (app/scoring.py). Bewertet wird
+    # Der Score aus dem persoenlichen Lernmodell (app/scoring.py). Geherzt wird
     # nur auf dem Pi; die oeffentliche Kopie zeigt das Ergebnis mit, damit dort
-    # dieselbe Empfehlungszeile und derselbe "wenig relevant"-Filter funktionieren
-    # wie im Heimnetz. P5b liess das unangetastet (score ist konstant 50.0,
-    # siehe scoring.py, aber app.js liest ihn noch aktiv fuer Top-Treffer/
-    # wenig-relevant - siehe Bericht zu P5b, warum das trotzdem stehen bleibt).
+    # dieselbe Empfehlungszeile und dieselbe Top-Treffer-Marke funktionieren wie
+    # im Heimnetz. Seit P5c wird der Score aus den Herzen gefuettert statt aus
+    # 👍/👎 - er bleibt 50.0, solange David noch nichts geherzt hat, und kann
+    # danach nur noch steigen (einseitiges Signal, siehe scoring.py).
     out["score"] = round(event.get("score", 50.0), 1)
     return out
 
@@ -77,7 +77,7 @@ def venue_cover(venue, events):
 
 
 def build_events(conn, start, end, categories=None, exclude_categories=None,
-                 with_reactions=False, slim=False):
+                 slim=False):
     """Die Events von start bis end (beides date-Objekte, beide Tage inklusive),
     bewertet und nach Datum/Uhrzeit sortiert. Events ohne Uhrzeit stehen am Ende
     ihres Tages.
@@ -94,10 +94,11 @@ def build_events(conn, start, end, categories=None, exclude_categories=None,
         die Chips wieder erreichbar - das entscheidet dort der Browser, der
         die Tagesdateien komplett bekommt.
 
-    with_reactions: je Event das gespeicherte 👍/👎 mitgeben. Nur das Web-UI
-        braucht das - bewertet wird ausschliesslich im Heimnetz, die
-        oeffentliche Kopie hat keine Bewerten-Buttons (siehe
-        tools/export_static.py).
+    Ein frueherer Parameter with_reactions haengte je Event das gespeicherte
+    👍/👎 an. Er ist mit P5c ersatzlos weg: ein Herz haengt nicht an der
+    einzelnen Zeigung, sondern an der Serie (Entscheidung #26), deshalb holt
+    sich die Liste im Browser die Herzen als EINE Schluesselliste ueber
+    /api/herzen statt als Feld an jedem einzelnen Event.
 
     slim: die Events auf die Felder eindampfen, die das Frontend anfasst
         (siehe slim_event). Der Export tut das, weil die Tagesdateien viermal
@@ -106,9 +107,6 @@ def build_events(conn, start, end, categories=None, exclude_categories=None,
     events = db.events_for_range(conn, start.isoformat(), end.isoformat(),
                                  categories, exclude_categories=exclude_categories)
     events = scoring.score_events(conn, events)
-    if with_reactions:
-        for event in events:
-            event["reaction"] = db.get_reaction(conn, event["uid"])
     # Tags (P5b): eine Anfrage fuer alle Events des Zeitraums statt einer pro
     # Event - dieselbe Begruendung wie bei venue_category_hints in db.py.
     tag_map = db.tags_for_events(conn, [e["uid"] for e in events])

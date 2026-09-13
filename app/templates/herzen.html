@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Herzen · DD was geht</title>
+<script src="{{ urls.asset('boot.js') }}"></script>
+<link rel="stylesheet" href="{{ urls.asset('app.css') }}">
+</head>
+{#
+  Die kuratierte Seite: die zweite Oberflaeche auf derselben Datenbank, und der
+  Grund fuer den ganzen Umbau. Hier steht ausschliesslich, was David selbst
+  geherzt hat - keine Vorauswahl, kein Vorschlag, kein Seeding (Entscheidung
+  #19). Am Tag der Auslieferung ist sie leer, und das ist richtig so.
+
+  Es gibt sie bewusst NUR unter Flask im Heimnetz; tools/export_static.py
+  exportiert index.html und die Venue-Seiten, diese Seite nicht.
+
+  Ein Eintrag ist eine SERIE (Entscheidung #26), keine einzelne Zeigung:
+  die Frauenkirche fuehrt dieselbe Tour 5-8 mal am Tag: eine Zeile, alle
+  Uhrzeiten. Solange die Serie in der Liste steht, kommen Titel/Zeiten/Link aus
+  den lebenden Zeilen; ist sie ganz verschwunden, uebernimmt der Schnappschuss
+  aus dem Herz und die Zeile wird als "verwaist" markiert.
+#}
+<body>
+<div class="page page-narrow">
+  <header class="masthead masthead-simple">
+    <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
+  </header>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a></nav>
+
+  <h2 class="venues-index-title">Deine Herzen ({{ (upcoming | length) + (past | length) }})</h2>
+  <p class="venues-index-hint">
+    Alles, was du in der Liste mit einem Herz markiert hast. Ein Herz gilt der ganzen Reihe –
+    bei einer Führung mit fünf Startzeiten also allen fünf. Die Auswahl bleibt hier stehen,
+    auch wenn die Quelle ihre Einträge umbaut.
+  </p>
+
+  {% macro herz_zeile(h) %}
+  <article class="herz-row{% if not h.live %} herz-row-verwaist{% endif %}">
+    <span class="herz-row-cover{% if not h.image_url %} placeholder{% endif %}"
+          {% if h.image_url %}style="background-image:url('{{ h.image_url }}')"{% endif %}>{% if not h.image_url %}{{ (h.title or '?')[0] }}{% endif %}</span>
+    <div class="herz-row-body">
+      <p class="herz-row-title">{{ h.title }}</p>
+      <div class="herz-row-meta">
+        <span class="herz-row-date">{{ h.date | de_date }}</span>
+        <span class="herz-row-times">{% for t in h.times %}{{ t or '--:--' }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+        {% if h.venue_slug %}<a class="event-venue-link" href="{{ urls.venue(h.venue_slug) }}">{{ h.venue }}</a>
+        {% elif h.venue %}<span class="event-venue-link">{{ h.venue }}</span>{% endif %}
+        {% if h.count > 1 %}<span class="tag-run">{{ h.count }} Termine</span>{% endif %}
+        {% if not h.live %}<span class="tag-verwaist">nicht mehr gelistet</span>{% endif %}
+      </div>
+      {% if h.note %}<p class="herz-row-note">{{ h.note }}</p>{% endif %}
+    </div>
+    <div class="herz-row-actions">
+      {% if h.url %}<a class="modal-source-link" href="{{ h.url }}" target="_blank" rel="noopener noreferrer">zur Quelle &#8599;</a>{% endif %}
+      <button class="herz herz-entfernen" type="button" data-run-key="{{ h.run_key }}" data-uid="{{ h.uid }}"
+              aria-label="Herz entfernen" title="Herz entfernen">♥</button>
+    </div>
+  </article>
+  {% endmacro %}
+
+  {% if upcoming %}
+  <div class="herzen-liste">
+    {% for h in upcoming %}{{ herz_zeile(h) }}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    Noch nichts geherzt. In der <a href="{{ urls.index }}">Liste</a> sitzt an jeder Zeile rechts ein ♥ –
+    was du dort anklickst, steht hier.
+  </div>
+  {% endif %}
+
+  {% if past %}
+  <h3 class="herzen-vorbei-titel">Vorbei</h3>
+  <div class="herzen-liste herzen-liste-vorbei">
+    {% for h in past %}{{ herz_zeile(h) }}{% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="footnote">
+    Diese Seite gibt es nur hier im Heimnetz. Was auf ihr steht, entscheidest ausschließlich du –
+    vorgeschlagen wird hier nichts.
+  </p>
+</div>
+{# Dieselbe Datei, die auch die Liste einbindet: sie bringt den Herz-Knopf fuer
+   app.js mit UND haengt sich an die schon gerenderten Knoepfe dieser Seite. #}
+<script src="{{ urls.asset('herzen.js') }}"></script>
+</body>
+</html>

@@ -289,9 +289,18 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
 /* Ohne Bewerten-Buttons (oeffentliche Kopie) bleibt die Spalte leer - dann
    soll sie auch keinen Platz einnehmen. */
 .event-actions:empty { display:none; }
-.fb { display:flex; gap:4px; }
-.fb button { border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:4px 7px; font-size:13px; cursor:pointer; }
-.fb button[data-active="true"] { border-color:var(--elbe); background:var(--elbe-soft); }
+/* Herz statt Daumen (P5c). Ein Knopf, zwei Zustaende - aria-pressed traegt den
+   Zustand, die Farbe ist nur die sichtbare Seite davon. */
+.herz-slot { display:flex; gap:4px; }
+.herz {
+  border:1px solid var(--line); background:var(--surface); border-radius:7px;
+  padding:4px 9px; font-size:14px; line-height:1.2; cursor:pointer;
+  color:var(--stone-dark); transition:color .12s ease, border-color .12s ease, background .12s ease;
+}
+.herz:hover { color:var(--elbe-strong); border-color:var(--elbe); }
+.herz[aria-pressed="true"] { color:var(--elbe-strong); border-color:var(--elbe); background:var(--elbe-soft); }
+.herz:disabled { opacity:.5; cursor:default; }
+.event.is-hearted { border-left:2px solid var(--elbe); }
 
 .empty-state, .loading { padding:30px 14px; text-align:center; color:var(--ink-faint); font-size:13.5px; }
 .footnote { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-faint); line-height:1.6; }
@@ -396,3 +405,35 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-
   .venue-cover { width:100%; height:180px; }
   .venue-row .tag, .venue-row .tag-region { display:none; }
 }
+
+/* ===========================================================================
+   P5c: die kuratierte Seite (/herzen)
+   =========================================================================== */
+
+.herzen-liste { display:flex; flex-direction:column; border-top:1px solid var(--line); }
+.herz-row {
+  display:flex; align-items:flex-start; gap:12px; padding:12px 4px;
+  border-bottom:1px solid var(--line);
+}
+.herz-row-cover { flex:0 0 auto; width:44px; height:44px; border-radius:8px; background:var(--stone) center/cover no-repeat; }
+.herz-row-cover.placeholder {
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-display);
+  font-size:17px; color:var(--stone-dark); background:var(--surface);
+}
+.herz-row-body { flex:1 1 auto; min-width:0; }
+.herz-row-title { margin:0 0 4px; font-size:14.5px; font-weight:500; }
+.herz-row-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); }
+.herz-row-date { color:var(--ink); }
+.herz-row-times { color:var(--ink-faint); }
+.herz-row-note { margin:6px 0 0; font-size:12.5px; color:var(--ink-soft); }
+.herz-row-actions { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+/* Verwaist heisst: die Quelle listet die Reihe nicht mehr. Die Zeile bleibt
+   trotzdem stehen (sie lebt vom Schnappschuss im Herz) und sagt das auch. */
+.herz-row-verwaist { opacity:.72; }
+.tag-verwaist {
+  font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.02em;
+  padding:2px 7px; border-radius:5px; white-space:nowrap;
+  border:1px dashed var(--stone-dark); color:var(--ink-faint);
+}
+.herzen-vorbei-titel { margin:32px 0 8px; font-family:var(--font-display); font-size:17px; color:var(--ink-soft); }
+.herzen-liste-vorbei .herz-row { opacity:.6; }

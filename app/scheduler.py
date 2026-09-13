@@ -66,14 +66,24 @@ def run_scrape(days_ahead=31):
         # Erst nach dem Speichern: die Erkennung vergleicht alle Quellen im
         # Zeitraum miteinander, nicht nur die gerade geholten Einträge.
         duplicate_count = dedup.link_duplicates(conn, today.isoformat(), end.isoformat())
+        # NACH der Doppelungs-Erkennung, nie davor: link_duplicates() schiebt
+        # Zeilen zwischen Gewinner und Doppelung hin und her, und ein Herz auf
+        # einer Zeile, die gerade zur Doppelung geworden ist, waere sonst bis
+        # zum naechsten Lauf aus der kuratierten Seite verschwunden - ohne
+        # Fehler irgendwo. Das ist der Akzeptanztest des ganzen Umbaus:
+        # ein Herz muss einen Re-Scrape ueberleben (app/db.py, Abschnitt
+        # HERZEN).
+        hearts = db.relink_hearts(conn)
         # MELDET Zukunfts-Events, die keine urteilsfaehige Quelle mehr liefert
         # (Schwelle: Zeilen UND Zeitspanne, siehe db.MIN_CUTOFF_SPAN).
         # Loescht derzeit bewusst NICHTS - siehe db.ORPHAN_DELETION_DISABLED;
         # dry_run=False steht hier nur, damit P3b-3 nichts anfassen muss.
         db.expire_orphaned_events(conn, today.isoformat(), dry_run=False)
     logger.info(
-        "Scrape fertig: %d Events gesehen, %d davon neu, %d Doppelungen ausgeblendet.",
+        "Scrape fertig: %d Events gesehen, %d davon neu, %d Doppelungen "
+        "ausgeblendet, Herzen: %d ok / %d neu verknuepft / %d verwaist.",
         len(events), new_count, duplicate_count,
+        hearts["ok"], hearts["neu_verknuepft"], hearts["verwaist"],
     )
     return len(events), new_count
 

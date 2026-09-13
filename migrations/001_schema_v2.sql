@@ -351,8 +351,31 @@ CREATE INDEX idx_scrape_runs_source ON scrape_runs(source, started_at);
 --     auch dann noch anzeigbar und wiederfindbar, wenn die Event-Zeile weg
 --     oder die uid gewechselt ist. Das kostet ein paar hundert Byte pro Herz
 --     und ersetzt eine ganze Reparatur-Mechanik.
+-- (c) NACHGETRAGEN VON P5c - die Regel, die beim Entwurf noch fehlte: ein Herz
+--     gilt der SERIE, nicht der einzelnen Zeigung (Entscheidung #26). Die
+--     Frauenkirche fuehrt dieselbe Tour 5-8 mal am Tag als eigene, einzeln
+--     buchbare Events mit eigenen uids, und nichts in diesem Schema verbindet
+--     die Geschwister. Deshalb traegt jedes Herz zusaetzlich `run_key`
+--     (normalize.run_key: "<tag>|<ort-slug>|<titel-slug>", derselbe Schluessel,
+--     nach dem app/static/app.js die Liste faltet) - DAS ist die Identitaet
+--     eines Herzens, `event_uid` nur der Anker, auf den es gerade zeigt.
+--
+-- (d) EBENFALLS P5c: `link_status = 'ok'` heisst "die Ankerzeile ist eine
+--     GEWINNER-Zeile" (duplicate_of IS NULL) - nicht "die Zeile existiert".
+--     Nur Gewinner zeigt die Liste. Eine lebende Zeile mit gesetztem
+--     duplicate_of ist ueberall unsichtbar, und ein Herz darauf wuerde sich
+--     selbst als 'ok' melden und trotzdem fehlen. app/db.py._resolve_heart()
+--     ist die einzige Stelle, die den Status setzt; sie prueft genau dieses
+--     Praedikat.
 CREATE TABLE hearts (
     event_uid       TEXT PRIMARY KEY,           -- absichtlich OHNE FK, siehe (a)
+
+    -- Die eigentliche Identitaet des Herzens, siehe (c). UNIQUE weiter unten.
+    run_key         TEXT NOT NULL DEFAULT '',
+    -- Die uids der Serienmitglieder zum Zeitpunkt der letzten Pruefung (JSON).
+    -- Schnappschuss wie die snap_*-Felder: nach einem Umbau bei der Quelle ist
+    -- das die Kandidatenliste fuer die Wiederanknuepfung.
+    member_uids     TEXT,
 
     -- Wiederanknuepfung: bricht die uid, sucht ein Reparaturlauf Events mit
     -- diesem identity_key und - falls die URL sich auch geaendert hat - mit
@@ -382,6 +405,7 @@ CREATE TABLE hearts (
     updated_at      TEXT NOT NULL
 );
 
+CREATE UNIQUE INDEX idx_hearts_run ON hearts(run_key);
 CREATE INDEX idx_hearts_identity ON hearts(identity_key);
 CREATE INDEX idx_hearts_date     ON hearts(snap_date);
 CREATE INDEX idx_hearts_status   ON hearts(link_status);
@@ -402,8 +426,17 @@ CREATE INDEX idx_hearts_status   ON hearts(link_status);
 -- bessere Feedback als ein nie benutztes Daumen-hoch/runter, und zwei
 -- konkurrierende Bewertungssysteme im selben UI will niemand. weights bleibt
 -- also, gefuettert aus hearts statt aus reactions; reactions faellt weg.
--- Bis weights Daten hat, sollte feed.py den score NICHT exportieren - ein
--- konstantes 50.0 im JSON verleitet P5 dazu, danach zu sortieren.
+--
+-- P5c HAT DAS UMGESETZT - und dabei die Folge nachgetragen, die hier noch
+-- fehlte: ein Herz ist ein EINSEITIGES Signal. weights.skips bleibt damit
+-- dauerhaft 0, die Laplace-Rate (likes+1)/(likes+skips+2) liegt immer in
+-- [0,5 ; 1), und der Score kann 50 nie mehr unterschreiten. Von den drei
+-- Verbrauchern des Scores vertragen zwei das (die Top-Treffer-Marke ab
+-- config.HIGHLIGHT_SCORE und die Sortierung von /api/fuer-dich); der dritte,
+-- der Filter "Wenig relevant" (Score < 40), konnte danach nie wieder etwas
+-- ausblenden und ist deshalb entfernt worden statt als toter Schalter stehen
+-- zu bleiben. Der score bleibt im Export (app/feed.py): er ist jetzt wieder
+-- ein Signal und nicht nur eine Konstante, sobald das erste Herz sitzt.
 CREATE TABLE weights (
     key    TEXT PRIMARY KEY,                    -- 'category:musik', 'venue:scheune', 'keyword:...'
     likes  INTEGER NOT NULL DEFAULT 0,

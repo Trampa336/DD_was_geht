@@ -207,36 +207,53 @@ with db.get_conn() as conn:
     check("category_filter normalisiert Leerzeichen/alle",
           db.category_filter(" musik , alle ,kultur") == ["musik", "kultur"])
 
-    # --- scoring: ohne Feedback neutral ---
+    # --- scoring: ohne Herzen neutral ---
+    # P5c: gefuettert wird das Modell jetzt aus Herzen statt aus 👍/👎
+    # (scoring.apply_reaction und die Tabelle reactions sind ersatzlos weg,
+    # siehe app/scoring.py). Die Pruefungen darunter sind dieselben Fragen in
+    # der neuen Mechanik - mit einer Ausnahme, die als eigener Check
+    # danebensteht: ein Herz ist EINSEITIG, es gibt kein Gegenstueck zum Skip.
     scored = scoring.score_events(conn, [dict(r) for r in rows])
-    check("score ohne Feedback == 50", all(e["score"] == 50.0 for e in scored))
+    check("score ohne Herzen == 50", all(e["score"] == 50.0 for e in scored))
 
-    # --- scoring: like auf Theater erhöht künftige Theater-Events ---
+    # --- scoring: ein Herz auf Theater erhöht künftige Theater-Events ---
     theater_event = next(e for e in rows if e["uid"] == "evt1")
-    changed = scoring.apply_reaction(conn, theater_event, "like")
-    check("apply_reaction meldet Änderung", changed is True)
+    scoring.apply_heart(conn, theater_event, True)
 
     new_theater_event = {
         "uid": "evt3", "date": "2026-08-22", "time": "19:00", "title": "Ein neues Theaterstück",
         "venue": "Boulevardtheater Dresden", "category": "kultur",
     }
-    score_after_like = scoring.score_event(conn, new_theater_event)
-    check("Score für ähnliches Kultur-Event steigt nach Like", score_after_like > 50.0)
+    score_after_heart = scoring.score_event(conn, new_theater_event)
+    check("Score für ähnliches Kultur-Event steigt nach Herz", score_after_heart > 50.0)
 
     party_event = dict(next(e for e in rows if e["uid"] == "evt2"))
     score_party = scoring.score_event(conn, party_event)
-    check("Party-Event bleibt neutral (kein Feedback dafür)", score_party == 50.0)
+    check("Party-Event bleibt neutral (kein Herz dafür)", score_party == 50.0)
 
-    # --- idempotenz: gleiche Reaktion nochmal aendert nichts ---
-    changed_again = scoring.apply_reaction(conn, theater_event, "like")
-    check("Erneutes gleiches Like ist No-Op", changed_again is False)
-    score_still = scoring.score_event(conn, new_theater_event)
-    check("Score unveraendert nach No-Op-Like", score_still == score_after_like)
+    # --- Herz entfernen macht den Effekt wieder rueckgaengig ---
+    scoring.apply_heart(conn, theater_event, False)
+    check("Score nach dem Entherzen wieder 50",
+          scoring.score_event(conn, new_theater_event) == 50.0)
+    check("Entherzen zieht die Gewichte nicht unter 0 (bump_weight klemmt ab)",
+          (scoring.apply_heart(conn, theater_event, False) or True)
+          and db.get_weight(conn, "category:kultur") == (0, 0))
 
-    # --- wechsel like -> skip macht alten Effekt rueckgaengig ---
-    scoring.apply_reaction(conn, theater_event, "skip")
-    score_after_switch = scoring.score_event(conn, new_theater_event)
-    check("Score nach Wechsel zu Skip wieder <= 50", score_after_switch <= 50.0)
+    # --- die Folge des einseitigen Signals, ausdruecklich festgehalten -------
+    # Mit Herzen bleibt weights.skips dauerhaft 0, die Laplace-Rate liegt damit
+    # immer in [0,5 ; 1) und der Score kann 50 NIE unterschreiten. Deshalb ist
+    # der Filter "Wenig relevant" (Score < 40) in P5c entfernt worden - er
+    # koennte nichts mehr ausblenden. Diese Pruefung ist der Grund, aus dem der
+    # Schalter nicht zurueckkommen darf, ohne dass jemand das Signal aendert.
+    for _ in range(40):
+        scoring.apply_heart(conn, theater_event, True)
+    check("Einseitiges Signal: skips bleiben 0, egal wie oft geherzt wird",
+          db.get_weight(conn, "category:kultur")[1] == 0)
+    check("Einseitiges Signal: kein Event kann unter 50 fallen",
+          min(scoring.score_event(conn, e) for e in
+              [new_theater_event, party_event, dict(theater_event)]) >= 50.0)
+    for _ in range(40):
+        scoring.apply_heart(conn, theater_event, False)
 
 
 # --- Parsing-Fixtures: HTML nachgebaut nach den echten Tagesansichten ---
@@ -1157,12 +1174,21 @@ with db.get_conn() as conn:
     check("Dedup-DB: weiterhin genau ein Protokolleintrag",
           len(db.duplicates_for_range(conn, "2026-09-05", "2026-09-05")) == 1)
 
-    # Like auf die ausgeblendete Version: der Favorit darf nicht verschwinden,
-    # sondern zeigt auf den Eintrag, der sie ersetzt.
-    db.set_reaction(conn, "dup-ra", "like")
-    _liked_uids = [e["uid"] for e in db.liked_events(conn)]
-    check("Dedup-DB: Like auf der Doppelung zeigt auf die sichtbare Version",
-          "dup-rauze" in _liked_uids and "dup-ra" not in _liked_uids)
+    # Herz auf die ausgeblendete Version: die Auswahl darf nicht verschwinden,
+    # sondern zeigt auf den Eintrag, der sie ersetzt. (Bis P5c stand hier
+    # dasselbe fuer ein Like ueber db.liked_events(); beides ist mit den
+    # Reaktionen weggefallen, die FRAGE bleibt dieselbe und muss weiter
+    # beantwortet werden - siehe app/db.py, Abschnitt HERZEN.)
+    _dup_heart, _dup_neu = db.set_heart(conn, "dup-ra")
+    check("Dedup-DB: Herz auf der Doppelung haengt sofort am sichtbaren Eintrag",
+          _dup_heart["event_uid"] == "dup-rauze" and _dup_neu is True)
+    check("Dedup-DB: das Herz meldet 'ok' - und das heisst GEWINNER-Zeile",
+          _dup_heart["link_status"] == "ok"
+          and conn.execute("SELECT duplicate_of FROM events WHERE uid = ?",
+                           (_dup_heart["event_uid"],)).fetchone()["duplicate_of"] is None)
+    check("Dedup-DB: die kuratierte Seite zeigt genau diesen einen Eintrag",
+          [h["uid"] for h in db.list_hearts(conn)] == ["dup-rauze"])
+    db.remove_heart(conn, _dup_heart["run_key"])
 
     # Aendert eine Quelle den Titel so stark, dass die Paarung nicht mehr
     # traegt, muss die Verknuepfung wieder aufgehen.
@@ -1450,7 +1476,7 @@ _page_all = _bundle(_page, os.path.join(_ROOT, "app", "static"))
 # (Kalender-Popover) kommen die drei flatpickr-Dateien dazu; die Liste ist die
 # einzige Stelle, die eine neue Datei kennen muss - Serve-Check und Anzahl
 # leiten sich beide von ihr ab, damit sie nie wieder auseinanderlaufen.
-_LINKED_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "rating.js",
+_LINKED_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "herzen.js",
                   "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
 for _asset in _LINKED_ASSETS:
     check(f"Flask liefert static/{_asset} aus",
@@ -1536,12 +1562,22 @@ check("Export: Seite laeuft im static-Modus", 'mode: "static"' in _static_html)
 check("Export: Stylesheet und Skripte liegen daneben",
       sorted(os.listdir(os.path.join(_export_dir, "static")))
       == sorted(web.PUBLIC_ASSETS))
-check("Export: rating.js wird nicht mitkopiert",
+check("Export: herzen.js wird nicht mitkopiert",
+      not os.path.exists(os.path.join(_export_dir, "static", "herzen.js")))
+check("Export: auch ein rating.js aus einem Export vor P5c bleibt draußen",
       not os.path.exists(os.path.join(_export_dir, "static", "rating.js")))
 # Der Kern der Rechte-Trennung: auf der oeffentlichen Kopie gibt es keine
 # Bewerten-Buttons und keinen Aufruf, der eine Bewertung irgendwohin schickte.
-check("Export: oeffentliche Seite kann nicht bewerten",
-      "var CAN_RATE = MODE === 'api';" in _static_all and "/api/feedback" not in _static_all)
+# Der Kern der Rechte-Trennung (decision #8): in der oeffentlichen Kopie darf
+# KEINE Schreibroute stehen. "/api/herz" ist exakt die Schreibroute - die
+# Leseroute heisst absichtlich /api/geherzt, damit dieser Griff eindeutig
+# bleibt. Zusaetzlich fehlt dort die Definition des Knopfes selbst (sie steht
+# in herzen.js, das gar nicht mitkopiert wird); der Aufruf in app.js bleibt
+# stehen und laeuft nie, weil CAN_HEART im static-Modus false ist.
+check("Export: oeffentliche Seite kann nicht herzen",
+      "var CAN_HEART = MODE === 'api';" in _static_all
+      and "/api/herz" not in _static_all
+      and "window.ddHerzButton = " not in _static_all)
 check("Export: keine Gast-Bewertung im localStorage mehr",
       "guestReact" not in _static_all and "guest.weights" not in _static_all.split("removeItem")[0])
 check("Export: Empfehlungszeile heisst oeffentlich anders",
@@ -1558,8 +1594,8 @@ check("Export: .nojekyll liegt daneben",
 # Die Flask-Seite darf davon nichts abbekommen - sie ist die einzige, auf der
 # eine Bewertung wirklich in der Datenbank landet.
 check("Flask-Seite bleibt im api-Modus", 'mode: "api"' in _page)
-check("Flask-Seite kann weiterhin bewerten",
-      "/api/feedback" in _page_all and "Für dich diese Woche" in _page)
+check("Flask-Seite kann herzen",
+      "/api/herz" in _page_all and "Für dich diese Woche" in _page)
 
 # Zweiter Lauf ohne Aenderung darf keine Datei anfassen, sonst traegt jeder
 # Push neue Blobs in die Git-Historie.
@@ -1987,21 +2023,23 @@ check("expire_orphaned_events(dry_run=True) meldet dieselbe Zeile",
 check("expire_orphaned_events(dry_run=True) loescht nichts",
       _nach_dry_run == 1)
 
-# Zukuenftiges Event, identisch verwaist wie "verwaist-zukunft", aber geliked -
+# Zukuenftiges Event, identisch verwaist wie "verwaist-zukunft", aber GEHERZT -
 # darf trotz Verwaisung NIE geloescht werden (data/ enthaelt die einzige Kopie
-# der Reaktionen; eine geloeschte Zeile liesse den Favoriten kommentarlos
-# verschwinden, siehe db._delete_orphaned_event).
+# der Herzen; eine geloeschte Zeile liesse einen Eintrag der kuratierten Seite
+# kommentarlos verschwinden, siehe db._delete_orphaned_event). Bis P5c stand
+# hier dieselbe Pruefung fuer ein Like - der Schutz haengt jetzt an
+# db.heart_for_uid() statt an db.get_reaction().
 with db.get_conn() as conn:
     db.upsert_events(conn, [{
-        "uid": "verwaist-geliked", "source": "azconni", "date": "2026-09-01",
-        "time": "20:00", "title": "Verwaist, aber geliked", "venue": "Testort",
+        "uid": "verwaist-geherzt", "source": "azconni", "date": "2026-09-01",
+        "time": "20:00", "title": "Verwaist, aber geherzt", "venue": "Testort",
         "category": "musik", "raw_category": "Test",
     }])
     conn.execute("UPDATE events SET last_seen = ? WHERE uid = ?",
-                 ("2026-08-20T09:00:00", "verwaist-geliked"))
+                 ("2026-08-20T09:00:00", "verwaist-geherzt"))
     conn.execute("UPDATE event_sources SET last_seen = ? WHERE event_uid = ?",
-                 ("2026-08-20T09:00:00", "verwaist-geliked"))
-    db.set_reaction(conn, "verwaist-geliked", "like")
+                 ("2026-08-20T09:00:00", "verwaist-geherzt"))
+    db.set_heart(conn, "verwaist-geherzt")
 
     _gemeldet = db.expire_orphaned_events(conn, _heute, threshold_runs=3, dry_run=False)
 
@@ -2013,7 +2051,10 @@ with db.get_conn() as conn:
     _zukunft_da = _existiert("verwaist-zukunft")
     _vergangen_da = _existiert("verwaist-vergangen")
     _frisch_da = _existiert("frisch-zukunft")
-    _geliked_da = _existiert("verwaist-geliked")
+    _geherzt_da = _existiert("verwaist-geherzt")
+    # Der Schutz muss auch fuer ein MITGLIED der Serie greifen, nicht nur fuer
+    # den Anker - geherzt ist die Serie (Entscheidung #26).
+    _schutz_mitglied = db.heart_for_uid(conn, "verwaist-geherzt") is not None
     _sources_da = conn.execute(
         "SELECT count(*) FROM event_sources WHERE event_uid = 'verwaist-zukunft'"
     ).fetchone()[0] == 1
@@ -2028,7 +2069,9 @@ check("dry_run=False meldet die verwaiste Zukunftszeile",
 check("dry_run=False loescht die verwaiste Zukunftszeile NICHT (abgeschaltet)", _zukunft_da)
 check("dry_run=False laesst die vergangene Zeile unangetastet", _vergangen_da)
 check("dry_run=False laesst die weiterhin gesehene Zeile stehen", _frisch_da)
-check("dry_run=False loescht eine verwaiste, aber geliked Zeile NICHT", _geliked_da)
+check("dry_run=False loescht eine verwaiste, aber geherzte Zeile NICHT", _geherzt_da)
+check("Der Loesch-Schutz kennt das Herz (db.heart_for_uid), nicht mehr die Reaktion",
+      _schutz_mitglied)
 check("dry_run=False laesst event_sources der gemeldeten Zeile stehen", _sources_da)
 
 # Die Anzahl der Laeufe allein taugt nicht als Schwelle: Deploys und manuelle
@@ -2550,6 +2593,11 @@ def _js_run_slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
 
 
+def _js_run_key(e):
+    """Nachbau von runKey() aus app.js - seit P5c MIT dem Tag (siehe dort)."""
+    return f"{e['date']}|{_js_run_slug(e.get('venue'))}|{_js_run_slug(e.get('title'))}"
+
+
 def _js_group_runs(events, min_size=3):
     """Python-Nachbau von runKey()+der Gruppierungsschleife in loadList()
     (app/static/app.js) - prueft die Anzeige-Logik, ohne einen Browser zu
@@ -2558,7 +2606,7 @@ def _js_group_runs(events, min_size=3):
     by_key = {}
     order = []
     for e in events:
-        key = _js_run_slug(e.get("venue")) + "|" + _js_run_slug(e.get("title"))
+        key = _js_run_key(e)
         if key not in by_key:
             by_key[key] = []
             order.append(key)
@@ -2566,7 +2614,7 @@ def _js_group_runs(events, min_size=3):
     rendered = set()
     items = []
     for e in events:
-        key = _js_run_slug(e.get("venue")) + "|" + _js_run_slug(e.get("title"))
+        key = _js_run_key(e)
         members = by_key[key]
         if len(members) >= min_size:
             if key in rendered:
@@ -2614,18 +2662,27 @@ check("P5x: insgesamt geht dabei keine einzige der 11 Zeigungen verloren - "
 check("app.js: RUN_MIN_SIZE ist 3 - aus der gemessenen Verteilung gewaehlt "
       "(siehe Kommentar im Code und P5x-Bericht), nicht geraten",
       "var RUN_MIN_SIZE = 3;" in _page_all)
-check("app.js: der Gruppenschluessel kombiniert Ort UND Titel (runKey) - "
-      "ohne Ort wuerden zwei Haeuser mit derselben Fuehrung verschmelzen",
-      "function runKey(e) { return runSlug(e.venue) + '|' + runSlug(e.title); }" in _page_all)
+check("app.js: der Gruppenschluessel kombiniert Tag, Ort UND Titel (runKey) - "
+      "ohne Ort wuerden zwei Haeuser mit derselben Fuehrung verschmelzen; der "
+      "Tag ist mit P5c dazugekommen (Herzen brauchen einen ueber Tage hinweg "
+      "eindeutigen Schluessel) und aendert an der Gruppierung nichts, weil "
+      "loadList() ohnehin nur innerhalb eines Tages gruppiert",
+      "function runKey(e) { return e.date + '|' + runSlug(e.venue) + '|' + runSlug(e.title); }" in _page_all)
 check("app.js: jede Uhrzeit einer Serie oeffnet ihr EIGENES Popup "
       "(openModal(m), nicht openModal(first)) - das haelt jede Zeigung "
       "einzeln erreichbar",
       "btn.addEventListener('click', function (evt) { evt.stopPropagation(); openModal(m); });" in _page_all)
-check("app.js: eine zusammengefasste Zeile bekommt KEINE Bewerten-Buttons "
-      "(reactions/apply_reaction haengen am einzelnen Showing-uid, siehe "
-      "app/db.py REACTIONS_ADDENDUM) - buildRunRow haengt fbButtons NICHT an",
+# P5x liess die zusammengefasste Zeile bewusst OHNE Bewerten-Knopf: 👍/👎 hingen
+# am einzelnen Showing-uid, und eine gefaltete Zeile hat keinen. Genau diese
+# offene Frage hat David mit Entscheidung #26 beantwortet - ein Herz gilt der
+# ganzen Serie -, also dreht P5c die Erwartung um: die gefaltete Zeile bekommt
+# einen Herz-Knopf, und der herzt alle Mitglieder auf einmal.
+check("P5c: eine zusammengefasste Zeile bekommt EINEN Herz-Knopf "
+      "(Entscheidung #26: ein Herz gilt der ganzen Serie) - buildRunRow haengt "
+      "herzButton an, und KEINE Daumen mehr (die gibt es nicht mehr)",
       "function buildRunRow" in _page_all
-      and "fbButtons" not in _page_all[_page_all.index("function buildRunRow"):_page_all.index("function loadList")])
+      and "fbButtons" not in _page_all
+      and "herzButton" in _page_all[_page_all.index("function buildRunRow"):_page_all.index("function loadList")])
 check("app.css: die Serien-Marke (.tag-run) ist ausgeliefert",
       ".tag-run {" in _page_all)
 check("app.css: die Mehrfach-Uhrzeiten-Liste (.event-time-list) ist ausgeliefert",
@@ -2648,5 +2705,310 @@ if os.path.exists(_p5x_day_file):
           and {e["uid"] for e in _p5x_static_run} == {f"p5x-run-{i}" for i in range(1, 6)})
 else:
     check("P5x: Tagesdatei fuer den Testtag wurde geschrieben", False)
+
+
+# ===========================================================================
+# P5c: Herzen - die kuratierte Seite, und was an ihr schiefgehen kann
+# ===========================================================================
+# Akzeptanztest des ganzen Umbaus (migrations/001_schema_v2.sql, Abschnitt 5):
+# ein Herz muss einen Re-Scrape ueberleben. Die Pruefungen hier sind nach den
+# drei Arten sortiert, auf die es das NICHT tun wuerde.
+
+# --- 1. EIN Serien-Begriff, zwei Implementierungen -------------------------
+# app.js gruppiert die Liste im Browser, der Server speichert die Herzen unter
+# demselben Schluessel. Laufen die beiden auch nur bei einem Sonderzeichen
+# auseinander, ist das Herz gesetzt und die Zeile trotzdem nicht markiert -
+# ohne Fehlermeldung irgendwo. Deshalb ein Differenztest statt eines Blickes.
+_p5c_woerter = [
+    "Domführung", "Dom zu Meißen", "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S",
+    "Straße & Co.", "Café Ø", "Køb Ø", "Ærø", "50 € Special", "Grüße",
+    "  Rand  ", "", "ÜBERLÄNGE – Tanz", "Zentralwerk (Halle 2)",
+]
+check("P5c: normalize.run_slug() und der JS-Nachbau stimmen auf jedem Wort ueberein",
+      all(normalize.run_slug(w) == _js_run_slug(w) for w in _p5c_woerter))
+# Warum es dafuer eine eigene Funktion braucht und nicht slugify() reicht:
+# slugify() wirft ueber encode("ascii","ignore") weg, was JavaScript zu einem
+# Bindestrich macht. Ohne diesen Nachweis waere die Extra-Funktion irgendwann
+# "unnoetige Dopplung" und wuerde wegvereinfacht.
+check("P5c: slugify() taugt dafuer NICHT - es weicht bei mindestens einem Wort ab "
+      "(Grund fuer die eigene Funktion, siehe Kommentar in normalize.py)",
+      any(normalize.slugify(w) != _js_run_slug(w) for w in _p5c_woerter))
+
+_p5c_probe = {"date": "2026-09-20", "venue": "Dom zu Meißen", "title": "Domführung"}
+check("P5c: run_key() = Tag|Ort|Titel, identisch zum JS-Nachbau",
+      normalize.run_key_for_event(_p5c_probe) == _js_run_key(_p5c_probe)
+      == "2026-09-20|dom-zu-meissen|domfuehrung")
+# Der Tag ist die Entscheidung dieses Pakets (siehe P5c-Bericht): dieselbe Tour
+# an einem anderen Tag ist ein ANDERES Herz.
+check("P5c: derselbe Lauf an einem anderen Tag ist ein anderer Schluessel - "
+      "ein Herz gilt der Fuehrung am Tag X, nicht jeder kuenftigen Fuehrung",
+      normalize.run_key_for_event(dict(_p5c_probe, date="2026-09-21"))
+      != normalize.run_key_for_event(_p5c_probe))
+
+# --- 2. Ein Herz gilt der ganzen Serie (Entscheidung #26) ------------------
+_p5c_tag = (_export_today + _dt.timedelta(days=5)).isoformat()
+_p5c_serie = [
+    {"uid": f"p5c-fuehrung-{i}", "source": "kulturkalender", "date": _p5c_tag,
+     "time": t, "title": "P5c Turmführung", "venue": "P5c Testturm",
+     "category": "fuehrungen", "url": f"https://example.org/p5c-f{i}"}
+    for i, t in enumerate(["10:00", "11:00", "12:00", "13:00"], start=1)
+]
+with db.get_conn() as conn:
+    db.upsert_events(conn, _p5c_serie)
+    _p5c_herz, _p5c_neu = db.set_heart(conn, "p5c-fuehrung-3")
+    _p5c_mitglieder = [m["uid"] for m in db.run_members(conn, _p5c_herz["run_key"])]
+    _p5c_keys = db.hearted_run_keys(conn)
+
+check("P5c: ein Klick auf EINE Zeigung herzt alle vier der Serie "
+      "(Entscheidung #26: das Herz gilt dem Lauf, nicht der Vorstellung)",
+      _p5c_mitglieder == [f"p5c-fuehrung-{i}" for i in range(1, 5)])
+check("P5c: gespeichert wird dabei EIN Herz, nicht vier "
+      "(gezaehlt ueber die Schluessel dieses Tages - in der Test-DB stehen "
+      "noch Herzen aus frueheren Bloecken)",
+      [k for k in _p5c_keys if k.startswith(_p5c_tag)] == [_p5c_herz["run_key"]])
+check("P5c: der gespeicherte Schluessel ist derselbe, den app.js aus der Zeile "
+      "rechnet - sonst waere die Serie geherzt und die Zeile nicht markiert",
+      _p5c_herz["run_key"] == _js_run_key(_p5c_serie[0]))
+check("P5c: der Anker bleibt die angeklickte Zeigung",
+      _p5c_herz["event_uid"] == "p5c-fuehrung-3")
+
+# Gewichte: EINMAL je Serie. Zaehlte jede Zeigung, haette ein Klick auf eine
+# achtmal taeglich laufende Domfuehrung achtmal so viel Gewicht wie ein Konzert.
+with db.get_conn() as conn:
+    _p5c_vorher = db.get_weight(conn, "venue:p5c-testturm")
+    db.set_heart(conn, "p5c-fuehrung-1")   # zweite Zeigung derselben Serie
+    _p5c_nachher = db.get_weight(conn, "venue:p5c-testturm")
+check("P5c: ein zweiter Klick auf dieselbe Serie legt kein zweites Herz an",
+      _p5c_vorher == _p5c_nachher)
+
+# --- 3. DIE FALLE: 'ok' heisst GEWINNER-Zeile, nicht "Zeile existiert" -----
+# dedup.link_duplicates() laeuft nach JEDEM Scrape und schiebt Zeilen zwischen
+# Gewinner und Doppelung. Der Fall unten ist der echte aus dem Bestand
+# (P5w-Bericht, uid 15a4e9d368071799): dieselbe Veranstaltung aus zwei Quellen,
+# Ortsschreibweise "Ostpol Dresden" gegen "Ostpol" - die beiden Schreibweisen
+# ergeben VERSCHIEDENE Serien-Schluessel, das Herz ist ueber den Schluessel
+# allein also nicht zu retten und muss der Doppelungs-Buchung folgen.
+_p5c_dup_tag = (_export_today + _dt.timedelta(days=6)).isoformat()
+with db.get_conn() as conn:
+    db.upsert_events(conn, [
+        {"uid": "p5c-kk", "source": "kulturkalender", "date": _p5c_dup_tag,
+         "time": "20:00", "title": "P5c Doppelabend", "venue": "P5c Ostpol Dresden",
+         "category": "musik", "url": "https://example.org/p5c-kk"},
+        {"uid": "p5c-rz", "source": "rauze", "date": _p5c_dup_tag,
+         "time": "22:00", "title": "P5c Doppelabend", "venue": "P5c Ostpol",
+         "category": "musik", "url": "https://example.org/p5c-rz"},
+    ])
+    _p5c_dup_herz, _ = db.set_heart(conn, "p5c-kk")
+    _p5c_key_vorher = _p5c_dup_herz["run_key"]
+    _p5c_status_vorher = _p5c_dup_herz["link_status"]
+    # Jetzt genau das, was jeder Scrape tut:
+    dedup.link_duplicates(conn, _p5c_dup_tag, _p5c_dup_tag)
+    _p5c_kk_ist_dup = conn.execute(
+        "SELECT duplicate_of FROM events WHERE uid = 'p5c-kk'").fetchone()["duplicate_of"]
+    # ... und das hier waere der stille Verlust, wenn niemand repariert:
+    _p5c_ohne_reparatur = db.run_members(conn, _p5c_key_vorher)
+    _p5c_bericht = db.relink_hearts(conn)
+    _p5c_danach = db.get_heart(conn, normalize.run_key_for_event(
+        db.event_for_uid(conn, "p5c-rz")))
+    _p5c_seite = [h for h in db.list_hearts(conn) if h["title"] == "P5c Doppelabend"]
+
+check("P5c: die Zeile lebt noch, ist aber Doppelung geworden - genau der Fall, "
+      "in dem 'die Zeile existiert' und 'die Liste zeigt sie' auseinanderfallen",
+      _p5c_kk_ist_dup == "p5c-rz" and _p5c_ohne_reparatur == [])
+check("P5c: ohne Reparatur waere das Herz aus jeder Ansicht verschwunden, "
+      "ohne dass irgendwo ein Fehler stuende - deshalb laeuft relink_hearts "
+      "nach JEDEM Scrape (app/scheduler.py)",
+      _p5c_bericht["neu_verknuepft"] >= 1)
+check("P5c: das Herz ist auf die Gewinner-Zeile gezogen und hat dabei den "
+      "Serien-Schluessel mitgenommen ('Ostpol Dresden' -> 'Ostpol')",
+      _p5c_danach is not None and _p5c_danach["event_uid"] == "p5c-rz"
+      and _p5c_danach["run_key"] != _p5c_key_vorher
+      and _p5c_danach["relinked_from"] == "p5c-kk")
+check("P5c: und es meldet das ehrlich als 'neu_verknuepft', nicht als 'ok'",
+      _p5c_status_vorher == "ok" and _p5c_danach["link_status"] == "neu_verknuepft")
+check("P5c: die kuratierte Seite zeigt den Eintrag weiter, mit den Daten der "
+      "lebenden Zeile (22:00 aus Rauze, nicht 20:00 aus dem Schnappschuss)",
+      len(_p5c_seite) == 1 and _p5c_seite[0]["live"] is True
+      and _p5c_seite[0]["times"] == ["22:00"]
+      and _p5c_seite[0]["url"] == "https://example.org/p5c-rz")
+
+# Die Invariante selbst, ueber ALLE Herzen: 'ok' ist eine Aussage ueber
+# duplicate_of, nicht ueber die blosse Existenz einer Zeile.
+def _p5c_invariante(conn):
+    for h in conn.execute("SELECT * FROM hearts WHERE link_status = 'ok'").fetchall():
+        row = conn.execute("SELECT duplicate_of FROM events WHERE uid = ?",
+                           (h["event_uid"],)).fetchone()
+        if row is None or row["duplicate_of"] is not None:
+            return False
+    return True
+
+
+with db.get_conn() as conn:
+    check("P5c: INVARIANTE - jedes Herz mit link_status='ok' zeigt auf eine "
+          "Zeile mit duplicate_of IS NULL (das Praedikat, das die Liste "
+          "wirklich benutzt), nicht bloss auf eine existierende Zeile",
+          _p5c_invariante(conn))
+
+# --- 4. Der Akzeptanztest: Herz -> Scrape -> Herz lebt noch ---------------
+# Nachgestellt wird, was scheduler.run_scrape() tut: dieselben Events noch
+# einmal einspielen (upsert), Doppelungen neu rechnen, Herzen nachziehen.
+with db.get_conn() as conn:
+    _p5c_vor_scrape = db.hearted_run_keys(conn)
+    db.upsert_events(conn, _p5c_serie)
+    dedup.link_duplicates(conn, _p5c_tag, _p5c_tag)
+    db.relink_hearts(conn)
+    _p5c_nach_scrape = db.hearted_run_keys(conn)
+    _p5c_serie_herz = db.get_heart(conn, _js_run_key(_p5c_serie[0]))
+check("P5c: AKZEPTANZTEST - ein Herz ueberlebt einen Re-Scrape "
+      "(gleiche Schluessel vorher wie nachher)",
+      _p5c_vor_scrape == _p5c_nach_scrape and _p5c_serie_herz is not None
+      and _p5c_serie_herz["link_status"] == "ok")
+
+# --- 5. Verwaist: die Serie ist ganz weg -----------------------------------
+# Der Schnappschuss im Herzen ist genau dafuer da - die Zeile bleibt lesbar und
+# sagt, dass sie nicht mehr gelistet ist. Ein Herz verschwindet NIE von selbst.
+with db.get_conn() as conn:
+    conn.execute("DELETE FROM event_sources WHERE event_uid LIKE 'p5c-fuehrung-%'")
+    conn.execute("DELETE FROM events WHERE uid LIKE 'p5c-fuehrung-%'")
+    _p5c_verwaist_bericht = db.relink_hearts(conn)
+    _p5c_verwaist = db.get_heart(conn, _js_run_key(_p5c_serie[0]))
+    _p5c_verwaist_seite = [h for h in db.list_hearts(conn)
+                           if h["title"] == "P5c Turmführung"]
+check("P5c: faellt die ganze Serie weg, bleibt das Herz stehen und meldet "
+      "'verwaist' - geloescht wird es nie",
+      _p5c_verwaist is not None and _p5c_verwaist["link_status"] == "verwaist"
+      and _p5c_verwaist_bericht["verwaist"] >= 1)
+check("P5c: die kuratierte Seite zeigt es dann aus dem Schnappschuss "
+      "(Titel/Datum/Ort bleiben lesbar, live=False)",
+      len(_p5c_verwaist_seite) == 1 and _p5c_verwaist_seite[0]["live"] is False
+      and _p5c_verwaist_seite[0]["title"] == "P5c Turmführung"
+      and _p5c_verwaist_seite[0]["date"] == _p5c_tag)
+# Und die Kandidatenliste ueberlebt die Verwaisung: sie mit [] zu ueberschreiben
+# waere der stille Verlust der einzigen Spur, ueber die ein spaeterer Lauf das
+# Herz wieder anknuepfen kann.
+check("P5c: member_uids bleibt beim Verwaisen erhalten (Kandidaten fuer die "
+      "spaetere Wiederanknuepfung)",
+      len(json.loads(_p5c_verwaist["member_uids"])) == 4)
+with db.get_conn() as conn:
+    db.upsert_events(conn, _p5c_serie)          # die Quelle liefert sie wieder
+    db.relink_hearts(conn)
+    _p5c_zurueck = db.get_heart(conn, _js_run_key(_p5c_serie[0]))
+    _p5c_zurueck_mitglieder = db.run_members(conn, _p5c_zurueck["run_key"])
+check("P5c: kommt die Reihe zurueck, haengt das Herz beim naechsten Lauf wieder "
+      "an ihr - und wieder an allen vier Zeigungen",
+      _p5c_zurueck["link_status"] in ("ok", "neu_verknuepft")
+      and len(_p5c_zurueck_mitglieder) == 4)
+
+# --- 6. reactions ist WIRKLICH weg ----------------------------------------
+with db.get_conn() as conn:
+    _p5c_reactions_da = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='reactions'"
+    ).fetchone() is not None
+check("P5c: die Tabelle reactions existiert nicht mehr (init_db legt sie nicht "
+      "mehr an und raeumt eine leere Alttabelle weg)", not _p5c_reactions_da)
+check("P5c: und auch keine Funktion spricht sie noch an",
+      not any(hasattr(db, n) for n in ("get_reaction", "set_reaction", "liked_events"))
+      and not hasattr(scoring, "apply_reaction"))
+_p5c_quellen = "\n".join(
+    open(os.path.join(_ROOT, p), encoding="utf-8").read()
+    for p in ("app/db.py", "app/web.py", "app/scoring.py", "app/feed.py",
+              "app/static/app.js", "app/templates/index.html"))
+# Gesucht wird nach BENUTZUNG, nicht nach Erwaehnung: die Kommentare duerfen
+# weiter erklaeren, was hier frueher stand (das ist die halbe Begruendung),
+# aber kein Code darf die alte Mechanik noch anfassen. Genau EIN Zugriff auf
+# reactions bleibt zulaessig, und der raeumt sie weg.
+check("P5c: keine Route, kein Knopf, kein Schreibzugriff auf reactions mehr",
+      '@app.route("/api/feedback"' not in _p5c_quellen
+      and "/api/feedback'" not in _p5c_quellen
+      and "INSERT INTO reactions" not in _p5c_quellen
+      and "ddFeedbackButtons" not in _p5c_quellen
+      and "asset('rating.js')" not in _p5c_quellen)
+_p5c_dbquelle = open(os.path.join(_ROOT, "app", "db.py"), encoding="utf-8").read()
+check("P5c: der einzige verbliebene Zugriff auf reactions ist der, der sie "
+      "wegraeumt - und er loescht nur, wenn sie leer ist (eine Ueberraschung "
+      "loescht man nicht weg, siehe db._retire_reactions)",
+      _p5c_dbquelle.count("FROM reactions") == 1
+      and "DROP TABLE reactions" in _p5c_dbquelle
+      and "if count:" in _p5c_dbquelle)
+check("P5c: rating.js liegt nicht mehr im Baum",
+      not os.path.exists(os.path.join(_ROOT, "app", "static", "rating.js")))
+
+# --- 7. Die Routen, durch die Flask-App ------------------------------------
+check("P5c: /api/feedback gibt es nicht mehr",
+      _client_web.post("/api/feedback", json={"uid": "x", "reaction": "like"}).status_code == 404)
+check("P5c: /herzen ist erreichbar", _client_web.get("/herzen").status_code == 200)
+_p5c_api = _client_web.post("/api/herz", json={"uid": "p5c-rz", "an": True}).get_json()
+check("P5c: POST /api/herz antwortet mit Serien-Schluessel und Anzahl",
+      _p5c_api["ok"] is True and _p5c_api["an"] is True
+      and _p5c_api["run_key"] == _js_run_key({"date": _p5c_dup_tag,
+                                              "venue": "P5c Ostpol",
+                                              "title": "P5c Doppelabend"}))
+check("P5c: GET /api/geherzt liefert genau die gespeicherten Schluessel",
+      _p5c_api["run_key"] in _client_web.get("/api/geherzt").get_json()["run_keys"])
+check("P5c: unbekannte uid -> 404, fehlende uid -> 400",
+      _client_web.post("/api/herz", json={"uid": "gibt-es-nicht"}).status_code == 404
+      and _client_web.post("/api/herz", json={}).status_code == 400)
+_p5c_aus = _client_web.post("/api/herz", json={"uid": "p5c-rz", "an": False}).get_json()
+check("P5c: dasselbe Herz laesst sich wieder entfernen",
+      _p5c_aus["an"] is False
+      and _p5c_aus["run_key"] not in _client_web.get("/api/geherzt").get_json()["run_keys"])
+
+# Die kuratierte Seite startet LEER (Entscheidung #19) - kein Seeding, keine
+# Vorauswahl, kein Vorschlag. Geprueft auf einer leeren hearts-Tabelle.
+with db.get_conn() as conn:
+    _p5c_gesichert = [dict(r) for r in conn.execute("SELECT * FROM hearts").fetchall()]
+    conn.execute("DELETE FROM hearts")
+_p5c_leer = _client_web.get("/herzen").get_data(as_text=True)
+check("P5c: die kuratierte Seite startet leer und sagt, wie man sie fuellt "
+      "(Entscheidung #19: kein Seeding, keine Vorauswahl)",
+      "Noch nichts geherzt" in _p5c_leer and "Deine Herzen (0)" in _p5c_leer)
+with db.get_conn() as conn:
+    for _h in _p5c_gesichert:
+        conn.execute(
+            "INSERT INTO hearts (" + ",".join(_h.keys()) + ") VALUES ("
+            + ",".join("?" * len(_h)) + ")", list(_h.values()))
+
+# --- 8. Die Rechte-Trennung, im gebauten Export nachgesehen ----------------
+_p5c_export = os.path.join(tempfile.mkdtemp(), "site-p5c")
+export_static.export(_p5c_export, days_ahead=10, today=_export_today)
+_p5c_dateien = {}
+for _root, _dirs, _names in os.walk(_p5c_export):
+    for _name in _names:
+        _pfad = os.path.join(_root, _name)
+        with open(_pfad, encoding="utf-8", errors="replace") as _fh:
+            _p5c_dateien[os.path.relpath(_pfad, _p5c_export)] = _fh.read()
+_p5c_alles = "\n".join(_p5c_dateien.values())
+check("P5c: KEINE Schreibroute im gebauten Export - ueber ALLE Dateien, nicht "
+      "nur ueber index.html",
+      "/api/herz" not in _p5c_alles and "/api/feedback" not in _p5c_alles)
+check("P5c: und keine Adresse des Pi im Export (weder Flask-Host noch Port)",
+      "192.168.178.91" not in _p5c_alles and ":1111" not in _p5c_alles)
+check("P5c: herzen.js wird nicht mitexportiert",
+      not any(n.endswith("herzen.js") for n in _p5c_dateien))
+check("P5c: die kuratierte Seite selbst wird nicht exportiert - sie ist Davids "
+      "Auswahl und bleibt bis P6 im Heimnetz",
+      not any("herzen" in n for n in _p5c_dateien))
+check("P5c: die oeffentliche Seite verlinkt sie auch nicht",
+      'href="/herzen"' not in _p5c_dateien["index.html"]
+      and ">Herzen<" not in _p5c_dateien["index.html"])
+check("P5c: die Flask-Seite dagegen verlinkt sie",
+      '<a href="/herzen">Herzen</a>' in _page)
+
+# --- 9. Der Score: die drei Verbraucher, sauber sortiert -------------------
+check("P5c: der Filter 'Wenig relevant' ist entfernt, nicht abgeschaltet - "
+      "mit einem einseitigen Signal kann kein Event unter 40 fallen "
+      "(siehe app/scoring.py, Kopf)",
+      'data-toggle="lowscore"' not in _page
+      and "var LOW_SCORE" not in _page_all and "filters.lowscore" not in _page_all
+      and "Wenig relevant" not in _page)
+check("P5c: die beiden Verbraucher, die ein rein positives Signal vertraegt, "
+      "bleiben: Top-Treffer-Marke an der Zeile und die Sortierung der "
+      "Empfehlungen",
+      "HIGHLIGHT_SCORE" in _page_all and "'Top-Treffer'" in _page_all
+      and "b.score - a.score" in _page_all)
+check("P5c: und der Score faehrt weiter im Export mit, damit die oeffentliche "
+      "Empfehlungszeile dieselbe Auswahl zeigt",
+      isinstance(json.loads(_p5c_dateien[os.path.join("data", "days",
+                 f"{_export_today.isoformat()}.json")])[0]["score"], (int, float)))
 
 print("\nAlle Smoke-Tests erfolgreich.")

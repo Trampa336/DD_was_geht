@@ -295,6 +295,55 @@ def slugify(text):
     return text
 
 
+# --- Serien-Schluessel (P5x im Frontend, P5c auf dem Server) ---------------
+# EINE Vorstellung davon, was eine "Serie"/ein "Lauf" ist - zwei
+# Implementierungen, weil die Liste im Browser gruppiert und die Herzen auf dem
+# Server gespeichert werden. Das Gegenstueck heisst runSlug()/runKey() in
+# app/static/app.js; tests_smoke.py haelt beide mit einem Differenztest ueber
+# genau die Zeichen zusammen, an denen sie auseinanderlaufen KOENNTEN.
+#
+# Bewusst NICHT slugify(): das wirft ueber encode("ascii", "ignore") alles weg,
+# was nach der NFKD-Zerlegung kein ASCII ist ("Køb Ø" -> "kb"), waehrend
+# JavaScript dieselbe Stelle ueber [^a-z0-9]+ zu einem Bindestrich macht
+# ("k-b"). Fuer einen Schluessel, der auf beiden Seiten GLEICH herauskommen
+# muss, ist dieser Unterschied kein Detail, sondern ein Herz, das in der Liste
+# nicht mehr als geherzt erkannt wird.
+def run_slug(text):
+    """Wie runSlug() in app/static/app.js: Kleinschrift, Umlaute ausgeschrieben,
+    Diakritika entfernt, alles Uebrige zu Bindestrichen - und ohne den
+    Wortfilter von dedup.py._title_tokens() (siehe P5w: ein gepunkteter Titel
+    bliebe sonst schluessellos)."""
+    text = (text or "").lower()
+    for src, dst in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        text = text.replace(src, dst)
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+
+
+def run_key(date, venue, title):
+    """Der Schluessel einer Serie: Tag + Ort + normalisierter Titel.
+
+    Der TAG gehoert dazu (Entscheidung P5c, siehe Bericht): app.js gruppiert
+    ohnehin nur innerhalb eines Tages (byDay), der Schluessel wird durch das
+    Datum also nicht enger - er wird nur ueber Tage hinweg eindeutig. Genau das
+    braucht ein Herz: "die Domfuehrung am 20.09." und nicht "jede Domfuehrung,
+    die es je geben wird".
+
+    venue ist der ROHE Ortsstring (events.raw_venue, im Event-Dict "venue") -
+    dasselbe Feld, das app.js benutzt. Dass zwei Schreibweisen derselben Venue
+    ("Ostpol" / "Ostpol Dresden") verschiedene Schluessel ergeben, ist damit
+    uebernommen und nicht neu; aufgefangen wird es beim Wiederanknuepfen ueber
+    die Doppelungs-Buchung (db.relink_hearts).
+    """
+    return f"{date}|{run_slug(venue)}|{run_slug(title)}"
+
+
+def run_key_for_event(event):
+    """run_key() aus einem Event-Dict, wie es db.events_for_range() liefert."""
+    return run_key(event["date"], event.get("venue"), event.get("title"))
+
+
 def classify_category(raw_category, title, venue=None):
     """Ordnet eine rohe Quellkategorie + Titel einem unserer Buckets zu.
 

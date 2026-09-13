@@ -7,16 +7,17 @@ dort. Der Pi selbst bleibt unerreichbar.
 
 Die Rechte-Trennung ist dabei keine Pruefung im Code, sondern die Bauart: auf der
 statischen Kopie gibt es keinen Server, an den man schreiben koennte - und seit
-dem Umbau zeigt sie auch keine Bewerten-Buttons mehr. Bewertet wird ausschliesslich
+dem Umbau zeigt sie auch keine Herz-Knoepfe mehr. Geherzt wird ausschliesslich
 unter http://<pi>:1111, also aus dem Heimnetz. Mitexportiert wird nur das Ergebnis:
 das Feld "score" je Event, damit die Empfehlungszeile auch oeffentlich etwas zu
-zeigen hat.
+zeigen hat. Die kuratierte Seite selbst (/herzen) wird NICHT exportiert - sie ist
+Davids Auswahl und bleibt bis auf Weiteres im Heimnetz.
 
 Ausgabe (in --out, Standard ./data/site):
 
     index.html            dieselbe Vorlage wie das Web-UI, nur mit mode="static"
     static/*              Stylesheet und Skripte, dieselben Dateien wie auf dem Pi
-                          (ohne rating.js - siehe web.PUBLIC_ASSETS)
+                          (ohne herzen.js - siehe web.PUBLIC_ASSETS)
     data/index.json       welche Tage es gibt, mit Version je Tag (Cache-Buster)
     data/days/<tag>.json  die Events eines Tages
     robots.txt            Disallow (die Seite ist "unlisted", nicht geheim)
@@ -183,7 +184,7 @@ def export(out_dir, days_ahead=45, today=None):
     _write(index_path, _dump(dict(index_payload, generated_at=generated_at)))
 
     # Stylesheet und Skripte sind dieselben Dateien, die auch der Pi ausliefert -
-    # nur rating.js bleibt zurueck (web.PUBLIC_ASSETS). Die Vorlage verlinkt sie
+    # nur herzen.js bleibt zurueck (web.PUBLIC_ASSETS). Die Vorlage verlinkt sie
     # relativ ("static/app.css"), das passt unter Flask wie unter GitHub Pages,
     # auch wenn die Seite dort in einem Unterverzeichnis liegt.
     static_out = os.path.join(out_dir, "static")
@@ -191,8 +192,8 @@ def export(out_dir, days_ahead=45, today=None):
     for name in web.PUBLIC_ASSETS:
         with open(os.path.join(web.STATIC_DIR, name), "r", encoding="utf-8") as handle:
             _write(os.path.join(static_out, name), handle.read())
-    # Ein rating.js aus einem aelteren Export muss weg, sonst laege der Code fuer
-    # das Bewerten weiter im oeffentlichen Repo.
+    # Ein herzen.js (oder ein rating.js aus einem Export vor P5c) muss weg, sonst
+    # laege der Code fuer den Schreibweg weiter im oeffentlichen Repo.
     for name in os.listdir(static_out):
         if name not in web.PUBLIC_ASSETS:
             os.remove(os.path.join(static_out, name))

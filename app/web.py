@@ -1,6 +1,21 @@
 """Personalisierte Web-Oberfläche (Flask) - dieselbe Optik wie der Artifact-
 Prototyp 'DD was geht', aber live aus der SQLite-Datenbank statt mit
-Beispieldaten, plus 'Für dich'-Bereich und Like/Skip direkt im Browser.
+Beispieldaten, plus 'Für dich'-Bereich und Herzen direkt im Browser.
+
+ZWEI OBERFLÄCHEN AUF EINER DATENBANK (der Grund für den ganzen Umbau):
+die durchsuchbare Liste unter "/" und die kuratierte Seite unter "/herzen" -
+dort steht ausschließlich, was David selbst geherzt hat.
+
+Geherzt wird NUR hier, im Heimnetz. Die Trennung ist keine Prüfung im Code,
+sondern die Bauart - drei Mechanismen, alle drei schon vor P5c in Betrieb und
+in tests_smoke.py festgehalten:
+  1. die Vorlage bindet herzen.js nur im api-Modus ein ({% if mode != 'static' %}),
+  2. PUBLIC_ASSETS unten lässt herzen.js beim Export weg (und der Exporter
+     löscht eine Altkopie aktiv wieder),
+  3. app.js setzt CAN_HEART = MODE === 'api' und fragt die Herzen gar nicht
+     erst ab, wenn die Seite statisch läuft.
+Die Schreibroute /api/herz existiert deshalb ausschließlich auf diesem Server;
+in der öffentlichen Kopie liegt nicht einmal der Code, der sie aufrufen würde.
 
 Die Seite selbst ist app/templates/index.html (nur noch Markup); Stylesheet und
 Skripte liegen daneben in app/static/ und werden von Flask ausgeliefert."""
@@ -10,7 +25,7 @@ from datetime import date
 
 from flask import Flask, abort, jsonify, render_template, request
 
-from . import config, db, feed, scoring
+from . import config, db, feed, normalize, scoring
 from .ranges import day_range, week_range
 from .scrapers import detail_fetch
 
@@ -31,9 +46,10 @@ def de_date(iso):
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
-# Nur diese Dateien darf die oeffentliche Kopie mitnehmen. rating.js fehlt hier
-# mit Absicht: dort gibt es keinen Server, an den eine Bewertung ginge, also
-# soll auch der Code dafuer nicht dabei sein (siehe tools/export_static.py).
+# Nur diese Dateien darf die oeffentliche Kopie mitnehmen. herzen.js fehlt hier
+# mit Absicht: dort gibt es keinen Server, an den ein Herz ginge, also soll auch
+# der Code dafuer nicht dabei sein (siehe tools/export_static.py). Bis P5c stand
+# an dieser Stelle rating.js, aus demselben Grund.
 PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "orte.js",
                   "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
 
@@ -85,6 +101,7 @@ def api_urls():
     return {
         "index": "/",
         "venues_index": "/orte",
+        "hearts_index": "/herzen",
         "venue": lambda slug: f"/orte/{slug}",
         "asset": lambda name: f"/static/{name}?v={ASSET_VERSION}",
     }
@@ -128,7 +145,7 @@ def api_events():
         # Dieselbe Liste baut der statische Export (tools/export_static.py) - nur
         # mit anderen Parametern, siehe feed.build_events.
         events = feed.build_events(conn, start, end, categories=selected,
-                                   exclude_categories=exclude, with_reactions=True)
+                                   exclude_categories=exclude)
 
     return jsonify({
         "date": day.isoformat(),
@@ -162,8 +179,6 @@ def api_fuer_dich():
         exclude = None if categories else _default_hidden(categories_meta)
         events = db.events_for_range(conn, today.isoformat(), end.isoformat(), categories, exclude_categories=exclude)
         top = scoring.top_picks(conn, events, limit=8)
-        for e in top:
-            e["reaction"] = db.get_reaction(conn, e["uid"])
     return jsonify({"categories": categories, "events": top})
 
 
@@ -247,23 +262,92 @@ def api_event_details(uid):
     return jsonify(_detail_payload(event, "fetched"))
 
 
-@app.route("/api/feedback", methods=["POST"])
-def api_feedback():
+# --- Herzen (P5c) ------------------------------------------------------------
+# Entscheidung #3: Kuratieren heisst Herzen - EIN positives Signal, kein
+# Annehmen/Ablehnen. Das abgeloeste 👍/👎 (/api/feedback, scoring.apply_reaction,
+# Tabelle reactions, static/rating.js) ist in diesem Paket vollstaendig
+# entfallen; Herzen sind der Ersatz, nicht ein zweites System daneben.
+#
+# Ein Herz gilt der SERIE, nicht der einzelnen Zeigung (Entscheidung #26): der
+# Browser schickt die uid der angeklickten Zeigung, den Serien-Schluessel
+# bestimmt der Server (db.set_heart -> normalize.run_key). So gibt es genau
+# eine Stelle, die weiss, welche Zeilen zu einer Serie gehoeren - der
+# Schreibweg und der Reparaturlauf nach dem Scrape benutzen dieselbe.
+
+@app.route("/api/geherzt")
+def api_geherzt():
+    """Die Schluessel aller Herzen. Die Liste im Browser markiert damit ihre
+    Zeilen - eine Abfrage fuer die ganze Seite, nicht eine je Event.
+
+    Heisst bewusst NICHT /api/herzen: dann waere "/api/herz" ein Praefix
+    von beidem, und die Pruefung "keine Schreibroute im statischen Export"
+    (tests_smoke.py, decision #8) liesse sich nicht mehr mit einem Griff
+    machen. Diese Leseroute darf im Export-Bundle stehen - aufgerufen wird
+    sie dort nie (CAN_HEART ist false), genau wie /api/event/<uid>/details
+    seit P5b."""
+    with db.get_conn() as conn:
+        return jsonify({"run_keys": db.hearted_run_keys(conn)})
+
+
+@app.route("/api/herz", methods=["POST"])
+def api_herz():
     payload = request.get_json(force=True, silent=True) or {}
     uid = payload.get("uid")
-    reaction = payload.get("reaction")
-    if reaction not in ("like", "skip") or not uid:
-        return jsonify({"error": "uid und reaction ('like'|'skip') erforderlich"}), 400
+    an = payload.get("an", True)
+    if not uid:
+        return jsonify({"error": "uid erforderlich"}), 400
 
     with db.get_conn() as conn:
-        row = conn.execute("SELECT * FROM events WHERE uid = ?", (uid,)).fetchone()
-        if row is None:
+        event = db.event_for_uid(conn, uid)
+        if event is None:
             return jsonify({"error": "unbekanntes Event"}), 404
-        event = dict(row)
-        scoring.apply_reaction(conn, event, reaction)
-        new_score = scoring.score_event(conn, event)
 
-    return jsonify({"ok": True, "uid": uid, "reaction": reaction, "score": new_score})
+        if an:
+            heart, neu = db.set_heart(conn, uid)
+            anchor = db.event_for_uid(conn, heart["event_uid"]) or event
+            # Gewichte einmal je Serie, nicht je Zeigung - siehe
+            # scoring.apply_heart - und nur beim ERSTEN Mal: zwei Zeilen
+            # derselben Serie (Doppelvorstellung unter RUN_MIN_SIZE) tragen
+            # denselben Schluessel, der zweite Klick aendert am Herzen nichts.
+            if neu:
+                scoring.apply_heart(conn, anchor, True)
+            return jsonify({
+                "ok": True, "an": True, "run_key": heart["run_key"],
+                "uid": heart["event_uid"], "anzahl": len(db.run_members(conn, heart["run_key"])),
+                "link_status": heart["link_status"],
+                "score": scoring.score_event(conn, anchor),
+            })
+
+        run_key = payload.get("run_key") or normalize.run_key_for_event(event)
+        heart = db.get_heart(conn, run_key)
+        if heart is None:
+            return jsonify({"ok": True, "an": False, "run_key": run_key})
+        anchor = db.event_for_uid(conn, heart["event_uid"]) or event
+        db.remove_heart(conn, run_key)
+        scoring.apply_heart(conn, anchor, False)
+        return jsonify({"ok": True, "an": False, "run_key": run_key,
+                        "score": scoring.score_event(conn, anchor)})
+
+
+@app.route("/herzen")
+def hearts_page():
+    """Die kuratierte Seite - die zweite Oberflaeche auf derselben Datenbank.
+
+    Sie startet LEER (Entscheidung #19): keine Vorauswahl, kein Vorschlag, kein
+    Seeding. Was hier steht, hat David selbst geherzt.
+
+    Bewusst NICHT im statischen Export (tools/export_static.py exportiert
+    index.html und die Venue-Seiten): die kuratierte Auswahl ist bis P6
+    ausschliesslich im Heimnetz zu sehen. Ob sie spaeter die oeffentliche Seite
+    wird, entscheidet David, nicht dieses Paket."""
+    today = date.today().isoformat()
+    with db.get_conn() as conn:
+        hearts = db.list_hearts(conn)
+    upcoming = [h for h in hearts if h["date"] >= today]
+    past = [h for h in hearts if h["date"] < today]
+    past.reverse()
+    return render_template("herzen.html", upcoming=upcoming, past=past,
+                           mode="api", asset_v=ASSET_VERSION, urls=api_urls())
 
 
 def run_web():

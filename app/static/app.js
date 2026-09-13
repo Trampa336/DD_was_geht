@@ -155,10 +155,11 @@
 
   // Die beiden Betriebsarten sind im Kopf der Vorlage beschrieben.
   var MODE = DD.mode;
-  // Bewertet wird ausschliesslich im Heimnetz. Das ist keine Pruefung, sondern
+  // Geherzt wird ausschliesslich im Heimnetz. Das ist keine Pruefung, sondern
   // die Bauart: auf der statischen Kopie gibt es nichts, wohin ein Klick ginge -
-  // rating.js wird dort gar nicht erst mitgeliefert.
-  var CAN_RATE = MODE === 'api';
+  // herzen.js wird dort gar nicht erst mitgeliefert (bis P5c hiess dieselbe
+  // Weiche CAN_RATE und galt fuer rating.js).
+  var CAN_HEART = MODE === 'api';
   var EXCLUDED = DD.excluded;
   var DATA_V = DD.dataVersion;
 
@@ -173,9 +174,12 @@
   // API: /api/events liefert ongoing, source und score ohnehin mit, deshalb wird
   // hier nach dem Laden gefiltert statt neu geholt.
   var SRC_LABEL = DD.sources;
-  // Unter dieser Schwelle gilt ein Event als "wenig relevant" - dieselbe Zahl,
-  // die frueher als Prozentwert an jeder Zeile stand.
-  var LOW_SCORE = 40;
+  /* Bis P5c stand hier LOW_SCORE = 40 und ein Filter "Wenig relevant", der
+     alles darunter ausblendete. Der Score kommt jetzt aus den Herzen, und ein
+     Herz ist ein einseitiges Signal: die Laplace-Rate in app/scoring.py kann
+     50 nicht mehr unterschreiten, unter 40 kommt also nie wieder ein Event.
+     Der Schalter ist deshalb entfernt und nicht nur abgeschaltet - ein Filter,
+     der nichts filtern kann, sieht aus wie eine kaputte Liste. */
   // Gegenstueck nach oben (config.HIGHLIGHT_SCORE): ab hier wird die Zeile als
   // Treffer hervorgehoben. Kommt aus der .env, damit die Schwelle mitwachsen
   // kann, waehrend das Lernmodell noch wenig Bewertungen kennt.
@@ -189,7 +193,7 @@
      tags=[] ist die neue Merkmal-Auswahl (kirche/museum/open-air/klassik/
      techno, echte Tabelle seit P2) - leer heisst keine Einschraenkung, wie bei
      den Kategorien. */
-  var filters = { ongoing: false, lowscore: false, umgebung: false, tags: [], sources: Object.keys(SRC_LABEL) };
+  var filters = { ongoing: false, umgebung: false, tags: [], sources: Object.keys(SRC_LABEL) };
   // Die Suche ist bewusst NICHT gespeichert (wie die Datumsauswahl) - ein
   // neuer Aufruf der Seite soll wieder bei "keine Suche" anfangen.
   var searchQuery = '';
@@ -199,7 +203,8 @@
       var saved = JSON.parse(stored('filters', '') || 'null');
       if (!saved) { return; }
       filters.ongoing = !!saved.ongoing;
-      filters.lowscore = !!saved.lowscore;
+      // saved.lowscore aus einem Browser, der die Seite vor P5c zuletzt gesehen
+      // hat, wird hier schlicht nicht mehr gelesen - der Schalter ist weg.
       filters.umgebung = !!saved.umgebung;
       if (Array.isArray(saved.tags)) {
         var knownTags = Array.prototype.map.call(document.querySelectorAll('.chip-tag'), function (c) { return c.dataset.tag; });
@@ -226,7 +231,7 @@
      Quellen zaehlt jede abgewaehlte. */
   function syncFilterBadge() {
     var badge = document.getElementById('filter-badge');
-    var n = (filters.ongoing ? 1 : 0) + (filters.lowscore ? 1 : 0)
+    var n = (filters.ongoing ? 1 : 0)
       + (filters.umgebung ? 1 : 0) + filters.tags.length
       + (Object.keys(SRC_LABEL).length - filters.sources.length);
     badge.textContent = n;
@@ -238,7 +243,6 @@
     // Ohne region-Feld gilt ein Event als Dresden - so bleibt eine Tagesdatei
     // aus einem aelteren Export lesbar (siehe tools/export_static.py).
     if (e.region && e.region !== 'dresden' && !filters.umgebung) { return false; }
-    if (!filters.lowscore && Number(e.score) < LOW_SCORE) { return false; }
     // Eine unbekannte Quelle (neuer Scraper, noch kein Label) bleibt sichtbar -
     // sonst verschwaende sie kommentarlos aus der Liste.
     if (e.source in SRC_LABEL && filters.sources.indexOf(e.source) === -1) { return false; }
@@ -363,13 +367,32 @@
   // Die Zeile unter dem Titel - im Popup und auf den Empfehlungskarten dieselbe.
   function whenLabel(ev) { return formatDay(ev.date) + (ev.time ? ' · ' + ev.time : ''); }
 
-  /* Bewerten steckt in rating.js und liegt nur auf der Flask-Seite. Von hier
-     geht das Event hinein und der Weg zurueck: nach dem Speichern werden Liste
-     und Empfehlungen neu gezeichnet, das offene Popup gleich mit. */
-  function fbButtons(ev) {
-    return window.ddFeedbackButtons(ev, function (rated) {
+  /* Die Herzen dieser Sitzung: die Schluessel der Serien, die David schon
+     geherzt hat (GET /api/geherzt, eine Abfrage fuer die ganze Seite statt einer
+     je Event). Im static-Modus bleibt die Menge leer und wird nie gefuellt -
+     dort gibt es keinen Server, der sie kennte. */
+  var heartedKeys = {};
+
+  function loadHearts() {
+    if (!CAN_HEART) { return Promise.resolve(); }
+    return fetch('/api/geherzt').then(function (r) { return r.json(); }).then(function (data) {
+      heartedKeys = {};
+      (data.run_keys || []).forEach(function (k) { heartedKeys[k] = true; });
+    }).catch(function () { /* Liste zeichnet dann eben ohne Markierung */ });
+  }
+
+  /* Der Herz-Knopf steckt in herzen.js und liegt nur auf der Flask-Seite. Von
+     hier geht der Serien-Schluessel hinein, eine Zeigung der Serie (an ihr
+     loest der Server auf, welche Zeilen dazugehoeren) und der Weg zurueck:
+     nach dem Umschalten werden Liste und Empfehlungen neu gezeichnet, das
+     offene Popup gleich mit. */
+  function herzButton(ev) {
+    var key = runKey(ev);
+    return window.ddHerzButton(key, ev.uid, !!heartedKeys[key], function (data) {
+      if (data.run_key) { heartedKeys[data.run_key] = !!data.an; }
+      if (!data.an && data.run_key) { delete heartedKeys[data.run_key]; }
       refresh();
-      if (currentModalEvent === rated) { renderModalFooter(); }
+      if (currentModalEvent === ev) { renderModalFooter(); }
     });
   }
 
@@ -400,9 +423,9 @@
   }
 
   function renderModalFooter() {
-    var host = document.getElementById('modal-fb');
+    var host = document.getElementById('modal-herz');
     host.innerHTML = '';
-    if (CAN_RATE) { host.appendChild(fbButtons(currentModalEvent)); }
+    if (CAN_HEART && currentModalEvent) { host.appendChild(herzButton(currentModalEvent)); }
   }
 
   function renderModal() {
@@ -536,15 +559,15 @@
       pickRow.innerHTML = '';
       var picks = data.events.filter(passesFilters);
       if (!picks.length) {
-        pickRow.innerHTML = CAN_RATE
-          ? '<div class="loading">Noch keine Empfehlungen – bewerte ein paar Events.</div>'
+        pickRow.innerHTML = CAN_HEART
+          ? '<div class="loading">Noch keine Empfehlungen – herze ein paar Events.</div>'
           : '<div class="loading">Gerade keine Empfehlungen für diese Auswahl.</div>';
         return;
       }
       picks.forEach(function (e) {
         var card = document.createElement('div');
         card.className = 'pick-card';
-        card.innerHTML = '<div class="pick-score">' + (CAN_RATE ? 'Für dich' : 'Empfehlung') + '</div>' +
+        card.innerHTML = '<div class="pick-score">' + (CAN_HEART ? 'Für dich' : 'Empfehlung') + '</div>' +
           '<div class="pick-title"></div><div class="pick-meta"></div>';
         card.querySelector('.pick-title').textContent = e.title;
         card.querySelector('.pick-meta').textContent = whenLabel(e);
@@ -599,8 +622,17 @@
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
-  // Ort UND Titel - siehe Kommentar oben, warum der Ort nicht optional ist.
-  function runKey(e) { return runSlug(e.venue) + '|' + runSlug(e.title); }
+  /* Tag, Ort UND Titel - siehe Kommentar oben, warum der Ort nicht optional
+     ist. Der TAG ist mit P5c dazugekommen und aendert an der Gruppierung der
+     Liste NICHTS: gruppiert wird ohnehin nur innerhalb eines Tages (byDay in
+     loadList), alle Mitglieder einer Gruppe tragen also denselben Tag.
+     Gebraucht wird er fuer die Herzen: dort ist der Schluessel keine
+     Gruppierungshilfe mehr, sondern eine gespeicherte Identitaet, und die muss
+     ueber Tage hinweg eindeutig sein - "die Domfuehrung am 20.09." statt
+     "jede Domfuehrung, die es je geben wird" (siehe P5c-Bericht).
+     Das Gegenstueck auf dem Server ist normalize.run_key(); tests_smoke.py
+     haelt beide mit einem Differenztest zusammen. */
+  function runKey(e) { return e.date + '|' + runSlug(e.venue) + '|' + runSlug(e.title); }
 
   /* Eine einzelne Zeile - unveraendertes Verhalten von vor P5x, nur aus der
      Schleife herausgezogen, damit buildRunRow() dieselben Bausteine nutzen
@@ -643,10 +675,13 @@
       && (e.region === 'weiter' ? 'Weiter weg' : 'Umland'));
     mark(row, '.price-tag', e.price_text);
     var actions = row.querySelector('.event-actions');
-    if (CAN_RATE) { actions.appendChild(fbButtons(e)); }
+    if (CAN_HEART) {
+      actions.appendChild(herzButton(e));
+      if (heartedKeys[runKey(e)]) { row.classList.add('is-hearted'); }
+    }
     // Statt eines eigenen Buttons oeffnet ein Klick auf die Zeile das
-    // Popup. Die Daumen-Buttons rechts stoppen ihr Event selbst nicht,
-    // deshalb hier pruefen, ob der Klick aus .event-actions kam.
+    // Popup. Der Herz-Knopf rechts stoppt sein Event zwar selbst, aber
+    // sicherheitshalber wird hier geprueft, ob der Klick aus .event-actions kam.
     row.setAttribute('role', 'button');
     row.setAttribute('tabindex', '0');
     row.setAttribute('aria-haspopup', 'dialog');
@@ -667,15 +702,14 @@
      dieser Zeigung mit ihrer eigenen uid und ihrer eigenen Quelle
      (openModal(m), nicht openModal(first)). Damit bleibt jede einzelne
      Zeigung erreichbar, auch nach dem Zusammenfalten.
-     Bewusst OHNE Zeilen-Klick (waere mehrdeutig, welche Zeigung gemeint ist)
-     und OHNE Daumen-Buttons in der Zeile: reactions/apply_reaction haengen am
-     Showing-uid (siehe app/db.py REACTIONS_ADDENDUM), eine zusammengefasste
-     Zeile hat keinen einzelnen Uid mehr, auf den ein Klick zeigen koennte.
-     Wer bewerten will, oeffnet ueber eine Uhrzeit das Popup der jeweiligen
-     Zeigung und bewertet dort ganz normal (fbButtons(currentModalEvent) in
-     renderModalFooter, unveraendert). Was das fuer die kommenden Herzen
-     bedeutet (dieselbe Frage, ein Uid pro Zeigung), steht im P5x-Bericht -
-     das baut ein spaeteres Paket. */
+     Bewusst OHNE Zeilen-Klick (waere mehrdeutig, welche Zeigung gemeint ist),
+     aber MIT Herz-Knopf: P5x hatte hier noch keinen, weil die damaligen
+     Daumen-Buttons am einzelnen Showing-uid hingen und eine zusammengefasste
+     Zeile keinen einzelnen Uid mehr hat. Genau diese Frage hat David mit
+     Entscheidung #26 beantwortet: ein Herz auf einer zusammengefassten Zeile
+     gilt der GANZEN Serie. Der Knopf schickt die uid der ersten Zeigung mit,
+     der Server loest daraus den Serien-Schluessel auf - alle Mitglieder sind
+     damit geherzt, und die Zeile gilt als geherzt, sobald es die Serie ist. */
   function buildRunRow(members) {
     var first = members[0];
     var row = document.createElement('article');
@@ -716,6 +750,10 @@
     mark(row, '.tag-run', members.length + ' Termine');
     var price = members.map(function (m) { return m.price_text; }).filter(Boolean)[0];
     mark(row, '.price-tag', price);
+    if (CAN_HEART) {
+      row.querySelector('.event-actions').appendChild(herzButton(first));
+      if (heartedKeys[runKey(first)]) { row.classList.add('is-hearted'); }
+    }
     return row;
   }
 
@@ -785,8 +823,11 @@
   }
 
   // Liste und Empfehlungen haengen an derselben Auswahl - was die eine aendert,
-  // aendert immer auch die andere.
-  function refresh() { loadList(); loadPicks(); }
+  // aendert immer auch die andere. Die Herzen kommen VOR dem Zeichnen, sonst
+  // baute die Liste ihre Knoepfe aus einem veralteten Stand.
+  function refresh() {
+    return loadHearts().then(function () { loadList(); loadPicks(); });
+  }
 
   function applySelection() {
     syncChips();
@@ -897,6 +938,5 @@
   syncFilterChips();
   syncChipFade();
   setSelectedDate(selectedDate);
-  loadPicks();
-  loadList();
+  refresh();
 })();

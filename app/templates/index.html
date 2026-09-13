@@ -19,11 +19,11 @@ window.DD = {
   /* Dieselbe Seite laeuft in zwei Betriebsarten - eine Vorlage, kein zweites
      Frontend, das auseinanderdriftet:
        'api'    = Flask auf dem Pi (nur im Heimnetz). Liste, Empfehlungen und
-                  Bewertungen laufen ueber /api/..., die Bewertung landet in der
-                  SQLite und trainiert das persoenliche Modell.
+                  Herzen laufen ueber /api/..., ein Herz landet in der SQLite
+                  und fuettert das persoenliche Modell.
        'static' = die oeffentliche Kopie auf GitHub Pages. Sie ist rein zum
                   Lesen: die Events kommen aus vorgerechneten JSON-Dateien, es
-                  gibt keinen Server und damit auch keine Bewerten-Buttons. Der
+                  gibt keinen Server und damit auch keine Herz-Knoepfe. Der
                   Score steht schon in den Dateien (tools/export_static.py), die
                   Empfehlungszeile zeigt also dieselbe Auswahl wie im Heimnetz. */
   mode: {{ mode | tojson }},
@@ -55,7 +55,11 @@ window.DD = {
   <header class="masthead">
     <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
     <div class="masthead-right">
-      <nav class="site-nav"><a href="{{ urls.venues_index }}">Alle Orte</a></nav>
+      {# Die kuratierte Seite gibt es nur im Heimnetz (siehe web.hearts_page) -
+         in der oeffentlichen Kopie liegt sie nicht, also darf dort auch kein
+         Link darauf stehen. #}
+      <nav class="site-nav"><a href="{{ urls.venues_index }}">Alle Orte</a>{% if mode != 'static' %}
+        <a href="{{ urls.hearts_index }}">Herzen</a>{% endif %}</nav>
       <div class="masthead-meta"><div class="city">Elbflorenz · Sachsen</div><div id="today-label"></div></div>
       <div class="switches">
         <div class="theme-switch">
@@ -83,8 +87,8 @@ window.DD = {
   </header>
 
   <section class="fuer-dich">
-    {# Bewertet wird nur im Heimnetz - oeffentlich ist es deshalb nicht "fuer
-       dich", sondern schlicht die Auswahl aus Leos Modell. #}
+    {# Geherzt wird nur im Heimnetz - oeffentlich ist es deshalb nicht "fuer
+       dich", sondern schlicht die Auswahl aus dem Modell dahinter. #}
     <h2>{% if mode == 'static' %}Empfehlungen der Woche{% else %}Für dich diese Woche{% endif %}</h2>
     <div class="fuer-dich-row" id="fuer-dich-row"><div class="loading">Lädt …</div></div>
   </section>
@@ -127,7 +131,12 @@ window.DD = {
           <span class="filters-label">Zeigen</span>
           <div class="filter-row">
             <button class="chip chip-toggle" data-toggle="ongoing" aria-pressed="false">Dauerangebote</button>
-            <button class="chip chip-toggle" data-toggle="lowscore" aria-pressed="false">Wenig relevant</button>
+            {# "Wenig relevant" (Score < 40) stand bis P5c hier. Der Score wird
+               jetzt aus Herzen gefuettert, und Herzen sind ein einseitiges
+               Signal - ein Score unter 50 kann gar nicht mehr entstehen (siehe
+               app/scoring.py). Ein Schalter, der nie etwas ausblenden kann, ist
+               kein Filter, sondern eine Falle; deshalb ist er weg statt
+               abgeschaltet. #}
             {# P5b/decision #12: Standard ist jetzt NUR Dresden - vorher blieb
                "Umland" (Radebeul, Freital, Pirna ...) immer sichtbar und nur
                "weiter weg" (Meissen, Saechsische Schweiz ...) hing am Schalter.
@@ -176,7 +185,7 @@ window.DD = {
         <div class="modal-description" id="modal-description"></div>
       </div>
       <div class="modal-footer">
-        <div class="fb" id="modal-fb"></div>
+        <div class="herz-slot" id="modal-herz"></div>
         <div class="modal-links">
           {# Zwei verschiedene Links, absichtlich beide da (decision #11):
              die Venue-Seite ist die neue, interne Zieladresse (decision #4),
@@ -192,17 +201,19 @@ window.DD = {
   {% if mode == 'static' %}
   <p class="footnote">Stand {{ generated_at_label }} · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
   {% else %}
-  <p class="footnote">Live aus deiner eigenen Datenbank auf dem Raspberry Pi. Bewerte Events mit 👍/👎 – die „Für dich"-Auswahl lernt daraus.</p>
+  <p class="footnote">Live aus deiner eigenen Datenbank auf dem Raspberry Pi. Ein Herz nimmt eine Veranstaltung in <a href="{{ urls.hearts_index }}">deine Auswahl</a> auf – und die „Für dich"-Empfehlungen lernen daraus.</p>
   {% endif %}
 </div>
 
 
 {% if mode != 'static' %}
 {# Steht nur in der Flask-Fassung der Seite. Der Jinja-Block ist der Grund,
-   warum in der oeffentlichen Kopie nicht einmal der Code fuer eine Bewertung
-   liegt - nicht nur ein abgeschalteter Knopf, sondern gar keiner. Der Exporter
-   kopiert rating.js dementsprechend nicht mit (tools/export_static.py). #}
-<script src="{{ urls.asset('rating.js') }}"></script>
+   warum in der oeffentlichen Kopie nicht einmal der Code fuer ein Herz liegt -
+   nicht nur ein abgeschalteter Knopf, sondern gar keiner. Der Exporter kopiert
+   herzen.js dementsprechend nicht mit (web.PUBLIC_ASSETS, und
+   tools/export_static.py loescht eine Altkopie aktiv wieder). Bis P5c stand
+   hier rating.js, aus demselben Grund. #}
+<script src="{{ urls.asset('herzen.js') }}"></script>
 {% endif %}
 <script src="{{ urls.asset('flatpickr.min.js') }}"></script>
 <script src="{{ urls.asset('flatpickr-de.js') }}"></script>

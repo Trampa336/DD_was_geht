@@ -1,4 +1,4 @@
-"""SQLite-Zugriff: Schema, Events speichern/lesen, Reaktionen verbuchen.
+"""SQLite-Zugriff: Schema, Events speichern/lesen, Herzen verbuchen.
 
 Seit P3 (Schema v2, siehe migrations/001_schema_v2.sql + migrations/CUTOVER.md):
 Venues und Kategorien sind erstklassige Zeilen statt Freitext-Spalten. Es gibt
@@ -7,6 +7,7 @@ neu gefuellt (siehe CUTOVER.md). Die 10 Scraper selbst liefern unveraendert
 Dicts mit Freitext-`venue`/`category`; die Aufloesung passiert ausschliesslich
 hier in upsert_events()."""
 import hashlib
+import json
 import logging
 import os
 import re
@@ -22,22 +23,23 @@ logger = logging.getLogger("dd-was-geht.db")
 _MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 SCHEMA_V2_PATH = _MIGRATIONS_DIR / "001_schema_v2.sql"
 
-# P3-Zusatz, NICHT Teil von migrations/001_schema_v2.sql: P2s Entwurf laesst
-# `reactions` bewusst weg ("wird von Herzen abgeloest", siehe DDL Abschnitt 6),
-# aber die Herzen-Funktion (kuratierte Auswahl, Wiederanknuepfung ueber
-# identity_key) ist in diesem Paket nicht gebaut - nur die Tabelle `hearts`
-# steht schon in der DDL. Ohne `reactions` waeren David's 👍/👎 ersatzlos weg,
-# bevor ein Ersatz existiert (scoring.apply_reaction, /api/feedback,
-# tests_smoke.py haengen aktiv daran). Deshalb bleibt reactions als
-# Zusatztabelle bestehen, bis ein spaeteres Paket sie wirklich durch Herzen
-# ersetzt - siehe Bericht zu P3.
-REACTIONS_ADDENDUM = """
-CREATE TABLE IF NOT EXISTS reactions (
-    event_uid TEXT PRIMARY KEY,
-    reaction TEXT NOT NULL CHECK(reaction IN ('like', 'skip')),
-    created_at TEXT NOT NULL
-);
-"""
+# P5c: `reactions` ist abgeloest. P3 hatte die Tabelle als Zusatz stehen
+# lassen, weil P2s DDL sie bewusst weglaesst ("wird von Herzen abgeloest",
+# Abschnitt 6) die Herzen aber noch nicht gebaut waren - ein Loeschen haette
+# David's 👍/👎 ersatzlos entfernt. Der Ersatz existiert jetzt (hearts +
+# /api/herz + scoring.apply_heart), also faellt der Zusatz weg: eine neue DB
+# bekommt `reactions` gar nicht erst, eine bestehende raeumt _retire_reactions()
+# auf.
+
+# Spalten, die P5c an `hearts` nachruestet, falls die DB noch auf dem Stand von
+# P2/P3 ist. Gleiches Muster wie tools/load_enrichment.py._ensure_columns():
+# idempotent ueber PRAGMA table_info, weil Schema v2 laut CUTOVER.md keinen
+# Migrationsweg kennt. Beide mit DEFAULT, sonst lehnt SQLite ADD COLUMN NOT
+# NULL ab.
+HEARTS_ADDED_COLUMNS = {
+    "run_key": "TEXT NOT NULL DEFAULT ''",
+    "member_uids": "TEXT",
+}
 
 
 def _connect():
@@ -78,8 +80,50 @@ def init_db():
         ).fetchone()
         if not exists:
             conn.executescript(SCHEMA_V2_PATH.read_text(encoding="utf-8"))
-        conn.executescript(REACTIONS_ADDENDUM)
+        _ensure_hearts_schema(conn)
+        _retire_reactions(conn)
         _seed_tags(conn)
+
+
+def _table_exists(conn, name):
+    return conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (name,)
+    ).fetchone() is not None
+
+
+def _ensure_hearts_schema(conn):
+    """run_key/member_uids nachruesten, falls die DB aelter als P5c ist.
+
+    Der UNIQUE-Index auf run_key ist die eigentliche Identitaet eines Herzens:
+    ein Herz gilt der ganzen Serie (Entscheidung #26), nicht der einzelnen
+    Zeigung - hearts.event_uid ist nur der Anker, auf den es gerade zeigt."""
+    have = {row["name"] for row in conn.execute("PRAGMA table_info(hearts)")}
+    for name, ddl in HEARTS_ADDED_COLUMNS.items():
+        if name not in have:
+            conn.execute(f"ALTER TABLE hearts ADD COLUMN {name} {ddl}")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_hearts_run ON hearts(run_key)")
+
+
+def _retire_reactions(conn):
+    """Die abgeloeste 👍/👎-Tabelle wegraeumen - aber NUR, wenn sie leer ist.
+
+    P2s Messung und der Stand beider Datenbanken sagen 0 Zeilen; faende dieser
+    Lauf trotzdem welche, waere das eine Ueberraschung, und eine Ueberraschung
+    loescht man nicht weg. Dann bleibt die Tabelle liegen und meldet sich im
+    Log, statt Davids Bewertungen still zu entsorgen."""
+    if not _table_exists(conn, "reactions"):
+        return
+    count = conn.execute("SELECT count(*) FROM reactions").fetchone()[0]
+    if count:
+        logger.warning(
+            "Tabelle reactions hat %d Zeile(n) und wurde deshalb NICHT "
+            "geloescht - sie wird seit P5c von nichts mehr gelesen (Herzen "
+            "haben sie abgeloest). Inhalt pruefen, dann von Hand entfernen.",
+            count,
+        )
+        return
+    conn.execute("DROP TABLE reactions")
+    logger.info("Tabelle reactions entfernt (leer, seit P5c durch hearts abgeloest).")
 
 
 # P4e: die fuenf Start-Tags (Begruendung + Liste in normalize.TAG_LABELS,
@@ -974,9 +1018,12 @@ def _delete_orphaned_event(conn, source, row):
     Loescht EINE verwaiste Zeile - mit den drei Schutzklauseln, die der
     Dry-Run nicht brauchte, weil er nie wirklich loeschte.
 
-    - Eine Zeile mit Reaktion wird NIE geloescht: data/ enthaelt die einzige
-      Kopie der Reaktionen, und liked_events() verbindet reactions -> events -
-      eine geloeschte Zeile liesse einen Favoriten kommentarlos verschwinden.
+    - Eine Zeile, an der ein Herz haengt, wird NIE geloescht: data/ enthaelt die
+      einzige Kopie der Herzen, und die kuratierte Seite liest sie ueber die
+      lebende Event-Zeile - eine geloeschte Zeile liesse einen Eintrag der
+      kuratierten Seite kommentarlos verschwinden. (Seit P5c Herzen statt
+      Reaktionen; der Schnappschuss im Herzen faengt den Verlust zwar ab, aber
+      "faengt es ab" ist kein Grund, ihn auszuloesen.)
     - Ist die Zeile CANONICAL einer Doppelung, werden ihre Duplikate zuerst
       entkoppelt (unlink_duplicate): sonst zeigt deren duplicate_of ins Leere
       und ein echtes, weiterhin gescraptes Event bliebe fuer immer ausgeblendet.
@@ -986,9 +1033,9 @@ def _delete_orphaned_event(conn, source, row):
     Gibt True zurueck, wenn tatsaechlich geloescht wurde.
     """
     uid = row["uid"]
-    if get_reaction(conn, uid) is not None:
+    if heart_for_uid(conn, uid) is not None:
         logger.warning(
-            "Verwaistes Event NICHT geloescht (hat eine Reaktion): %s \"%s\" (%s, %s)",
+            "Verwaistes Event NICHT geloescht (haengt an einem Herz): %s \"%s\" (%s, %s)",
             uid, row["title"], row["date"], source,
         )
         return False
@@ -1081,22 +1128,6 @@ def expire_orphaned_events(conn, today, threshold_runs=3, dry_run=True):
     return orphaned
 
 
-def get_reaction(conn, event_uid):
-    row = conn.execute(
-        "SELECT reaction FROM reactions WHERE event_uid = ?", (event_uid,)
-    ).fetchone()
-    return row["reaction"] if row else None
-
-
-def set_reaction(conn, event_uid, reaction):
-    conn.execute(
-        """INSERT INTO reactions (event_uid, reaction, created_at) VALUES (?, ?, ?)
-           ON CONFLICT(event_uid) DO UPDATE SET reaction = excluded.reaction,
-                                                  created_at = excluded.created_at""",
-        (event_uid, reaction, datetime.utcnow().isoformat()),
-    )
-
-
 def get_weight(conn, key):
     row = conn.execute("SELECT likes, skips FROM weights WHERE key = ?", (key,)).fetchone()
     return (row["likes"], row["skips"]) if row else (0, 0)
@@ -1112,18 +1143,343 @@ def bump_weight(conn, key, like_delta=0, skip_delta=0):
     )
 
 
-def liked_events(conn, limit=30):
-    # Wurde die als Doppelung ausgeblendete Version geliket, erscheint hier der
-    # Eintrag, der sie ersetzt (COALESCE auf duplicate_of) - sonst würde ein
-    # Favorit ohne Vorwarnung aus der Liste verschwinden. GROUP BY, damit ein
-    # beidseitig gelikter Doppeleintrag nur einmal auftaucht.
+# ===========================================================================
+# HERZEN (P5c) - Davids redaktionelle Auswahl
+# ===========================================================================
+#
+# DIE EINE REGEL, an der dieses Paket haengt: `link_status = 'ok'` heisst NICHT
+# "die Zeile existiert noch", sondern "die Zeile ist eine GEWINNER-Zeile"
+# (duplicate_of IS NULL). Nur die zeigt die Liste - events_for_range() haengt
+# genau dieses AND an. Eine lebende Zeile mit gesetztem duplicate_of ist in
+# jeder Ansicht unsichtbar; ein Herz darauf wuerde sich selbst als 'ok' melden
+# und waere trotzdem von der kuratierten Seite verschwunden.
+#
+# Das ist derselbe Fehler wie zweimal zuvor in diesem Projekt (venues.
+# meta_status in P5v, P5ws Doppelungs-Fund): ein Status-Feld, das GESETZT ist,
+# ist nicht dieselbe Tatsache wie die Bedingung, die sein Leser wirklich
+# braucht. Deshalb gibt es hier genau EINE Stelle, die den Status bestimmt -
+# _resolve_heart() - und sowohl der Schreibweg (set_heart) als auch der
+# Reparaturlauf nach jedem Scrape (relink_hearts) gehen durch sie.
+#
+# dedup.link_duplicates() laeuft nach JEDEM Scrape ueber heute..+31 Tage und
+# schiebt Zeilen zwischen Gewinner und Doppelung hin und her. Ein Beispiel aus
+# dem Bestand (Stand 12.09.2026): 15a4e9d368071799 ("S.Y.N.T.H.E.T.I.C
+# S.I.G.N.A.L.S", Kulturkalender, raw_venue "Ostpol Dresden") ist seit P5w
+# Doppelung von e5b0aa6df8071ec8 (Rauze, raw_venue "Ostpol"). Die beiden
+# Schreibweisen ergeben VERSCHIEDENE Serien-Schluessel - ein Herz auf der
+# Kulturkalender-Zeile ist also ueber den Schluessel allein NICHT zu retten.
+# Es wird ueber die Doppelungs-Buchung weitergezogen und uebernimmt dabei den
+# Schluessel des Gewinners. Genau dafuer ist _canonical_uid() da.
+
+_HEART_EVENT_SELECT = (
+    "SELECT e.*, e.category_slug AS category, e.raw_venue AS venue, "
+    "v.slug AS venue_slug, v.is_meeting_point AS venue_is_meeting_point "
+    "FROM events e LEFT JOIN venues v ON v.id = e.venue_id "
+)
+
+
+def _public_event(row):
+    """Dieselbe Nachbereitung wie in events_for_range(): Treffpunkte bekommen
+    keine Venue-Seite, das Flag selbst verlaesst die Funktion nicht."""
+    event = dict(row)
+    if event.pop("venue_is_meeting_point", None):
+        event["venue_slug"] = None
+    return event
+
+
+def event_for_uid(conn, uid):
+    """Eine einzelne Zeigung mit denselben Feldern, die auch die Liste sieht."""
+    row = conn.execute(_HEART_EVENT_SELECT + "WHERE e.uid = ?", (uid,)).fetchone()
+    return _public_event(row) if row else None
+
+
+def run_members(conn, run_key, winners_only=True):
+    """Alle Zeigungen EINER Serie, chronologisch.
+
+    Der Serien-Schluessel traegt den Tag an erster Stelle, also reicht ein
+    Tages-Query plus Nachfiltern in Python - der Schluessel selbst ist in SQL
+    nicht ausdrueckbar (normalize.run_slug). Pro Tag sind das rund 110 Zeilen.
+
+    winners_only=True ist der Normalfall UND der Punkt der ganzen Uebung: was
+    die Liste nicht zeigt, ist auch kein Mitglied einer geherzten Serie."""
+    day = run_key.split("|", 1)[0]
+    query = _HEART_EVENT_SELECT + "WHERE e.date = ?"
+    if winners_only:
+        query += " AND e.duplicate_of IS NULL"
+    members = [
+        _public_event(row) for row in conn.execute(query, (day,)).fetchall()
+        if normalize.run_key_for_event(_public_event(row)) == run_key
+    ]
+    members.sort(key=lambda e: (e["time"] or "99:99", e["uid"]))
+    return members
+
+
+def _canonical_uid(conn, uid):
+    """Folgt der Doppelungs-Kette bis zu der Zeile, die die Liste zeigt.
+
+    Zuerst events.duplicate_of; ist die Zeile selbst verschwunden, sagt
+    event_duplicates noch, worauf sie zuletzt zeigte (die Buchung bleibt auch
+    ohne die Zeile stehen). Gibt None zurueck, wenn am Ende keine lebende
+    Gewinner-Zeile steht."""
+    seen = set()
+    while uid and uid not in seen:
+        seen.add(uid)
+        row = conn.execute(
+            "SELECT duplicate_of FROM events WHERE uid = ?", (uid,)).fetchone()
+        if row is None:
+            booking = conn.execute(
+                "SELECT canonical_uid FROM event_duplicates WHERE duplicate_uid = ?",
+                (uid,)).fetchone()
+            if booking is None:
+                return None
+            uid = booking["canonical_uid"]
+            continue
+        if row["duplicate_of"] is None:
+            return uid
+        uid = row["duplicate_of"]
+    return None
+
+
+def _winner_by_identity(conn, identity_key, run_date):
+    """Letzter Rettungsanker: dieselbe Zeigung unter neuer uid. identity_key ist
+    sha1("<source>|<url>|<date>") und bewusst nicht eindeutig (Serien teilen
+    sich eine Seite), deshalb zaehlt zusaetzlich der Tag."""
     rows = conn.execute(
-        """SELECT c.* FROM reactions r
-           JOIN events e ON e.uid = r.event_uid
-           JOIN events c ON c.uid = COALESCE(e.duplicate_of, e.uid)
-           WHERE r.reaction = 'like'
-           GROUP BY c.uid
-           ORDER BY MAX(r.created_at) DESC LIMIT ?""",
-        (limit,),
+        _HEART_EVENT_SELECT
+        + "WHERE e.identity_key = ? AND e.date = ? AND e.duplicate_of IS NULL "
+          "ORDER BY e.time IS NULL, e.time, e.uid",
+        (identity_key, run_date),
     ).fetchall()
-    return [dict(row) for row in rows]
+    return _public_event(rows[0]) if rows else None
+
+
+def _resolve_heart(conn, heart):
+    """Bestimmt Anker, Serien-Schluessel, Mitglieder und link_status EINES
+    Herzens - die einzige Stelle, die das tut.
+
+    Reihenfolge, von "nichts passiert" bis "nichts mehr da":
+      1. Die Serie hat Gewinner-Zeilen und der Anker ist eine davon -> 'ok'.
+      2. Die Serie hat Gewinner-Zeilen, aber der Anker ist keine mehr (seine
+         Zeigung ist weggefallen oder zur Doppelung geworden) -> auf die
+         frueheste Gewinner-Zeigung umhaengen, 'neu_verknuepft'.
+      3. Keine Gewinner-Zeile unter dem Schluessel: der Doppelungs-Buchung von
+         Anker und Ex-Mitgliedern folgen. Fuehrt sie auf eine Gewinner-Zeile,
+         zieht das Herz MITSAMT Schluessel dorthin um ("Ostpol Dresden" ->
+         "Ostpol") -> 'neu_verknuepft'.
+      4. Noch nicht am Ende: identity_key + Tag -> 'neu_verknuepft'.
+      5. Nichts davon -> 'verwaist'. Das Herz bleibt stehen und lebt vom
+         Schnappschuss; die kuratierte Seite markiert es.
+
+    Gibt (event_uid, run_key, members, link_status, relinked_from) zurueck.
+    """
+    old_uid = heart["event_uid"]
+    key = heart["run_key"]
+    members = run_members(conn, key)
+
+    if members:
+        if any(m["uid"] == old_uid for m in members):
+            return old_uid, key, members, "ok", heart.get("relinked_from")
+        return members[0]["uid"], key, members, "neu_verknuepft", old_uid
+
+    candidates = [old_uid] + [u for u in _member_uids(heart) if u != old_uid]
+    for uid in candidates:
+        canonical = _canonical_uid(conn, uid)
+        if not canonical:
+            continue
+        winner = event_for_uid(conn, canonical)
+        if winner is None or winner["duplicate_of"] is not None:
+            continue
+        new_key = normalize.run_key_for_event(winner)
+        return (winner["uid"], new_key, run_members(conn, new_key) or [winner],
+                "neu_verknuepft", old_uid)
+
+    fallback = _winner_by_identity(conn, heart["identity_key"], key.split("|", 1)[0])
+    if fallback is not None:
+        new_key = normalize.run_key_for_event(fallback)
+        return (fallback["uid"], new_key, run_members(conn, new_key) or [fallback],
+                "neu_verknuepft", old_uid)
+
+    return old_uid, key, [], "verwaist", heart.get("relinked_from")
+
+
+def _member_uids(heart):
+    try:
+        return json.loads(heart.get("member_uids") or "[]")
+    except ValueError:
+        return []
+
+
+def _write_heart(conn, heart, resolved, note=None, created_at=None):
+    """Schreibt ein aufgeloestes Herz. Der Schnappschuss wird dabei aus der
+    lebenden Ankerzeile aufgefrischt, solange es eine gibt - ein Schnappschuss
+    soll den LETZTEN bekannten guten Stand halten, nicht den ersten."""
+    uid, key, members, status, relinked_from = resolved
+    anchor = next((m for m in members if m["uid"] == uid), None)
+    if anchor is None:
+        anchor = event_for_uid(conn, uid)
+    now = datetime.utcnow().isoformat()
+    snap = {
+        "identity_key": (anchor or {}).get("identity_key") or heart["identity_key"],
+        "snap_title": (anchor or {}).get("title") or heart["snap_title"],
+        "snap_date": (anchor or {}).get("date") or heart["snap_date"],
+        "snap_time": (anchor or {}).get("time") if anchor else heart.get("snap_time"),
+        "snap_venue": (anchor or {}).get("venue") if anchor else heart.get("snap_venue"),
+        "snap_url": (anchor or {}).get("url") if anchor else heart.get("snap_url"),
+        "snap_source": (anchor or {}).get("source") if anchor else heart.get("snap_source"),
+    }
+    # Bei 'verwaist' gibt es keine lebenden Mitglieder mehr - dann bleibt die
+    # ALTE Liste stehen. Sie mit [] zu ueberschreiben waere der stille Verlust
+    # der Kandidaten, ueber die ein spaeterer Lauf das Herz wieder anknuepfen
+    # koennte (_resolve_heart, Schritt 3).
+    member_uids = json.dumps([m["uid"] for m in members]) if members \
+        else (heart.get("member_uids") or json.dumps([]))
+    conn.execute(
+        """INSERT INTO hearts (event_uid, run_key, identity_key, snap_title,
+                               snap_date, snap_time, snap_venue, snap_url,
+                               snap_source, member_uids, note, sort_order,
+                               link_status, relinked_from, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(run_key) DO UPDATE SET
+             event_uid = excluded.event_uid, identity_key = excluded.identity_key,
+             snap_title = excluded.snap_title, snap_date = excluded.snap_date,
+             snap_time = excluded.snap_time, snap_venue = excluded.snap_venue,
+             snap_url = excluded.snap_url, snap_source = excluded.snap_source,
+             member_uids = excluded.member_uids, note = excluded.note,
+             link_status = excluded.link_status,
+             relinked_from = excluded.relinked_from,
+             updated_at = excluded.updated_at""",
+        (uid, key, snap["identity_key"], snap["snap_title"], snap["snap_date"],
+         snap["snap_time"], snap["snap_venue"], snap["snap_url"], snap["snap_source"],
+         member_uids,
+         heart.get("note") if note is None else note,
+         heart.get("sort_order") or 0, status, relinked_from,
+         created_at or heart.get("created_at") or now, now),
+    )
+
+
+def get_heart(conn, run_key):
+    row = conn.execute("SELECT * FROM hearts WHERE run_key = ?", (run_key,)).fetchone()
+    return dict(row) if row else None
+
+
+def heart_for_uid(conn, uid):
+    """Das Herz, an dem diese Zeigung haengt - als Anker ODER als Mitglied der
+    Serie. Der Loesch-Schutz in _delete_orphaned_event() braucht die zweite
+    Haelfte: geherzt ist die Serie, nicht nur ihre frueheste Zeigung."""
+    row = conn.execute("SELECT * FROM hearts WHERE event_uid = ?", (uid,)).fetchone()
+    if row:
+        return dict(row)
+    for candidate in conn.execute("SELECT * FROM hearts").fetchall():
+        heart = dict(candidate)
+        if uid in _member_uids(heart):
+            return heart
+    return None
+
+
+def set_heart(conn, uid, note=None):
+    """Herzt die SERIE, zu der diese Zeigung gehoert (Entscheidung #26).
+
+    Zeigt die uid auf eine ausgeblendete Doppelung, gilt das Herz dem Eintrag,
+    den die Liste an ihrer Stelle zeigt - sonst legte ein Klick ein Herz an,
+    das von Anfang an unsichtbar ist.
+
+    Gibt (herz, neu) zurueck - (None, False), wenn die uid unbekannt ist. Das
+    Flag ist nicht Kosmetik: zwei Zeigungen derselben Serie sind zwei Zeilen mit
+    demselben Schluessel (eine Doppelvorstellung faellt unter RUN_MIN_SIZE und
+    bleibt ungefaltet). Ohne das Flag zaehlte der zweite Klick ein zweites Mal
+    in die Gewichte, obwohl sich am Herzen nichts aendert."""
+    event = event_for_uid(conn, uid)
+    if event is None:
+        return None, False
+    if event["duplicate_of"] is not None:
+        canonical = _canonical_uid(conn, uid)
+        event = event_for_uid(conn, canonical) if canonical else event
+
+    key = normalize.run_key_for_event(event)
+    seed = {
+        "event_uid": event["uid"], "run_key": key,
+        "identity_key": event["identity_key"], "snap_title": event["title"],
+        "snap_date": event["date"], "snap_time": event.get("time"),
+        "snap_venue": event.get("venue"), "snap_url": event.get("url"),
+        "snap_source": event.get("source"), "member_uids": None,
+        "note": note, "sort_order": 0, "relinked_from": None,
+        "created_at": None,
+    }
+    existing = get_heart(conn, key)
+    if existing:
+        seed = dict(existing, note=existing.get("note") if note is None else note)
+    _write_heart(conn, seed, _resolve_heart(conn, seed), note=note)
+    return get_heart(conn, key), existing is None
+
+
+def remove_heart(conn, run_key):
+    cursor = conn.execute("DELETE FROM hearts WHERE run_key = ?", (run_key,))
+    return cursor.rowcount > 0
+
+
+def hearted_run_keys(conn):
+    """Die Schluessel aller Herzen - das ist alles, was die Liste im Browser
+    braucht, um eine Zeile als geherzt zu zeichnen (eine Abfrage statt einer
+    pro Event)."""
+    return [row["run_key"] for row in
+            conn.execute("SELECT run_key FROM hearts ORDER BY run_key").fetchall()]
+
+
+def list_hearts(conn):
+    """Die kuratierte Seite: je Herz die LEBENDEN Zeilen der Serie, und nur
+    wenn es keine mehr gibt, der Schnappschuss."""
+    out = []
+    rows = conn.execute(
+        "SELECT * FROM hearts ORDER BY snap_date ASC, sort_order ASC, "
+        "snap_time IS NULL, snap_time ASC").fetchall()
+    for row in rows:
+        heart = dict(row)
+        members = run_members(conn, heart["run_key"])
+        first = members[0] if members else None
+        out.append({
+            "run_key": heart["run_key"],
+            "uid": heart["event_uid"],
+            "status": heart["link_status"],
+            "note": heart["note"],
+            "live": bool(members),
+            "count": len(members),
+            "date": first["date"] if first else heart["snap_date"],
+            "times": [m["time"] for m in members] if members else [heart["snap_time"]],
+            "title": first["title"] if first else heart["snap_title"],
+            "venue": first["venue"] if first else heart["snap_venue"],
+            "venue_slug": first.get("venue_slug") if first else None,
+            "url": (first.get("url") if first else heart["snap_url"]),
+            "image_url": first.get("image_url") if first else None,
+            "category": first.get("category") if first else None,
+            "source": first.get("source") if first else heart["snap_source"],
+        })
+    return out
+
+
+def relink_hearts(conn):
+    """Nach JEDEM Scrape (und nach dedup.link_duplicates, nicht davor): jedes
+    Herz wieder auf eine Zeile ziehen, die die Liste auch zeigt.
+
+    Gibt {'ok': n, 'neu_verknuepft': n, 'verwaist': n} zurueck."""
+    summary = {"ok": 0, "neu_verknuepft": 0, "verwaist": 0}
+    for row in conn.execute("SELECT * FROM hearts").fetchall():
+        heart = dict(row)
+        resolved = _resolve_heart(conn, heart)
+        new_uid, new_key, _members, status, _from = resolved
+        if new_key != heart["run_key"]:
+            # Der Schluessel selbst wandert (Doppelung mit anderer Ortsschreib-
+            # weise). Die alte Zeile muss weg, bevor der UNIQUE-Index auf
+            # run_key zuschlaegt.
+            conn.execute("DELETE FROM hearts WHERE run_key = ?", (heart["run_key"],))
+        _write_heart(conn, heart, resolved)
+        summary[status] += 1
+        if status != "ok":
+            logger.warning(
+                "Herz %s: %s (Anker %s -> %s, Schluessel %s -> %s)",
+                heart["snap_title"], status, heart["event_uid"], new_uid,
+                heart["run_key"], new_key,
+            )
+    if summary["ok"] or summary["neu_verknuepft"] or summary["verwaist"]:
+        logger.info("Herzen geprueft: %d ok, %d neu verknuepft, %d verwaist.",
+                    summary["ok"], summary["neu_verknuepft"], summary["verwaist"])
+    return summary
