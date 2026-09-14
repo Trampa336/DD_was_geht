@@ -96,20 +96,31 @@ nicht abgeschaltet, sondern gar nicht erst im Bundle (Entscheidung #8).
 `tests_smoke.py` prüft das über *jede* gebaute Datei, nicht nur über
 `index.html`.
 
-### Ein Repo, Seite unter `docs/`
+### Ein eigenes Ausgabe-Repo, an dessen Wurzel
 
-Quellcode und gebaute Seite liegen im **selben** Repo
-(`github.com/Trampa336/dd-was-geht`), die Seite unter `docs/`. GitHub Pages
-kennt bei „deploy from a branch“ genau zwei Wurzeln, `/` und `/docs`; `/` würde
-den kompletten Quellbaum als Website ausliefern. Der Export verlinkt daher
-ausschließlich **relativ** (`tools/export_static.py:_static_urls`) und
-funktioniert in einem Unterverzeichnis unverändert – ein einziger absoluter
-Link (`/orte`, `/herzen`) wäre dort tot, und genau darauf prüft `tests_smoke.py`
-über alle HTML-Dateien des Exports.
+Die gebaute Seite lebt in einem **eigenen** Repo
+(`github.com/Trampa336/DD_was_geht`), unverändert an dessen Wurzel – so wie
+von Anfang an. Zwischenzeitlich (P6a) sollten Quellcode und gebaute Seite ein
+gemeinsames Repo teilen, die Seite unter `docs/`, weil GitHub Pages bei
+„deploy from a branch“ nur `/` und `/docs` kennt. David hat sich dagegen
+entschieden (Entscheidung #29): GitHub behält **nur** die öffentliche Seite,
+unverändert, unter derselben URL; der Quellcode zieht auf einen eigenen
+Forgejo-Server um (eigenes Paket, eigener Cutover). Es gibt also **keine**
+Zusammenlegung von Quellcode und Seite.
 
-`rsync --delete` zielt deshalb auf `$SITE_REPO/docs/`, nicht auf das Repo:
-ein halber Export kann nur noch die Seite leeren, nie den Quellbaum daneben
-löschen.
+Der Export verlinkt trotzdem ausschließlich **relativ**
+(`tools/export_static.py:_static_urls`) und würde auch in einem
+Unterverzeichnis funktionieren – ein einziger absoluter Link (`/orte`,
+`/herzen`) wäre dort tot, und genau darauf prüft `tests_smoke.py` über alle
+HTML-Dateien des Exports. Das kostet nichts und hält die Tür für ein
+`SITE_SUBDIR` offen, falls es das je wieder braucht.
+
+`rsync --delete` zielt auf die Wurzel des Klons und schließt `.git` explizit
+aus (`--exclude '.git'`) – ohne den Ausschluss würde jeder Lauf das
+Verwaltungsverzeichnis des Klons mit wegräumen, weil es in der Exportausgabe
+naturgemäß nicht vorkommt. Alles außerhalb der Exportausgabe an der Wurzel
+gilt als nicht mehr gewollt und wird gelöscht – das Repo ist reine
+Build-Ausgabe, kein Ort für zusätzliche Dateien wie ein eigenes `README.md`.
 
 ### Probelauf ohne Docker und ohne Push
 
@@ -123,18 +134,11 @@ fahren: Export, Vollständigkeits-Prüfung, `rsync`, Staging – alles bis vor d
 Commit. Was danach kommt (`git push` über den Deploy-Key, der Pages-Build
 selbst) lässt sich lokal nicht prüfen.
 
-**Stand:** der neue Pfad ist gebaut und lokal grün; die Umstellung der
-Live-Seite ist ein eigener, angekündigter Schritt. Bis dahin läuft die
-öffentliche Seite unverändert aus dem alten Repo:
-
-| | URL |
-|---|---|
-| heute live (altes Repo `DD_was_geht`) | https://trampa336.github.io/DD_was_geht/ |
-| nach der Umstellung | https://trampa336.github.io/dd-was-geht/ |
-
-**Die URL ändert sich also.** Wer den alten Link hat, landet nach dem Abschalten
-des alten Repos im Nichts – wenn das stört, bleibt das alte Repo als
-Weiterleitungs-Seite stehen, statt gelöscht zu werden.
+**Stand:** die Live-Seite läuft unverändert unter
+https://trampa336.github.io/DD_was_geht/ weiter – die URL ändert sich durch
+diesen Umbau **nicht**. Was ansteht, ist ein reiner Code-Deploy auf CT103
+(neue `export_static.py`/`publish_site.sh`), keine Änderung an GitHub Pages
+oder am Repo selbst.
 
 ## Scraper kalibrieren
 
@@ -406,7 +410,7 @@ dd-was-geht/
   tools/venue_readiness_report.py  Misst, wie viele Venues ueberhaupt etwas zum Zeigen haben (P5b)
   tools/enrich_venues_cybersax.py  Anreicherung ueber die cybersax-Adressseiten - fuer Venues ohne Kulturkalender-Seite (P5u)
   tools/export_static.py     Statischer Export für GitHub Pages (siehe „Öffentliche Seite für Freunde")
-  tools/publish_site.sh      Export -> docs/ im selben Repo -> commit + push (Cronjob)
+  tools/publish_site.sh      Export -> Wurzel des Seiten-Repos -> commit + push (Cronjob)
   tests_smoke.py             Schnelltest der Kernlogik ohne Netzwerk
   .env.example
   docker-compose.yml / Dockerfile

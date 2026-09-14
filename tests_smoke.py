@@ -3017,15 +3017,20 @@ check("P5c: und der Score faehrt weiter im Export mit, damit die oeffentliche "
                  f"{_export_today.isoformat()}.json")])[0]["score"], (int, float)))
 
 # =========================================================================
-# P6a - der neue Veroeffentlichungsweg: EIN Repo, Seite unter docs/
+# P6a/P6a2 - der Veroeffentlichungsweg: eigenes Ausgabe-Repo, an der Wurzel
 # =========================================================================
-# Was hier festgehalten wird, ist genau das, was der Umzug (P6b) zum ersten Mal
-# in Produktion tut. Drei Dinge muessen stimmen, sonst nimmt der Umzug die
-# oeffentliche Seite mit:
-#   1. der Export laeuft aus einem UNTERVERZEICHNIS heraus - jeder absolute
-#      Link ("/orte", "/herzen") waere unter <user>.github.io/dd-was-geht/ tot,
+# P6a hatte Quellcode und gebaute Seite kurzzeitig in einem gemeinsamen Repo
+# zusammengefuehrt, Seite unter docs/. David hat sich dagegen entschieden
+# (Entscheidung #29): GitHub behaelt NUR die oeffentliche Seite
+# (DD_was_geht), unveraendert und an ihrer Wurzel: der Quellcode zieht auf
+# einen eigenen Forgejo-Server um (eigenes Paket). P6a2 macht das docs/-Ziel
+# rueckgaengig, ohne die echten Verbesserungen aus P6a zu verlieren. Drei
+# Dinge muessen weiterhin stimmen:
+#   1. der Export bleibt relativ verlinkt - das schadet an der Repo-Wurzel
+#      nicht und haelt die Tuer offen fuer ein Unterverzeichnis (SITE_SUBDIR),
+#      falls es das je wieder braucht,
 #   2. die kuratierte Seite ist dabei, aber als reine Lesekopie,
-#   3. publish_site.sh loescht per rsync --delete nur noch docs/, nie das Repo.
+#   3. publish_site.sh loescht per rsync --delete nur die Ausgabe, nie .git.
 
 # --- 1. _write vergleicht BYTEWEISE ---------------------------------------
 # Der Fehler, den P6a gefunden hat: im Textmodus gelesen wird aus \r\n ein \n,
@@ -3043,9 +3048,11 @@ check("P6a: und beim zweiten Mal NICHT mehr - auch wenn der Text ein CRLF "
 check("P6a: und das CRLF steht unveraendert auf der Platte",
       open(_p6a_tmp, "rb").read() == _p6a_text.encode("utf-8"))
 
-# --- 2. Der Export lebt in einem Unterverzeichnis --------------------------
-# Das ist die Eigenschaft, auf der docs/ ueberhaupt beruht. Geprueft wird ueber
-# ALLE HTML-Dateien des gebauten Exports, nicht ueber index.html allein.
+# --- 2. Der Export bleibt relativ verlinkt ---------------------------------
+# Das gilt unabhaengig davon, ob die Ausgabe an der Repo-Wurzel landet (seit
+# Entscheidung #29 der Normalfall) oder - ueber SITE_SUBDIR - in einem
+# Unterverzeichnis. Geprueft wird ueber ALLE HTML-Dateien des gebauten
+# Exports, nicht ueber index.html allein.
 _p6a_links, _p6a_absolut, _p6a_tot = 0, [], []
 for _name, _inhalt in _p5c_dateien.items():
     if not _name.endswith(".html"):
@@ -3090,21 +3097,46 @@ check("P6a: die Flask-Fassung derselben Vorlage hat den Knopf weiterhin",
 
 # --- 4. publish_site.sh: was den Umzug ueberhaupt erst zurueckrollbar macht -
 _p6a_sh = open(os.path.join(_ROOT, "tools", "publish_site.sh"), encoding="utf-8").read()
-check("P6a: rsync --delete zeigt auf das UNTERVERZEICHNIS, nicht auf das Repo "
-      "- ein halber Export kann damit nur noch die Seite leeren, nie den "
-      "Quellbaum daneben loeschen",
-      'rsync -a --delete "$EXPORT_DIR/" "$SITE_REPO/$SITE_SUBDIR/"' in _p6a_sh
-      and 'rsync -a --delete "$EXPORT_DIR/" "$SITE_REPO/"' not in _p6a_sh)
-check("P6a: und SITE_SUBDIR wird vorher geprueft - leer, absolut oder mit "
-      "'..' waere genau der Griff daneben",
-      '[[ "$SITE_SUBDIR" =~ ^[A-Za-z0-9_-]+$ ]]' in _p6a_sh)
-check("P6a: gestaged wird nur das Unterverzeichnis (ein 'git add -A' naehme im "
-      "zusammengelegten Repo auch Quellcode mit, der auf CT103 liegen blieb)",
-      'git add -A -- "$SITE_SUBDIR"' in _p6a_sh and "\ngit add -A\n" not in _p6a_sh)
-check("P6a: der Klon wird vor dem Schreiben hart auf origin gezogen - sonst "
-      "scheitert der Push still, sobald jemand Quellcode von woanders pusht",
+# Die folgenden vier Pruefungen sind P6a2-Fassungen von P6a-Pruefungen, die
+# woertlich auf "docs" bzw. SITE_SUBDIR als PFLICHT-Unterordner bestanden -
+# genau das ist mit Entscheidung #29 falsch geworden (kein gemeinsames Repo
+# mehr, die Ausgabe geht wieder an die Repo-Wurzel). Ersetzt, nicht geloescht.
+check("P6a2: SITE_REPO zeigt wieder auf den bestehenden Klon dd-was-geht-site "
+      "- unter Entscheidung #29 gibt es kein neu anzulegendes dd-was-geht-repo "
+      "mehr, das Seiten-Repo bleibt dasselbe wie vor P6a",
+      'SITE_REPO="${SITE_REPO:-$HOME/dd-was-geht-site}"' in _p6a_sh
+      and "dd-was-geht-repo" not in _p6a_sh)
+check("P6a2: SITE_SUBDIR darf jetzt LEER sein (= Repo-Wurzel, der Normalfall "
+      "seit Entscheidung #29) - nur ein GEFUELLTER, aber gefaehrlicher Wert "
+      "('..', ein fuehrendes '/') wird noch abgewiesen",
+      '[[ -z "$SITE_SUBDIR" || "$SITE_SUBDIR" =~ ^[A-Za-z0-9_-]+$ ]]' in _p6a_sh)
+check("P6a2: der Origin-Check verlangt wieder DD_was_geht, nicht mehr das "
+      "waehrend P6a kurz geplante dd-was-geht - das Seiten-Repo IST unter "
+      "Entscheidung #29 wieder das alte, oeffentliche Repo",
+      '"$ORIGIN_URL" == *DD_was_geht*' in _p6a_sh
+      and "dd-was-geht*" not in _p6a_sh)
+check("P6a2: rsync --delete schliesst .git aus - an der Repo-Wurzel (seit #29 "
+      "der Normalfall) liegt .git GENAU im rsync-Ziel, und ohne den "
+      "Ausschluss raeumt --delete bei jedem Lauf einen Teil des "
+      "Verwaltungsverzeichnisses des Klons weg",
+      "rsync -a --delete --exclude '.git' \"$EXPORT_DIR/\" \"$TARGET_DIR/\"" in _p6a_sh)
+check("P6a2: rsync- und git-Ziel haengen an TARGET_DIR/GIT_PATH, nicht mehr "
+      "fest an $SITE_REPO/docs - ein leeres SITE_SUBDIR ergibt die Repo-Wurzel",
+      'TARGET_DIR="$SITE_REPO/$SITE_SUBDIR"' in _p6a_sh
+      and 'TARGET_DIR="$SITE_REPO"' in _p6a_sh
+      and "$SITE_REPO/docs" not in _p6a_sh)
+check("P6a2: gestaged wird ueber GIT_PATH, denselben Pfad wie das rsync-Ziel "
+      "- an der Repo-Wurzel ist das '.', mit gesetztem SITE_SUBDIR weiterhin "
+      "nur der Unterordner",
+      'git add -A -- "$GIT_PATH"' in _p6a_sh and "\ngit add -A\n" not in _p6a_sh)
+check("P6a2: der fetch+reset vor dem Schreiben steht weiterhin - jetzt als "
+      "reine Vorsichtsmassnahme, nicht mehr gegen einen zweiten Schreiber "
+      "(den es unter Entscheidung #29 nicht mehr gibt, siehe Kommentar im "
+      "Skript, der das auch so sagt statt die alte, jetzt falsche "
+      "Begruendung stehen zu lassen)",
       'git -C "$SITE_REPO" fetch -q origin "$BRANCH"' in _p6a_sh
-      and 'reset -q --hard "origin/$BRANCH"' in _p6a_sh)
+      and 'reset -q --hard "origin/$BRANCH"' in _p6a_sh
+      and "NICHT MEHR" in _p6a_sh)
 check("P6a: die Vollstaendigkeits-Pruefung deckt alle vier Oberflaechen ab, "
       "nicht nur die Startseite",
       "for datei in index.html herzen.html orte/index.html data/index.json" in _p6a_sh)

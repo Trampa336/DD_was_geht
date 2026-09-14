@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # Veroeffentlicht den Kalender als statische Seite auf GitHub Pages.
 #
-# EIN Repo (P6, Entscheidung #9): Quellcode UND gebaute Seite liegen ab jetzt
-# beide in github.com/Trampa336/dd-was-geht. Die Seite steht dort unter docs/,
-# die URL wird https://<user>.github.io/dd-was-geht/.
+# Ziel ist ein einziges, eigenes Repo fuer die Seite selbst
+# (github.com/Trampa336/DD_was_geht), Ausgabe an dessen WURZEL - so wie es
+# schon vor P6a lief und wie es seit Entscheidung #29 wieder gilt.
 #
-# Warum docs/ - und nicht die Wurzel, nicht ein zweiter Branch, keine Action:
-#   * GitHub Pages kennt bei "deploy from a branch" genau zwei Wurzeln: / und
-#     /docs. / wuerde den kompletten Quellbaum als Website ausliefern (app/,
-#     tools/, tests_smoke.py, README.md). docs/ trennt Ausgabe von Quelle,
-#     ohne dass irgendwo ein zweiter Ort gepflegt werden muss.
-#   * Ein orphan-Branch gh-pages haelt die vier taeglichen Diffs aus der
-#     Historie von main heraus - der einzige echte Vorteil, und er kostet einen
-#     zweiten Arbeitsbaum in einem Skript, das als root im Cron laeuft. Wenn
-#     die Historie von main durch die Seite unertraeglich wird, ist DAS der
-#     Ausweg; gemessen ist er derzeit nicht noetig (P6a).
-#   * Eine GitHub Action koennte die Seite gar nicht bauen: dazu braeuchte sie
-#     die Datenbank, und die verlaesst das Heimnetz nicht.
+# Zwischenzeitlich (P6a) sollten Quellcode UND gebaute Seite ein gemeinsames
+# Repo teilen, die Seite unter docs/ - weil GitHub Pages' "deploy from a
+# branch" nur / und /docs kennt. David hat sich dagegen entschieden
+# (Entscheidung #29): GitHub behaelt NUR die oeffentliche Seite, unveraendert,
+# der Quellcode zieht auf einen eigenen Forgejo-Server um (eigenes Paket,
+# eigener Cutover). Es gibt also KEINE Zusammenlegung mehr - dieses Skript
+# schreibt wieder direkt in das Seiten-Repo, wie am Anfang des Projekts.
+#
+# SITE_SUBDIR bleibt trotzdem eine Variable (Voreinstellung: leer = Wurzel),
+# statt hart auf die Wurzel verdrahtet zu sein - siehe die Pruefung unten, wo
+# das erklaert ist.
 #
 # Die Ausgabe ist relativ verlinkt (tools/export_static.py:_static_urls) und
-# funktioniert in einem Unterverzeichnis unveraendert.
+# funktioniert unveraendert, egal ob sie an der Repo-Wurzel oder (SITE_SUBDIR)
+# in einem Unterverzeichnis landet.
 #
 # Laeuft auf dem HOST von CT103, nicht im Container: exportieren laesst sich nur
 # im Container (dort liegen Python-Abhaengigkeiten und die DB, und /app/data ist
@@ -29,27 +29,23 @@
 #   1. Export im Container      -> data/site/   (Bind-Mount, landet direkt hier)
 #   2. Vollstaendigkeit pruefen  (ein halber Export wuerde die Seite leeren)
 #   3. Klon hart auf origin ziehen
-#   4. rsync nach $SITE_REPO/docs/
+#   4. rsync in die Repo-Wurzel (oder SITE_SUBDIR, falls gesetzt)
 #   5. commit + push            -> GitHub Pages baut die Seite neu
 #
-# Probelauf ohne Docker und ohne Push - genau so hat P6a den Weg lokal gefahren:
+# Probelauf ohne Docker und ohne Push - genau so laesst sich der Weg lokal fahren:
 #   EXPORT_MODE=lokal PYTHON=../.venv/bin/python DRY_RUN=1 \
 #     SITE_REPO=/pfad/zum/klon tools/publish_site.sh
 #
-# Einrichtung (einmalig):
-#   ssh-keygen -t ed25519 -f ~/.ssh/dd-was-geht-repo-deploy -N ""
-#   Pubkey bei GitHub AM REPO dd-was-geht als Deploy Key MIT Schreibrecht
+# Einrichtung (einmalig, siehe README "Oeffentliche Seite fuer Freunde") -
+# unveraendert gegenueber der Fassung vor P6a, denn es ist dasselbe Repo:
+#   ssh-keygen -t ed25519 -f ~/.ssh/dd-was-geht-deploy -N ""
+#   Pubkey bei GitHub AM REPO DD_was_geht als Deploy Key MIT Schreibrecht eintragen
 #   ~/.ssh/config:
-#       Host github-dd-repo
+#       Host github-dd
 #           HostName github.com
 #           User git
-#           IdentityFile ~/.ssh/dd-was-geht-repo-deploy
-#   git clone git@github-dd-repo:Trampa336/dd-was-geht.git ~/dd-was-geht-repo
-#
-#   ACHTUNG, der Grund fuer den ZWEITEN Schluessel: ein Deploy-Key gilt bei
-#   GitHub genau einem Repository. Der alte ~/.ssh/dd-was-geht-deploy bleibt
-#   deshalb unangetastet am alten Seiten-Repo haengen - und genau darum bleibt
-#   der alte Weg bis zum letzten Schritt zurueckrollbar.
+#           IdentityFile ~/.ssh/dd-was-geht-deploy
+#   git clone git@github-dd:Trampa336/DD_was_geht.git ~/dd-was-geht-site
 #
 # Cron (45 min nach jedem Scrape, der um */6:30 laeuft):
 #   15 1,7,13,19 * * * /opt/dd-was-geht/tools/publish_site.sh >> /opt/dd-was-geht/data/publish.log 2>&1
@@ -57,8 +53,8 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SITE_REPO="${SITE_REPO:-$HOME/dd-was-geht-repo}"
-SITE_SUBDIR="${SITE_SUBDIR:-docs}"
+SITE_REPO="${SITE_REPO:-$HOME/dd-was-geht-site}"
+SITE_SUBDIR="${SITE_SUBDIR:-}"
 BRANCH="${BRANCH:-main}"
 CONTAINER="${CONTAINER:-dd-was-geht}"
 EXPORT_MODE="${EXPORT_MODE:-container}"
@@ -72,19 +68,27 @@ EXPORT_DIR="${EXPORT_DIR:-$PROJECT_DIR/data/site}"
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 fail() { log "FEHLER: $*"; exit 1; }
 
-# rsync --delete zeigt gleich auf $SITE_REPO/$SITE_SUBDIR. Ein leerer, ein
-# absoluter oder ein herausfuehrender Wert machte daraus ein Loeschen des halben
-# Repos - das ist die eine Zeile hier, die wirklich weh tun kann.
-[[ "$SITE_SUBDIR" =~ ^[A-Za-z0-9_-]+$ ]] \
-    || fail "SITE_SUBDIR='$SITE_SUBDIR' ist kein einfacher Ordnername."
+# SITE_SUBDIR ist seit Entscheidung #29 in der Voreinstellung LEER (= die
+# Ausgabe landet an der Repo-Wurzel, wie im laufenden Betrieb). Zu P6a-Zeiten
+# stand hier "docs", weil Quellcode und Seite ein Repo teilten - das ist mit
+# der Ruecknahme der Zusammenlegung nicht mehr noetig. Die Variable bleibt
+# trotzdem bestehen (re-scoped, nicht entfernt): ein GEFUELLTER, aber
+# gefaehrlicher Wert (ein fuehrendes "/", ein herausfuehrendes "..") waere
+# immer noch die eine Zeile, die rsync --delete auf das falsche Verzeichnis
+# zeigen liesse. Nur "leer" ist jetzt kein Fehler mehr, sondern der Normalfall.
+[[ -z "$SITE_SUBDIR" || "$SITE_SUBDIR" =~ ^[A-Za-z0-9_-]+$ ]] \
+    || fail "SITE_SUBDIR='$SITE_SUBDIR' ist kein einfacher Ordnername (leer = Repo-Wurzel)."
 [[ -d "$SITE_REPO/.git" ]] || fail "$SITE_REPO ist kein Git-Repo. Siehe Kopf dieser Datei."
 
-# Zeigt der Klon auch wirklich auf das ZUSAMMENGEFUEHRTE Repo? Ein liegen
-# gebliebener Klon des alten Seiten-Repos wuerde sonst klaglos weiterbedient,
-# und der Umzug waere nur scheinbar passiert.
+# Zeigt der Klon auch wirklich auf die OEFFENTLICHE Seite? Unter Entscheidung
+# #29 bleibt DD_was_geht das einzige Repo, in das dieses Skript je schreiben
+# soll. Ein liegen gebliebener Klon des waehrend P6a kurz geplanten
+# Quellcode/Seite-Repos (dd-was-geht, mit Bindestrich statt Unterstrich)
+# wuerde sonst klaglos weiterbedient, und die Ruecknahme der Zusammenlegung
+# waere nur scheinbar passiert.
 ORIGIN_URL="$(git -C "$SITE_REPO" remote get-url origin)"
-[[ "$ORIGIN_URL" == *dd-was-geht* && "$ORIGIN_URL" != *DD_was_geht* ]] \
-    || fail "origin von $SITE_REPO ist '$ORIGIN_URL' - erwartet wird dd-was-geht."
+[[ "$ORIGIN_URL" == *DD_was_geht* ]] \
+    || fail "origin von $SITE_REPO ist '$ORIGIN_URL' - erwartet wird DD_was_geht (Entscheidung #29)."
 
 log "Export ($EXPORT_MODE) ..."
 case "$EXPORT_MODE" in
@@ -124,38 +128,64 @@ done
 [[ -e "$EXPORT_DIR/.nojekyll" ]] || fail "Export unvollstaendig: .nojekyll fehlt."
 [[ "$DAYS" -ge 1 ]] || fail "Export unvollstaendig ($DAYS Tagesdateien)."
 
-# Der Klon auf CT103 ist Wegwerf-Arbeitsplatz, kein Arbeitsbaum: der Inhalt von
-# docs/ entsteht bei jedem Lauf neu. Deshalb VOR dem Schreiben hart auf origin
-# ziehen. Ohne das scheitert der Push in dem Moment, in dem David von woanders
-# am Quellcode etwas pusht - und zwar still, in einem Cron-Log, das niemand
-# liest. Das ist die neue Fehlerquelle, die das Zusammenlegen mitbringt: das
-# alte Seiten-Repo hatte ausser dem Cron keinen zweiten Schreiber.
+# TARGET_DIR/GIT_PATH fassen zusammen, wohin rsync schreibt und welcher Pfad
+# bei git add/diff/clean gilt. Bei leerem SITE_SUBDIR (Normalfall seit #29)
+# ist das Ziel die Repo-Wurzel selbst und "." der Pfad dafuer; ist SITE_SUBDIR
+# gesetzt, gilt weiterhin genau das Verhalten aus der P6a-Fassung.
+if [[ -n "$SITE_SUBDIR" ]]; then
+    TARGET_DIR="$SITE_REPO/$SITE_SUBDIR"
+    GIT_PATH="$SITE_SUBDIR"
+else
+    TARGET_DIR="$SITE_REPO"
+    GIT_PATH="."
+fi
+
+# Der Klon auf CT103 ist Wegwerf-Arbeitsplatz, kein Arbeitsbaum: der Inhalt
+# entsteht bei jedem Lauf neu. Deshalb VOR dem Schreiben hart auf origin ziehen.
+#
+# Die urspruengliche Begruendung dafuer (P6a) war ein zusammengelegtes Repo
+# mit zwei Schreibern - Quellcode-Pushes von ueberall UND dieser Cronjob.
+# Diese Begruendung gilt mit Entscheidung #29 NICHT MEHR: das Seiten-Repo
+# (DD_was_geht) hat, wie schon vor P6a, ausser diesem Cronjob keinen zweiten
+# Schreiber. Der fetch+reset bleibt trotzdem stehen, als guenstige
+# Absicherung gegen einen Klon, der aus irgendeinem anderen Grund (ein
+# manueller Eingriff, ein Rest von einem vorigen Fehlschlag) von origin
+# abweicht - er kostet im Normalfall nichts.
 log "Klon auf origin/$BRANCH ziehen ..."
 git -C "$SITE_REPO" fetch -q origin "$BRANCH"
 git -C "$SITE_REPO" checkout -q "$BRANCH"
 git -C "$SITE_REPO" reset -q --hard "origin/$BRANCH"
-git -C "$SITE_REPO" clean -qfd -- "$SITE_SUBDIR"
+git -C "$SITE_REPO" clean -qfd -- "$GIT_PATH"
 
-mkdir -p "$SITE_REPO/$SITE_SUBDIR"
-log "Uebernehme $DAYS Tagesdateien nach $SITE_REPO/$SITE_SUBDIR ..."
-# Kein --exclude '.git' mehr noetig: das Ziel ist ein Unterordner, das Repo
-# liegt eine Ebene darueber. --delete raeumt damit nur noch die Seite auf, nie
-# den Quellbaum daneben.
-rsync -a --delete "$EXPORT_DIR/" "$SITE_REPO/$SITE_SUBDIR/"
+mkdir -p "$TARGET_DIR"
+log "Uebernehme $DAYS Tagesdateien nach $TARGET_DIR ..."
+# --exclude '.git': an der Repo-Wurzel (SITE_SUBDIR leer, der Normalfall seit
+# #29) liegt .git GENAU im rsync-Ziel. Ohne den Ausschluss wuerde --delete es
+# bei jedem Lauf als "nicht mehr in der Quelle vorhanden" wegraeumen - die
+# Ausgabe von export_static.py enthaelt naturgemaess kein .git. Bei gesetztem
+# SITE_SUBDIR liegt .git ohnehin eine Ebene hoeher; der Ausschluss ist dann
+# wirkungslos, aber unschaedlich.
+rsync -a --delete --exclude '.git' "$EXPORT_DIR/" "$TARGET_DIR/"
 
 cd "$SITE_REPO"
-# Nur den Ausgabeordner anfassen. Ein "git add -A" wuerde in diesem Repo auch
-# Quellcode-Aenderungen mitnehmen, die jemand auf CT103 hinterlassen hat.
-git add -A -- "$SITE_SUBDIR"
+# GIT_PATH ist derselbe Pfad wie beim rsync-Ziel oben. An der Repo-Wurzel
+# (".") macht das inhaltlich keinen Unterschied zu einem plumpen "git add -A"
+# mehr - das Seiten-Repo enthaelt seit Entscheidung #29 ohnehin nur noch die
+# Ausgabe, keinen Quellcode. Der Pfad bleibt trotzdem ausdruecklich benannt:
+# sollte SITE_SUBDIR je wieder gesetzt werden (etwa fuer ein gemeinsames Repo
+# wie zu P6a-Zeiten), gilt dieselbe Grenze wie damals - "git add -A" ohne
+# Pfad wuerde dann auch Quellcode-Aenderungen mitnehmen, die auf CT103 liegen
+# blieben.
+git add -A -- "$GIT_PATH"
 if git diff --cached --quiet; then
     log "Nichts geaendert - kein Commit noetig."
     exit 0
 fi
 
-GEAENDERT=$(git diff --cached --numstat -- "$SITE_SUBDIR" | wc -l)
+GEAENDERT=$(git diff --cached --numstat -- "$GIT_PATH" | wc -l)
 if [[ "$DRY_RUN" == "1" ]]; then
     log "DRY_RUN=1: kein Commit, kein Push. Anstehen wuerden $GEAENDERT Dateien:"
-    git diff --cached --shortstat -- "$SITE_SUBDIR"
+    git diff --cached --shortstat -- "$GIT_PATH"
     git reset -q
     exit 0
 fi
