@@ -15,7 +15,7 @@
   <header class="masthead masthead-simple">
     <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
   </header>
-  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a></nav>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a> · <a href="{{ urls.hearts_index }}">{% if mode == 'static' %}Handverlesen{% else %}Herzen{% endif %}</a></nav>
 
   <h2 class="venues-index-title">Alle Orte ({{ venues | length }})</h2>
   <p class="venues-index-hint">

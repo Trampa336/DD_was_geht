@@ -2985,12 +2985,17 @@ check("P5c: und keine Adresse des Pi im Export (weder Flask-Host noch Port)",
       "192.168.178.91" not in _p5c_alles and ":1111" not in _p5c_alles)
 check("P5c: herzen.js wird nicht mitexportiert",
       not any(n.endswith("herzen.js") for n in _p5c_dateien))
-check("P5c: die kuratierte Seite selbst wird nicht exportiert - sie ist Davids "
-      "Auswahl und bleibt bis P6 im Heimnetz",
-      not any("herzen" in n for n in _p5c_dateien))
-check("P5c: die oeffentliche Seite verlinkt sie auch nicht",
-      'href="/herzen"' not in _p5c_dateien["index.html"]
-      and ">Herzen<" not in _p5c_dateien["index.html"])
+# P6a hat diese beiden Pruefungen UMGEDREHT (Entscheidung #27): die kuratierte
+# Seite geht oeffentlich. Nicht gelockert wurde dabei nichts - der Herz-Knopf
+# bleibt draussen (Entscheidung #8), und genau das pruefen sie jetzt.
+check("P6a: die kuratierte Seite WIRD exportiert (Entscheidung #27 kehrt die "
+      "P5c-Pruefung um) - und zwar genau einmal, als herzen.html",
+      sorted(n for n in _p5c_dateien if os.path.basename(n).startswith("herzen"))
+      == ["herzen.html"])
+check("P6a: die oeffentliche Seite verlinkt sie - relativ, nie absolut "
+      "(unter Pages liegt sie in einem Unterverzeichnis)",
+      'href="herzen.html"' in _p5c_dateien["index.html"]
+      and 'href="/herzen"' not in _p5c_dateien["index.html"])
 check("P5c: die Flask-Seite dagegen verlinkt sie",
       '<a href="/herzen">Herzen</a>' in _page)
 
@@ -3010,5 +3015,111 @@ check("P5c: und der Score faehrt weiter im Export mit, damit die oeffentliche "
       "Empfehlungszeile dieselbe Auswahl zeigt",
       isinstance(json.loads(_p5c_dateien[os.path.join("data", "days",
                  f"{_export_today.isoformat()}.json")])[0]["score"], (int, float)))
+
+# =========================================================================
+# P6a - der neue Veroeffentlichungsweg: EIN Repo, Seite unter docs/
+# =========================================================================
+# Was hier festgehalten wird, ist genau das, was der Umzug (P6b) zum ersten Mal
+# in Produktion tut. Drei Dinge muessen stimmen, sonst nimmt der Umzug die
+# oeffentliche Seite mit:
+#   1. der Export laeuft aus einem UNTERVERZEICHNIS heraus - jeder absolute
+#      Link ("/orte", "/herzen") waere unter <user>.github.io/dd-was-geht/ tot,
+#   2. die kuratierte Seite ist dabei, aber als reine Lesekopie,
+#   3. publish_site.sh loescht per rsync --delete nur noch docs/, nie das Repo.
+
+# --- 1. _write vergleicht BYTEWEISE ---------------------------------------
+# Der Fehler, den P6a gefunden hat: im Textmodus gelesen wird aus \r\n ein \n,
+# ein gerendertes CRLF las sich also bei JEDEM Lauf als "geaendert". Genau ein
+# Event-Titel im Bestand traegt ein CRLF, und orte/boulevardtheater.html wurde
+# deshalb jedes Mal neu geschrieben - byte-identisch. Git sah davon nichts, die
+# Zaehlung "venues_written" in der Ausgabe log.
+_p6a_tmp = os.path.join(tempfile.mkdtemp(), "crlf.html")
+_p6a_text = "<p>King Of Pop\r\nMichael Jackson</p>\n"
+check("P6a: _write schreibt beim ersten Mal", export_static._write(_p6a_tmp, _p6a_text) is True)
+check("P6a: und beim zweiten Mal NICHT mehr - auch wenn der Text ein CRLF "
+      "traegt (sonst schreibt der Export dieselbe Datei bis in alle Ewigkeit "
+      "neu und die Statistik zaehlt eine Aenderung, die es nicht gibt)",
+      export_static._write(_p6a_tmp, _p6a_text) is False)
+check("P6a: und das CRLF steht unveraendert auf der Platte",
+      open(_p6a_tmp, "rb").read() == _p6a_text.encode("utf-8"))
+
+# --- 2. Der Export lebt in einem Unterverzeichnis --------------------------
+# Das ist die Eigenschaft, auf der docs/ ueberhaupt beruht. Geprueft wird ueber
+# ALLE HTML-Dateien des gebauten Exports, nicht ueber index.html allein.
+_p6a_links, _p6a_absolut, _p6a_tot = 0, [], []
+for _name, _inhalt in _p5c_dateien.items():
+    if not _name.endswith(".html"):
+        continue
+    for _url in re.findall(r'(?:^|\s)(?:href|src)="([^"]+)"', _inhalt):
+        if _url.startswith(("http://", "https://", "#", "data:", "mailto:")):
+            continue
+        if _url.startswith("/"):
+            _p6a_absolut.append((_name, _url))
+            continue
+        _p6a_links += 1
+        _ziel = os.path.normpath(os.path.join(os.path.dirname(_name), _url.split("?")[0]))
+        if _ziel not in _p5c_dateien:
+            _p6a_tot.append((_name, _url))
+check("P6a: der Export enthaelt KEINEN absoluten Link - unter GitHub Pages "
+      f"liegt die Seite in einem Unterverzeichnis (gefunden: {_p6a_absolut[:3]})",
+      not _p6a_absolut)
+check(f"P6a: und alle {_p6a_links} relativen Links zeigen auf eine Datei, die "
+      f"es auch gibt (kaputt: {_p6a_tot[:3]})", not _p6a_tot)
+check("P6a: die vier Pflichtdateien liegen im Export - ohne sie bricht "
+      "publish_site.sh ab, statt eine halbe Seite zu veroeffentlichen",
+      all(n in _p5c_dateien for n in
+          ["index.html", "herzen.html", os.path.join("orte", "index.html"),
+           os.path.join("data", "index.json"), ".nojekyll", "robots.txt"]))
+
+# --- 3. Die kuratierte Seite: oeffentlich, aber ohne Schreibweg ------------
+_p6a_herzen = _p5c_dateien["herzen.html"]
+check("P6a: die exportierte kuratierte Seite zeigt die geherzte Serie "
+      "(sonst waere die Pruefung darunter wertlos - eine leere Seite enthaelt "
+      "auch keinen Knopf)",
+      "P5c Turmführung" in _p6a_herzen and "4 Termine" in _p6a_herzen)
+check("P6a: und traegt KEINEN Herz-Knopf, keinen Serien-Schluessel, kein "
+      "herzen.js - das Ergebnis ist oeffentlich, der Schreibweg nie "
+      "(Entscheidung #8)",
+      "herz-entfernen" not in _p6a_herzen and "data-run-key" not in _p6a_herzen
+      and "herzen.js" not in _p6a_herzen and "<button" not in _p6a_herzen)
+check("P6a: sie ist wie die Startseite auf noindex gestellt (die Seite ist "
+      "'unlisted', nicht geheim)",
+      'name="robots" content="noindex, nofollow"' in _p6a_herzen)
+check("P6a: die Flask-Fassung derselben Vorlage hat den Knopf weiterhin",
+      "herz-entfernen" in _client_web.get("/herzen").get_data(as_text=True))
+
+# --- 4. publish_site.sh: was den Umzug ueberhaupt erst zurueckrollbar macht -
+_p6a_sh = open(os.path.join(_ROOT, "tools", "publish_site.sh"), encoding="utf-8").read()
+check("P6a: rsync --delete zeigt auf das UNTERVERZEICHNIS, nicht auf das Repo "
+      "- ein halber Export kann damit nur noch die Seite leeren, nie den "
+      "Quellbaum daneben loeschen",
+      'rsync -a --delete "$EXPORT_DIR/" "$SITE_REPO/$SITE_SUBDIR/"' in _p6a_sh
+      and 'rsync -a --delete "$EXPORT_DIR/" "$SITE_REPO/"' not in _p6a_sh)
+check("P6a: und SITE_SUBDIR wird vorher geprueft - leer, absolut oder mit "
+      "'..' waere genau der Griff daneben",
+      '[[ "$SITE_SUBDIR" =~ ^[A-Za-z0-9_-]+$ ]]' in _p6a_sh)
+check("P6a: gestaged wird nur das Unterverzeichnis (ein 'git add -A' naehme im "
+      "zusammengelegten Repo auch Quellcode mit, der auf CT103 liegen blieb)",
+      'git add -A -- "$SITE_SUBDIR"' in _p6a_sh and "\ngit add -A\n" not in _p6a_sh)
+check("P6a: der Klon wird vor dem Schreiben hart auf origin gezogen - sonst "
+      "scheitert der Push still, sobald jemand Quellcode von woanders pusht",
+      'git -C "$SITE_REPO" fetch -q origin "$BRANCH"' in _p6a_sh
+      and 'reset -q --hard "origin/$BRANCH"' in _p6a_sh)
+check("P6a: die Vollstaendigkeits-Pruefung deckt alle vier Oberflaechen ab, "
+      "nicht nur die Startseite",
+      "for datei in index.html herzen.html orte/index.html data/index.json" in _p6a_sh)
+check("P6a: und sie zaehlt die Tagesdateien erst, nachdem sie das Verzeichnis "
+      "geprueft hat - fehlt es, brach das Skript wegen 'set -o pipefail' "
+      "stumm ab, ohne eine Zeile ins Cron-Log zu schreiben (Fassung vor P6a)",
+      'if [[ -d "$EXPORT_DIR/data/days" ]]; then' in _p6a_sh
+      and "2>/dev/null | wc -l)" not in _p6a_sh)
+check("P6a: es gibt einen Probelauf ohne Commit und ohne Push (DRY_RUN) und "
+      "einen Export ohne Docker (EXPORT_MODE=lokal) - nur damit laesst sich "
+      "dieser Weg ueberhaupt ausserhalb von CT103 durchspielen",
+      'DRY_RUN="${DRY_RUN:-0}"' in _p6a_sh and "EXPORT_MODE" in _p6a_sh
+      and 'if [[ "$DRY_RUN" == "1" ]]' in _p6a_sh)
+check("P6a: der Export im Container zielt unveraendert auf /app/data/site - "
+      "das ist der einzige Pfad, den der Host per Bind-Mount ueberhaupt sieht",
+      "docker exec \"$CONTAINER\" python3 tools/export_static.py --out /app/data/site" in _p6a_sh)
 
 print("\nAlle Smoke-Tests erfolgreich.")

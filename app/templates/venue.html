@@ -20,7 +20,7 @@
   <header class="masthead masthead-simple">
     <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
   </header>
-  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a> · <a href="{{ urls.venues_index }}">Alle Orte</a></nav>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a> · <a href="{{ urls.venues_index }}">Alle Orte</a> · <a href="{{ urls.hearts_index }}">{% if mode == 'static' %}Handverlesen{% else %}Herzen{% endif %}</a></nav>
 
   <article class="venue-head">
     <div class="venue-cover{% if not cover %} placeholder{% endif %}"

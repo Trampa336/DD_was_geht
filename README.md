@@ -83,11 +83,58 @@ noch einmal `docker compose up --build -d`.
 
 ## Öffentliche Seite für Freunde
 
-Read-only, ohne Bewerten-Buttons: **https://trampa336.github.io/DD_was_geht/**
+Read-only, ohne Herz-Knöpfe. Der Host exportiert den Bestand alle paar Stunden
+als statische Seite und pusht sie per Cron (`tools/publish_site.sh`) auf GitHub
+Pages – ohne Portfreigabe oder Tunnel. Details zum Export:
+`tools/export_static.py`.
 
-Der Pi exportiert den Bestand alle paar Stunden als statische Seite und pusht sie
-per Cron (`tools/publish_site.sh`) auf GitHub Pages – ohne Portfreigabe oder
-Tunnel. Details zum Export: `tools/export_static.py`.
+Exportiert werden **alle vier Oberflächen**: die durchsuchbare Liste
+(`index.html`), die kuratierte Auswahl (`herzen.html`, Entscheidung #27), der
+Orte-Index (`orte/index.html`) und eine Seite je Ort. Was nie mitkommt, ist der
+**Schreibweg**: kein Herz-Knopf, kein `herzen.js`, keine `/api/herz`-Route –
+nicht abgeschaltet, sondern gar nicht erst im Bundle (Entscheidung #8).
+`tests_smoke.py` prüft das über *jede* gebaute Datei, nicht nur über
+`index.html`.
+
+### Ein Repo, Seite unter `docs/`
+
+Quellcode und gebaute Seite liegen im **selben** Repo
+(`github.com/Trampa336/dd-was-geht`), die Seite unter `docs/`. GitHub Pages
+kennt bei „deploy from a branch“ genau zwei Wurzeln, `/` und `/docs`; `/` würde
+den kompletten Quellbaum als Website ausliefern. Der Export verlinkt daher
+ausschließlich **relativ** (`tools/export_static.py:_static_urls`) und
+funktioniert in einem Unterverzeichnis unverändert – ein einziger absoluter
+Link (`/orte`, `/herzen`) wäre dort tot, und genau darauf prüft `tests_smoke.py`
+über alle HTML-Dateien des Exports.
+
+`rsync --delete` zielt deshalb auf `$SITE_REPO/docs/`, nicht auf das Repo:
+ein halber Export kann nur noch die Seite leeren, nie den Quellbaum daneben
+löschen.
+
+### Probelauf ohne Docker und ohne Push
+
+```bash
+EXPORT_MODE=lokal PYTHON=../.venv/bin/python DRY_RUN=1 \
+  SITE_REPO=/pfad/zum/klon tools/publish_site.sh
+```
+
+Das ist der einzige Weg, den Veröffentlichungspfad außerhalb von CT103 zu
+fahren: Export, Vollständigkeits-Prüfung, `rsync`, Staging – alles bis vor den
+Commit. Was danach kommt (`git push` über den Deploy-Key, der Pages-Build
+selbst) lässt sich lokal nicht prüfen.
+
+**Stand:** der neue Pfad ist gebaut und lokal grün; die Umstellung der
+Live-Seite ist ein eigener, angekündigter Schritt. Bis dahin läuft die
+öffentliche Seite unverändert aus dem alten Repo:
+
+| | URL |
+|---|---|
+| heute live (altes Repo `DD_was_geht`) | https://trampa336.github.io/DD_was_geht/ |
+| nach der Umstellung | https://trampa336.github.io/dd-was-geht/ |
+
+**Die URL ändert sich also.** Wer den alten Link hat, landet nach dem Abschalten
+des alten Repos im Nichts – wenn das stört, bleibt das alte Repo als
+Weiterleitungs-Seite stehen, statt gelöscht zu werden.
 
 ## Scraper kalibrieren
 
@@ -285,7 +332,7 @@ Die Kategorien stehen im Web-UI als eine einzige, nicht umbrechende Chip-Zeile �
 
 Ein Herz gilt der **ganzen Reihe**, nicht der einzelnen Vorstellung: die Frauenkirche führt dieselbe Tour fünf- bis achtmal am Tag als eigene, einzeln buchbare Events, und ein Herz auf einer zusammengefassten Zeile (siehe P5x) meint alle davon. Der Schlüssel dafür ist `Tag|Ort|normalisierter Titel` (`normalize.run_key()`, Gegenstück `runKey()` in `app/static/app.js`) – mit dem **Tag**, damit „die Dom-Führung am 20.09.“ und nicht „jede Dom-Führung, die es je geben wird“ geherzt ist. Zwei Vorstellungen desselben Titels am selben Abend im selben Haus teilen sich damit ein Herz, auch wenn sie als zwei Zeilen dastehen.
 
-Geherzt wird **nur im Heimnetz**: die Schreibroute `/api/herz` gibt es nur auf der Flask-Seite, `static/herzen.js` wird gar nicht erst mit exportiert, und `app.js` fragt die Herzen im statischen Modus nicht ab (`CAN_HEART`). Die kuratierte Seite selbst wird ebenfalls nicht exportiert. Verschwindet eine geherzte Reihe ganz aus den Quellen, bleibt der Eintrag stehen und meldet „nicht mehr gelistet“ – ein Herz wird nie von selbst gelöscht (Schnappschuss in der Tabelle `hearts`).
+Geherzt wird **nur im Heimnetz**: die Schreibroute `/api/herz` gibt es nur auf der Flask-Seite, `static/herzen.js` wird gar nicht erst mit exportiert, und `app.js` fragt die Herzen im statischen Modus nicht ab (`CAN_HEART`). Die kuratierte Seite selbst **wird** exportiert (Entscheidung #27), aber ohne Knopf: dieselbe Vorlage mit `mode="static"` rendert weder den Herz-Knopf noch die Serien-Schlüssel, die er bräuchte. Verschwindet eine geherzte Reihe ganz aus den Quellen, bleibt der Eintrag stehen und meldet „nicht mehr gelistet“ – ein Herz wird nie von selbst gelöscht (Schnappschuss in der Tabelle `hearts`).
 
 **„Sport & Bewegung“ meint Mitmachen, nicht Zuschauen:** Yoga, Pilates, offene Radausfahrten, Lauftreffs, Klettern, Wanderungen. Zuschauersport (Fußball, Liga- und Heimspiele, Public Viewing) ist ausdrücklich ausgenommen und bleibt in „Weiteres“. Weil Quellseiten solche Termine gern unter ihrer eigenen Rubrik führen – „Yoga im Alaunpark“ läuft auf rauze.de als Rohkategorie „Festival“ –, wird Sport in `normalize.classify_category()` als Titel-Vorprüfung **vor** `RAW_CATEGORY_MAP` ausgewertet, und mit Wortgrenzen statt Substring-Treffern: sonst würden „Weinbergswanderung“ (Weinprobe) oder „Der Wanderer über dem Nebelmeer“ (Musical) mitkommen.
 
@@ -359,7 +406,7 @@ dd-was-geht/
   tools/venue_readiness_report.py  Misst, wie viele Venues ueberhaupt etwas zum Zeigen haben (P5b)
   tools/enrich_venues_cybersax.py  Anreicherung ueber die cybersax-Adressseiten - fuer Venues ohne Kulturkalender-Seite (P5u)
   tools/export_static.py     Statischer Export für GitHub Pages (siehe „Öffentliche Seite für Freunde")
-  tools/publish_site.sh      Export + Push auf den Pi-Host (Cronjob)
+  tools/publish_site.sh      Export -> docs/ im selben Repo -> commit + push (Cronjob)
   tests_smoke.py             Schnelltest der Kernlogik ohne Netzwerk
   .env.example
   docker-compose.yml / Dockerfile

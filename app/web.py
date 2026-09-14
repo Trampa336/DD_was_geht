@@ -336,18 +336,21 @@ def hearts_page():
     Sie startet LEER (Entscheidung #19): keine Vorauswahl, kein Vorschlag, kein
     Seeding. Was hier steht, hat David selbst geherzt.
 
-    Bewusst NICHT im statischen Export (tools/export_static.py exportiert
-    index.html und die Venue-Seiten): die kuratierte Auswahl ist bis P6
-    ausschliesslich im Heimnetz zu sehen. Ob sie spaeter die oeffentliche Seite
-    wird, entscheidet David, nicht dieses Paket."""
+    Seit P6a (Entscheidung #27) wird sie AUCH exportiert - dieselbe Vorlage mit
+    mode="static", siehe tools/export_static.py. Oeffentlich ist das Ergebnis
+    der Auswahl; der Herz-Knopf bleibt hier (Entscheidung #8 unveraendert).
+    Geherzt und entherzt wird weiterhin ausschliesslich auf diesem Server."""
     today = date.today().isoformat()
     with db.get_conn() as conn:
         hearts = db.list_hearts(conn)
     upcoming = [h for h in hearts if h["date"] >= today]
     past = [h for h in hearts if h["date"] < today]
     past.reverse()
+    # generated_at_label traegt nur die statische Kopie ("Stand ..."); unter
+    # Flask ist die Seite immer aktuell, der Platzhalter bleibt leer.
     return render_template("herzen.html", upcoming=upcoming, past=past,
-                           mode="api", asset_v=ASSET_VERSION, urls=api_urls())
+                           mode="api", asset_v=ASSET_VERSION,
+                           generated_at_label="", urls=api_urls())
 
 
 def run_web():

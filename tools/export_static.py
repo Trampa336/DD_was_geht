@@ -10,12 +10,19 @@ statischen Kopie gibt es keinen Server, an den man schreiben koennte - und seit
 dem Umbau zeigt sie auch keine Herz-Knoepfe mehr. Geherzt wird ausschliesslich
 unter http://<pi>:1111, also aus dem Heimnetz. Mitexportiert wird nur das Ergebnis:
 das Feld "score" je Event, damit die Empfehlungszeile auch oeffentlich etwas zu
-zeigen hat. Die kuratierte Seite selbst (/herzen) wird NICHT exportiert - sie ist
-Davids Auswahl und bleibt bis auf Weiteres im Heimnetz.
+zeigen hat.
+
+Seit P6a wird auch die kuratierte Seite exportiert (Entscheidung #27): das
+ERGEBNIS der Auswahl ist oeffentlich, der Herz-Knopf selbst nie (Entscheidung #8
+unveraendert). Die Vorlage herzen.html traegt dafuer denselben mode-Schalter wie
+index.html - im static-Modus ohne Knopf, ohne data-run-key und ohne herzen.js.
 
 Ausgabe (in --out, Standard ./data/site):
 
     index.html            dieselbe Vorlage wie das Web-UI, nur mit mode="static"
+    herzen.html           die kuratierte Seite, read-only (Entscheidung #27)
+    orte/index.html       die Orte-Uebersicht
+    orte/<slug>.html      eine Seite je Ort
     static/*              Stylesheet und Skripte, dieselben Dateien wie auf dem Pi
                           (ohne herzen.js - siehe web.PUBLIC_ASSETS)
     data/index.json       welche Tage es gibt, mit Version je Tag (Cache-Buster)
@@ -63,12 +70,14 @@ def _static_urls(asset_v, under_orte=False):
         return {
             "index": "../index.html",
             "venues_index": "index.html",
+            "hearts_index": "../herzen.html",
             "venue": lambda slug: f"{slug}.html",
             "asset": lambda name: f"../static/{name}?v={asset_v}",
         }
     return {
         "index": "index.html",
         "venues_index": "orte/index.html",
+        "hearts_index": "herzen.html",
         "venue": lambda slug: f"orte/{slug}.html",
         "asset": lambda name: f"static/{name}?v={asset_v}",
     }
@@ -76,13 +85,26 @@ def _static_urls(asset_v, under_orte=False):
 
 def _write(path, text):
     """Schreibt nur, wenn sich der Inhalt geaendert hat - sonst sieht Git eine
-    Aenderung, wo keine ist, und jeder Push traegt unnoetige Blobs nach."""
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as handle:
-            if handle.read() == text:
+    Aenderung, wo keine ist, und jeder Push traegt unnoetige Blobs nach.
+
+    Verglichen wird BYTEWEISE, nicht im Textmodus (P6a). Im Textmodus macht
+    Python beim Lesen aus jedem \\r\\n ein \\n (universal newlines); ein
+    gerendertes \\r\\n las sich also immer wieder als "geaendert", obwohl auf
+    der Platte Byte fuer Byte dasselbe stand. Real gemessen: genau ein
+    Event-Titel aus dem Scrape traegt ein CRLF ("King Of Pop: A Tribute to
+    Michael Jackson ... von\\r\\nMichael Jackson"), und orte/boulevardtheater.html
+    wurde deshalb bei JEDEM Export neu geschrieben. Git sah davon nie etwas -
+    die Zaehlung in der Ausgabe ("venues_written") log aber, und zwar in die
+    Richtung, in der man sie am wenigsten hinterfragt."""
+    data = text.encode("utf-8")
+    try:
+        with open(path, "rb") as handle:
+            if handle.read() == data:
                 return False
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(text)
+    except FileNotFoundError:
+        pass
+    with open(path, "wb") as handle:
+        handle.write(data)
     return True
 
 
@@ -128,6 +150,9 @@ def export(out_dir, days_ahead=45, today=None):
         # Venue-Seiten (P5b): ungefenstert (nicht auf days_ahead begrenzt wie
         # die Tagesdateien oben) - eine Venue-Seite soll den vollen bekannten
         # Vorlauf zeigen, nicht nur die naechsten 45 Tage.
+        # Die kuratierte Seite (Entscheidung #27). Dieselbe Abfrage wie
+        # web.hearts_page - eine Quelle, zwei Aufrufer, wie bei index.html.
+        hearts = db.list_hearts(conn)
         venues = db.list_venues(conn, today.isoformat())
         venue_events = {}
         venue_last_past = {}
@@ -218,6 +243,26 @@ def export(out_dir, days_ahead=45, today=None):
         )
     _write(os.path.join(out_dir, "index.html"), html)
 
+    # --- Die kuratierte Seite (P6a, Entscheidung #27) ------------------------
+    # Oeffentlich ist das ERGEBNIS der Auswahl, nie der Weg dorthin: dieselbe
+    # Vorlage wie unter Flask, nur mode="static" - damit faellt der Herz-Knopf
+    # weg (samt data-run-key/data-uid) und herzen.js wird gar nicht erst
+    # verlinkt. Der Exporter kopiert es ohnehin nicht mit (web.PUBLIC_ASSETS).
+    # Entscheidung #8 bleibt damit woertlich erfuellt: in der oeffentlichen
+    # Kopie liegt nicht einmal der Code, der /api/herz aufrufen wuerde.
+    hearts_today = today.isoformat()
+    hearts_upcoming = [h for h in hearts if h["date"] >= hearts_today]
+    hearts_past = [h for h in hearts if h["date"] < hearts_today]
+    hearts_past.reverse()
+    with flask_app.test_request_context("/"):
+        hearts_html = flask_app.jinja_env.get_template("herzen.html").render(
+            upcoming=hearts_upcoming, past=hearts_past, mode="static",
+            asset_v=asset_v,
+            generated_at_label=datetime.fromisoformat(generated_at).strftime("%d.%m.%Y, %H:%M"),
+            urls=_static_urls(asset_v),
+        )
+    _write(os.path.join(out_dir, "herzen.html"), hearts_html)
+
     # --- Venue-Seiten (P5b) --------------------------------------------------
     # Kernannahme des Pakets: ein Event fuehrt auf eine Venue-Seite INNERHALB
     # der App, nicht zum Kulturkalender (decision #4) - das muss auch in der
@@ -270,6 +315,7 @@ def export(out_dir, days_ahead=45, today=None):
         "venues": len(venues),
         "venues_written": venues_written,
         "venues_removed": venues_removed,
+        "hearts": len(hearts),
         "bytes": sum(
             os.path.getsize(os.path.join(root, name))
             for root, _, names in os.walk(out_dir) for name in names
@@ -296,7 +342,8 @@ def main():
               f"{stats['days_written']} Tagesdateien neu/geaendert, "
               f"{stats['days_removed']} entfernt). "
               f"{stats['venues']} Venue-Seiten ({stats['venues_written']} neu/geaendert, "
-              f"{stats['venues_removed']} entfernt).")
+              f"{stats['venues_removed']} entfernt). "
+              f"Kuratierte Seite: {stats['hearts']} Eintraege.")
 
 
 if __name__ == "__main__":

@@ -55,11 +55,12 @@ window.DD = {
   <header class="masthead">
     <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
     <div class="masthead-right">
-      {# Die kuratierte Seite gibt es nur im Heimnetz (siehe web.hearts_page) -
-         in der oeffentlichen Kopie liegt sie nicht, also darf dort auch kein
-         Link darauf stehen. #}
-      <nav class="site-nav"><a href="{{ urls.venues_index }}">Alle Orte</a>{% if mode != 'static' %}
-        <a href="{{ urls.hearts_index }}">Herzen</a>{% endif %}</nav>
+      {# Die kuratierte Seite steht seit P6a in BEIDEN Fassungen (Entscheidung
+         #27) - im Heimnetz mit Herz-Knoepfen, oeffentlich ohne. Der Link ist
+         deshalb nicht mehr an den Modus gebunden; was am Modus haengt, ist
+         allein der Schreibweg (siehe app/templates/herzen.html). #}
+      <nav class="site-nav"><a href="{{ urls.venues_index }}">Alle Orte</a>
+        <a href="{{ urls.hearts_index }}">{% if mode == 'static' %}Handverlesen{% else %}Herzen{% endif %}</a></nav>
       <div class="masthead-meta"><div class="city">Elbflorenz · Sachsen</div><div id="today-label"></div></div>
       <div class="switches">
         <div class="theme-switch">
@@ -199,7 +200,7 @@ window.DD = {
   </div>
 
   {% if mode == 'static' %}
-  <p class="footnote">Stand {{ generated_at_label }} · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite.</p>
+  <p class="footnote">Stand {{ generated_at_label }} · Gesammelt aus Dresdner Veranstaltungskalendern. Die Empfehlungen der Woche stammen aus dem persönlichen Modell hinter der Seite, die <a href="{{ urls.hearts_index }}">handverlesene Auswahl</a> von Hand.</p>
   {% else %}
   <p class="footnote">Live aus deiner eigenen Datenbank auf dem Raspberry Pi. Ein Herz nimmt eine Veranstaltung in <a href="{{ urls.hearts_index }}">deine Auswahl</a> auf – und die „Für dich"-Empfehlungen lernen daraus.</p>
   {% endif %}

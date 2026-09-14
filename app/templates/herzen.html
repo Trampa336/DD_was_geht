@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Herzen · DD was geht</title>
+{% if mode == 'static' %}
+{# Wie index.html: die oeffentliche Kopie ist "unlisted", nicht geheim. #}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>{% if mode == 'static' %}Handverlesen{% else %}Herzen{% endif %} · DD was geht</title>
 <script src="{{ urls.asset('boot.js') }}"></script>
 <link rel="stylesheet" href="{{ urls.asset('app.css') }}">
 </head>
@@ -13,8 +17,20 @@
   geherzt hat - keine Vorauswahl, kein Vorschlag, kein Seeding (Entscheidung
   #19). Am Tag der Auslieferung ist sie leer, und das ist richtig so.
 
-  Es gibt sie bewusst NUR unter Flask im Heimnetz; tools/export_static.py
-  exportiert index.html und die Venue-Seiten, diese Seite nicht.
+  ZWEI BETRIEBSARTEN, eine Vorlage - genau wie index.html (P6a, Entscheidung
+  #27):
+    'api'    = Flask im Heimnetz. Hier wird geherzt und entherzt.
+    'static' = die oeffentliche Kopie auf GitHub Pages. Sie zeigt das ERGEBNIS
+               der Auswahl und sonst nichts: kein Herz-Knopf, kein
+               data-run-key, kein herzen.js (Entscheidung #8 unveraendert).
+               Der Exporter kopiert herzen.js ohnehin nicht mit
+               (app/web.py:PUBLIC_ASSETS) - in der oeffentlichen Kopie liegt
+               also nicht einmal der Code, der /api/herz aufrufen wuerde.
+
+  Warum die Ueberschrift im static-Modus nicht "Deine Herzen" heisst: auf der
+  oeffentlichen Seite ist "deine" der Besucher, und dessen eigene Likes sind
+  etwas voellig anderes (Entscheidung #3b - pro Browser, localStorage, nichts
+  davon landet hier). Die beiden duerfen sich nicht anfuehlen wie dasselbe.
 
   Ein Eintrag ist eine SERIE (Entscheidung #26), keine einzelne Zeigung:
   die Frauenkirche fuehrt dieselbe Tour 5-8 mal am Tag: eine Zeile, alle
@@ -27,14 +43,23 @@
   <header class="masthead masthead-simple">
     <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
   </header>
-  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a></nav>
+  <nav class="breadcrumb"><a href="{{ urls.index }}">&larr; Zur Übersicht</a> · <a href="{{ urls.venues_index }}">Alle Orte</a></nav>
 
+  {% if mode == 'static' %}
+  <h2 class="venues-index-title">Handverlesen ({{ (upcoming | length) + (past | length) }})</h2>
+  <p class="venues-index-hint">
+    Die Auswahl hinter der Seite: jede Zeile hier wurde von Hand markiert, nicht von einem
+    Programm vorgeschlagen. Eine Markierung gilt der ganzen Reihe – bei einer Führung mit
+    fünf Startzeiten also allen fünf.
+  </p>
+  {% else %}
   <h2 class="venues-index-title">Deine Herzen ({{ (upcoming | length) + (past | length) }})</h2>
   <p class="venues-index-hint">
     Alles, was du in der Liste mit einem Herz markiert hast. Ein Herz gilt der ganzen Reihe –
     bei einer Führung mit fünf Startzeiten also allen fünf. Die Auswahl bleibt hier stehen,
     auch wenn die Quelle ihre Einträge umbaut.
   </p>
+  {% endif %}
 
   {% macro herz_zeile(h) %}
   <article class="herz-row{% if not h.live %} herz-row-verwaist{% endif %}">
@@ -54,8 +79,12 @@
     </div>
     <div class="herz-row-actions">
       {% if h.url %}<a class="modal-source-link" href="{{ h.url }}" target="_blank" rel="noopener noreferrer">zur Quelle &#8599;</a>{% endif %}
+      {% if mode != 'static' %}
+      {# Der Knopf existiert nur in der Flask-Fassung. Nicht abgeschaltet -
+         gar nicht erst gerendert, samt der Schluessel, die er braeuchte. #}
       <button class="herz herz-entfernen" type="button" data-run-key="{{ h.run_key }}" data-uid="{{ h.uid }}"
               aria-label="Herz entfernen" title="Herz entfernen">♥</button>
+      {% endif %}
     </div>
   </article>
   {% endmacro %}
@@ -63,6 +92,11 @@
   {% if upcoming %}
   <div class="herzen-liste">
     {% for h in upcoming %}{{ herz_zeile(h) }}{% endfor %}
+  </div>
+  {% elif mode == 'static' %}
+  <div class="empty-state">
+    Hier steht noch nichts. Die Auswahl wird von Hand gefüllt – schau später noch mal vorbei,
+    oder stöbere in der <a href="{{ urls.index }}">vollständigen Liste</a>.
   </div>
   {% else %}
   <div class="empty-state">
@@ -78,13 +112,23 @@
   </div>
   {% endif %}
 
+  {% if mode == 'static' %}
   <p class="footnote">
-    Diese Seite gibt es nur hier im Heimnetz. Was auf ihr steht, entscheidest ausschließlich du –
-    vorgeschlagen wird hier nichts.
+    Stand {{ generated_at_label }} · Reine Lesekopie. Markiert wird ausschließlich in der
+    privaten Fassung – auf dieser Seite gibt es keinen Server, an den eine Markierung ginge.
   </p>
+  {% else %}
+  <p class="footnote">
+    Was auf dieser Seite steht, entscheidest ausschließlich du – vorgeschlagen wird hier nichts.
+    Die öffentliche Kopie zeigt dieselbe Auswahl, aber ohne Herz-Knöpfe.
+  </p>
+  {% endif %}
 </div>
+{% if mode != 'static' %}
 {# Dieselbe Datei, die auch die Liste einbindet: sie bringt den Herz-Knopf fuer
-   app.js mit UND haengt sich an die schon gerenderten Knoepfe dieser Seite. #}
+   app.js mit UND haengt sich an die schon gerenderten Knoepfe dieser Seite.
+   Im static-Modus gibt es weder das eine noch das andere. #}
 <script src="{{ urls.asset('herzen.js') }}"></script>
+{% endif %}
 </body>
 </html>
