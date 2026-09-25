@@ -24,6 +24,15 @@ def _ev(uid, source, title, venue, time="20:00", **kw):
                 ort_roh=venue, category=kw.pop("category", "musik"), **kw)
 
 
+def test_herz_mehrere_slugs_oder_suchtext():
+    from ddwg.__main__ import herz_ziele
+    orte = _orte()
+    assert herz_ziele(orte, ["strasse-e", "meissner-dom"]) == ["strasse-e", "meissner-dom"]
+    assert herz_ziele(orte, ["strasse-e", "strasse-e"]) == ["strasse-e"]
+    assert herz_ziele(orte, ["Reithalle", "Straße", "E"]) == ["strasse-e"]   # Suchtext wie bisher
+    assert herz_ziele(orte, ["gibt-es-nicht"]) == []
+
+
 def test_uid_stabil():
     a = normalize.make_event_uid("2026-09-26", "20:00", "Konzert", "Ostpol")
     assert a == normalize.make_event_uid("2026-09-26", "20:00", "Konzert", "Ostpol")

@@ -4,9 +4,12 @@ Kein Server, keine Nachladerei: die Events der naechsten Wochen stehen als JSON
 in der Seite, gerendert und gefiltert wird im Browser (ddwg/vorlage/index.html).
 Doppelklick genuegt.
 
-Diese Seite ist der Zwischenstand bis zum UI-Umbau. Wer daran baut, aendert die
-Vorlage - dieses Modul liefert nur die Daten (daten()) und fuellt sie ein.
+Die Oberflaeche (Zeitstrahl-Galerie und Entdecken-Karte) steckt in der Vorlage;
+beim Bauen wird zusaetzlich die Schrift TeX Gyre Heros eingebettet. Wer an der
+Oberflaeche baut, aendert die Vorlage - dieses Modul liefert nur die Daten
+(daten()) und fuellt sie samt Schrift ein.
 """
+import base64
 import json
 import os
 from datetime import date, datetime, timedelta
@@ -64,9 +67,12 @@ def daten(conn, orte, heute=None, tage=None):
         ort = orte.get(slug)
         if not ort:
             continue
+        lat, lon = ort.get("lat"), ort.get("lon")
         orte_out[slug] = {k: v for k, v in {
             "n": ort.get("name"), "h": 1 if ort.get("herz") else None,
             "w": ort.get("homepage"), "a": ort.get("adresse"), "art": ort.get("art"),
+            "lat": round(lat, 5) if lat is not None else None,
+            "lon": round(lon, 5) if lon is not None else None,
         }.items() if v}
 
     return {
@@ -79,6 +85,22 @@ def daten(conn, orte, heute=None, tage=None):
     }
 
 
+SCHRIFT_DIR = os.path.join(os.path.dirname(VORLAGE_PATH), "schrift")
+
+
+def _schrift_css():
+    """@font-face-Regeln mit den TeX-Gyre-Heros-Dateien als data:-URIs."""
+    def b64(datei):
+        with open(os.path.join(SCHRIFT_DIR, datei), "rb") as fh:
+            return base64.b64encode(fh.read()).decode("ascii")
+    return (
+        "@font-face{font-family:'TeX Gyre Heros';font-weight:400 500;font-display:swap;"
+        "src:url(data:font/woff2;base64,%s) format('woff2')}"
+        "@font-face{font-family:'TeX Gyre Heros';font-weight:600 900;font-display:swap;"
+        "src:url(data:font/woff2;base64,%s) format('woff2')}"
+    ) % (b64("texgyreheros-regular.woff2"), b64("texgyreheros-bold.woff2"))
+
+
 def schreiben(conn=None, orte=None, pfad=None, heute=None):
     orte = orte or Orte.load()
     if conn is None:
@@ -89,6 +111,7 @@ def schreiben(conn=None, orte=None, pfad=None, heute=None):
     payload = payload.replace("</", "<\\/")
     with open(VORLAGE_PATH, encoding="utf-8") as fh:
         html = fh.read().replace("/*__DATEN__*/null", payload)
+    html = html.replace("/*__SCHRIFT__*/", _schrift_css())
     pfad = pfad or AUSGABE_PATH
     os.makedirs(os.path.dirname(pfad), exist_ok=True)
     with open(pfad, "w", encoding="utf-8") as fh:

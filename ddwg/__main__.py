@@ -3,6 +3,7 @@
     python -m ddwg scrape [--tage 31] [--quelle rauze ...] [--ohne-details]
     python -m ddwg build            events neu bauen + ausgabe/index.html schreiben
     python -m ddwg herz <ort>       Ort als Herz-Ort markieren (--weg: entfernen)
+    python -m ddwg herz <slug> ...  mehrere Orte auf einmal (exakte slugs)
     python -m ddwg herz --liste     alle Herz-Orte
     python -m ddwg orte <suche>     Orte suchen (slug, Name, Alias)
     python -m ddwg status           letzte Laeufe je Quelle, Bestand, neue Orte
@@ -50,18 +51,29 @@ def _finde_ort(orte, text):
     return None
 
 
+def herz_ziele(orte, woerter):
+    """Welche Orte meint 'herz'? Sind alle Woerter exakte slugs, sind es mehrere
+    Orte (so kopiert es die Seite: 'herz ostpol scheune'). Sonst ist es ein
+    Suchtext wie bisher ('herz straße e')."""
+    if len(woerter) > 1 and all(w in orte.by_slug for w in woerter):
+        return list(dict.fromkeys(woerter))
+    slug = _finde_ort(orte, " ".join(woerter))
+    return [slug] if slug else []
+
+
 def cmd_herz(args):
     orte = Orte.load()
     if args.liste or not args.ort:
         for slug in orte.herz_orte():
             print(f"  ♥ {slug:40} {orte[slug].get('name')}")
         return
-    slug = _finde_ort(orte, " ".join(args.ort))
-    if not slug:
+    ziele = herz_ziele(orte, args.ort)
+    if not ziele:
         sys.exit(1)
-    orte.set_herz(slug, an=not args.weg)
+    for slug in ziele:
+        orte.set_herz(slug, an=not args.weg)
+        print(("Herz entfernt: " if args.weg else "♥ Herz gesetzt: ") + f"{slug} ({orte[slug].get('name')})")
     orte.save()
-    print(("Herz entfernt: " if args.weg else "♥ Herz gesetzt: ") + f"{slug} ({orte[slug].get('name')})")
     print("Danach 'python -m ddwg build', damit die Ausgabe es zeigt.")
 
 

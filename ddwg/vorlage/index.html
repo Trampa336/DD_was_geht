@@ -2,235 +2,518 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a12">
 <title>DD was geht</title>
+<style>/*__SCHRIFT__*/</style>
 <style>
 :root {
-  --bg: #f6f4ef; --surface: #ffffff; --ink: #1d1f20; --ink-soft: #5b6064; --ink-faint: #8a8f93;
-  --line: #e2ded5; --accent: #1f8a82; --accent-soft: #dff1ee; --heart: #d6336c; --heart-soft: #fbe3ec;
-  --radius: 12px; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131718; --surface: #1b2022; --ink: #e8eaeb; --ink-soft: #a7adb1; --ink-faint: #737a7e;
-    --line: #2a3134; --accent: #4fc3ba; --accent-soft: #1b3533; --heart: #ff6b9a; --heart-soft: #3a1f2a;
-  }
+  --bg:#0b0a12; --surface:#15141f; --surface2:#1f1d2e; --ink:#f3f0ff; --soft:#b4afcc; --faint:#77718f;
+  --line:#2a2840; --accent:#ff2e88; --on-accent:#fff; --accent2:#27e0ff; --heart:#ff4d6d;
+  --f:'TeX Gyre Heros', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --r:14px; --r-s:10px; --rail:58px; --schritt:74px; --mitte:40vh;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 60px; }
-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 14px; }
-h1 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
-.stand { color: var(--ink-faint); font-size: 13px; }
-#suche { margin-left: auto; min-width: 220px; flex: 0 1 280px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; }
-.leiste { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 18px; }
-.pill { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); font: inherit; font-size: 13.5px; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
-.pill[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
-.pill.herz[aria-pressed="true"] { background: var(--heart-soft); border-color: var(--heart); }
-section { margin-top: 26px; }
-section > h2 { font-size: 19px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
-section > h2 .n { font-size: 13px; font-weight: 500; color: var(--ink-faint); }
-.hinweis { color: var(--ink-faint); font-size: 13px; margin: 2px 0 10px; }
-.tag { margin: 18px 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
-.ev { display: grid; grid-template-columns: 52px 1fr auto; gap: 4px 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 6px; }
-.ev.herz { border-left: 3px solid var(--heart); }
-.ev .zeit { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-soft); padding-top: 1px; }
-.ev .titel { font-weight: 650; color: var(--ink); text-decoration: none; }
-.ev a.titel:hover { text-decoration: underline; }
-.ev .meta { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
-.ev .meta a { color: inherit; }
-.ev .meta .sep { color: var(--ink-faint); margin: 0 5px; }
-.ev .q { font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; }
-.ev img { width: 76px; height: 54px; object-fit: cover; border-radius: 8px; background: var(--line); }
-.ev details { grid-column: 2 / 4; font-size: 13.5px; color: var(--ink-soft); }
-.ev summary { cursor: pointer; color: var(--accent); font-size: 12.5px; list-style: none; }
-.ev summary::-webkit-details-marker { display: none; }
-.ev details p { margin: 6px 0 0; white-space: pre-line; }
-.badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--ink-soft); margin-left: 6px; vertical-align: 1px; }
-.mehr { appearance: none; border: 1px dashed var(--line); background: transparent; color: var(--accent); font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer; margin: 2px 0 6px; }
-.leer { color: var(--ink-faint); font-size: 14px; padding: 12px 0; }
-.filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
-.filter .trenner { width: 1px; background: var(--line); margin: 0 4px; }
-@media (max-width: 560px) {
-  #suche { margin-left: 0; flex: 1 1 100%; }
-  .ev { grid-template-columns: 44px 1fr; }
-  .ev img { display: none; }
-  .ev details { grid-column: 2; }
-}
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 15px/1.4 var(--f); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(70% 40% at 10% -5%, rgba(255,46,136,.18), transparent 70%), radial-gradient(60% 35% at 105% 10%, rgba(39,224,255,.12), transparent 70%); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+a { color: var(--accent); }
+svg { flex: none; }
+#app { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
+main { flex: 1; }
+
+/* ---------- Kopf ---------- */
+.kopf { padding: 18px 16px 6px calc(var(--rail) + 8px); transition: padding .15s; }
+#app[data-tab="karte"] .kopf { padding-left: 16px; }
+.kopf h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+.kopf h1 b { color: var(--accent); font-weight: inherit; }
+.kopf p { margin: 4px 0 0; font-size: 12px; color: var(--faint); }
+
+/* ---------- Reiter unten ---------- */
+.reiter { order: 99; position: sticky; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 30; display: flex; gap: 4px; margin: 14px 12px 10px; padding: 5px; border-radius: calc(var(--r) + 4px); background: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.reiter button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 8px; border-radius: var(--r-s); color: var(--soft); font-weight: 650; font-size: 14px; }
+.reiter button[aria-selected=true] { background: var(--accent); color: var(--on-accent); }
+
+/* ---------- Zeitstrahl links (nur im Reiter "Was geht") ---------- */
+.rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none; }
+#app[data-tab="karte"] .rail { display: none; }
+.rail.greift .tl-datum.aktiv span { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(0,0,0,.45); }
+.rand { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 2; }
+.rand.oben { top: 14px; }
+.rand.unten { bottom: calc(96px + env(safe-area-inset-bottom)); }
+.rd { display: flex; flex-direction: column; align-items: center; min-width: 40px; padding: 3px 0; border-radius: 8px; background: var(--bg); line-height: 1.05; opacity: .7; }
+.rd small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.rd b { font-size: 15px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
+.rd.we small, .rd.we b { color: var(--accent2); }
+.rd:active { opacity: 1; }
+.rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background-image: radial-gradient(circle, var(--faint) 0 1px, transparent 1.3px); background-size: 2px 7px; opacity: .7; }
+.rail.we::before { background-image: radial-gradient(circle, var(--accent2) 0 1px, transparent 1.3px); opacity: .55; }
+.tl-datum { position: absolute; left: 0; right: 0; top: var(--mitte); height: 52px; margin-top: -26px; display: flex; flex-direction: column; align-items: center; justify-content: center; will-change: transform, opacity; }
+.tl-datum span { display: flex; flex-direction: column; align-items: center; padding: 4px 0; min-width: 42px; border-radius: 10px; background: var(--bg); line-height: 1.05; }
+.tl-datum small { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); }
+.tl-datum b { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tl-datum i { font-style: normal; font-size: 9.5px; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
+.tl-datum.we small, .tl-datum.we b { color: var(--accent2); }
+.tl-datum.aktiv span { box-shadow: 0 0 0 1px var(--line), 0 6px 20px rgba(0,0,0,.45); background: var(--surface); }
+.tl-datum.aktiv.we span { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent), 0 6px 20px rgba(0,0,0,.45); }
+
+/* ---------- Galerie: Liste über alle Tage ---------- */
+#tab-was { padding: 0 12px 40vh calc(var(--rail) + 8px); }
+.tag { padding-top: 18px; }
+.tag-kopf { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--soft); }
+.tag-kopf em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--faint); }
+.tag.we .tag-kopf { color: var(--accent2); }
+.raster { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gk { position: relative; display: block; border-radius: var(--r); overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+.gk.herz { border-color: color-mix(in srgb, var(--heart) 70%, transparent); }
+.medium { display: block; width: 100%; aspect-ratio: 4/5; object-fit: cover; background: var(--surface2); }
+.poster { display: flex; align-items: flex-end; padding: 10px; overflow: hidden; font-weight: 700; font-size: 20px; line-height: 1.02; word-break: break-word; hyphens: auto; letter-spacing: -.01em; }
+.p0 { background: var(--accent); color: var(--on-accent); }
+.p1 { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+.p2 { background: var(--surface2); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+.p3 { background: var(--surface2); color: var(--accent2); box-shadow: inset 0 0 0 2px var(--accent2); }
+.herz-b { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--heart); color: #fff; font-size: 10.5px; font-weight: 700; }
+.gk-txt { display: block; padding: 8px 10px 10px; }
+.gk-zeit { display: block; font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.gk-titel { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; font-size: 14px; font-weight: 700; line-height: 1.22; }
+.gk-ort { display: block; margin-top: 3px; font-size: 11.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gk-ort.h { color: var(--heart); }
+.mehr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 120px; border-radius: var(--r); border: 1px dashed var(--line); color: var(--soft); font-size: 13px; text-align: center; padding: 10px; }
+.mehr b { font-size: 22px; color: var(--accent); }
+
+/* ---------- Entdecken: Karte ---------- */
+.karte-rahmen { position: relative; margin: 0 12px; height: calc(100dvh - 190px); min-height: 380px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: var(--surface2); }
+#karte { position: absolute; inset: 0; }
+#karte .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) saturate(.45) brightness(.85) contrast(1.05); }
+#karte.leaflet-container { background: var(--surface2); font-family: var(--f); }
+.karte-aus { display: grid; place-items: center; height: 100%; padding: 20px; text-align: center; color: var(--faint); font-size: 14px; }
+.karte-oben { position: absolute; top: 0; left: 0; right: 0; z-index: 500; display: grid; gap: 6px; padding: 10px 0 24px; background: linear-gradient(color-mix(in srgb, var(--bg) 85%, transparent), transparent); pointer-events: none; }
+.zeile { display: flex; gap: 6px; overflow-x: auto; padding: 0 10px; scrollbar-width: none; pointer-events: auto; }
+.zeile::-webkit-scrollbar { display: none; }
+.fc { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-size: 12.5px; font-weight: 700; color: var(--soft); }
+.fc em { font-style: normal; opacity: .65; font-size: 11px; }
+.fc[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.fc.herzfc[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
+.fc.uebernehmen { background: var(--heart); border-color: var(--heart); color: #fff; }
+.trenner { flex: none; width: 1px; margin: 4px 2px; background: var(--line); }
+.legende { margin: 8px 16px 0; font-size: 11.5px; color: var(--faint); }
+.mk { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 2px solid var(--bg); font: 700 11px var(--f); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
+.mk.klein { font-size: 0; }
+.mk.h { background: var(--heart); color: #fff; font-size: 15px; border: 3px solid var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--heart) 35%, transparent); }
+.mk.cl { background: var(--surface); color: var(--accent); border: 2px solid var(--accent); font-size: 12px; box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent); }
+.mk.gewaehlt { outline: 3px solid var(--ink); outline-offset: 3px; }
+.ort-karte { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 600; max-height: 60%; overflow: auto; padding: 12px 12px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 12px 40px rgba(0,0,0,.55); animation: hoch .2s ease-out; }
+.ort-karte[hidden] { display: none; }
+.ok-kopf { display: flex; align-items: flex-start; gap: 10px; }
+.ok-kopf h3 { flex: 1; margin: 0; font-size: 21px; font-weight: 700; line-height: 1.1; }
+.ok-kopf h3 small { display: block; margin-top: 4px; font: 400 12px var(--f); color: var(--soft); }
+.ok-zu { width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--r-s); background: var(--surface2); }
+.ok-ev { display: grid; grid-template-columns: 74px 1fr; gap: 8px; width: 100%; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.ok-ev .ev-zeit { margin: 0; font-size: 12px; }
+.ok-ev b { font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ok-aktionen { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+.herzknopf { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; border-radius: var(--r-s); font-weight: 700; font-size: 14px; background: var(--heart); color: #fff; border: 1px solid var(--heart); }
+.herzknopf[aria-pressed=true] { background: transparent; color: var(--heart); }
+.befehl { margin: 12px 0 0; padding: 12px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; word-break: break-all; }
+.aend { margin: 12px 0 0; padding: 0; list-style: none; font-size: 13.5px; }
+.aend li { padding: 5px 0; border-top: 1px solid var(--line); }
+.aend .plus { color: var(--heart); font-weight: 700; }
+.aend .minus { color: var(--faint); text-decoration: line-through; }
+
+/* ---------- Ereignis- und Ort-Termine (in Blättern) ---------- */
+.ev { display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: start; width: 100%; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); }
+.ev .medium { aspect-ratio: 1; border-radius: max(0px, calc(var(--r-s) - 4px)); }
+.ev .poster { font-size: 12px; padding: 7px; }
+.ev-zeit { display: block; margin: 2px 0 1px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12.5px; color: var(--accent); }
+.ev-titel { display: block; font-weight: 650; line-height: 1.3; }
+.ev-meta { display: block; margin-top: 2px; font-size: 12.5px; color: var(--soft); }
+
+/* ---------- Detail-Blatt ---------- */
+.sheet { position: fixed; inset: 0; z-index: 60; }
+.sheet[hidden] { display: none; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
+.sheet-body { position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto; max-height: 90vh; overflow: auto; overscroll-behavior: contain; background: var(--surface); border-radius: calc(var(--r) + 6px) calc(var(--r) + 6px) 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); animation: hoch .25s ease-out; }
+@keyframes hoch { from { transform: translateY(40px); opacity: 0; } }
+.sheet-griff { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; padding: 10px; pointer-events: none; }
+.sheet-griff button { pointer-events: auto; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 80%, transparent); }
+.sh-bild { margin-top: -56px; }
+.sh-bild .medium { aspect-ratio: 16/10; }
+.sh-bild .poster { font-size: 34px; }
+.sh { padding: 14px 18px 0; }
+.sh-datum { font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.sh h2 { margin: 6px 0 8px; font-size: 25px; font-weight: 700; line-height: 1.1; }
+.sh-ort { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: var(--r-s); background: var(--surface2); }
+.sh-ort b { display: block; }
+.sh-ort span { font-size: 12.5px; color: var(--soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.chip { font-size: 12px; font-weight: 650; padding: 4px 10px; border-radius: 999px; background: var(--surface2); color: var(--soft); }
+.chip.h { background: var(--heart); color: #fff; }
+.sh-text { white-space: pre-line; color: var(--soft); font-size: 14.5px; }
+.sh-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 14px; border-radius: var(--r-s); background: var(--surface2); border: 1px solid var(--line); font-weight: 650; font-size: 14px; color: var(--ink); text-decoration: none; }
+.knopf.primaer { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.sh-q { margin-top: 14px; font-size: 12px; color: var(--faint); }
+.abschnitt { margin: 18px 0 0; font-size: 17px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.abschnitt em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--faint); }
+.sh-liste { margin: 10px -18px 0; }
+.sh-liste .ev { grid-template-columns: 76px 1fr; gap: 10px; width: 100%; margin: 0; padding: 10px 18px; background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+
+#toast { position: fixed; z-index: 90; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; width: max-content; max-width: min(90vw, 360px); padding: 10px 16px; border-radius: var(--r); background: var(--ink); color: var(--bg); font-weight: 650; font-size: 13.5px; transition: .25s; text-align: center; }
+#toast.an { opacity: 1; transform: translate(-50%, 0); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>DD was geht</h1>
-    <span class="stand" id="stand"></span>
-    <input id="suche" type="search" placeholder="Suchen: Titel oder Ort" autocomplete="off">
-  </header>
-
-  <div class="leiste" id="tage" role="group" aria-label="Zeitraum"></div>
-
-  <section id="herz">
-    <h2>♥ Deine Orte <span class="n" id="herz-n"></span></h2>
-    <div class="hinweis" id="herz-hinweis"></div>
-    <div id="herz-liste"></div>
-  </section>
-
-  <section id="entdecken">
-    <h2>Entdecken <span class="n" id="entdecken-n"></span></h2>
-    <div class="filter" id="kategorien" role="group" aria-label="Kategorien"></div>
-    <div class="filter" id="schalter" role="group" aria-label="Weitere Filter"></div>
-    <div id="entdecken-liste"></div>
-  </section>
+<div id="app" data-tab="was">
+  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p></header>
+  <div class="rail" id="rail" aria-hidden="true"></div>
+  <main>
+    <section id="tab-was"><div id="tage"></div></section>
+    <section id="tab-karte" hidden>
+      <div class="karte-rahmen">
+        <div id="karte"></div>
+        <div class="karte-oben" id="ent-filter"></div>
+        <div class="ort-karte" id="ort-karte" hidden></div>
+      </div>
+      <p class="legende" id="legende"></p>
+    </section>
+  </main>
+  <nav class="reiter" role="tablist">
+    <button role="tab" data-tab="was" aria-selected="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Was geht</span></button>
+    <button role="tab" data-tab="karte" aria-selected="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg><span>Entdecken</span></button>
+  </nav>
 </div>
 
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-bg" data-zu></div>
+  <div class="sheet-body" role="dialog" aria-modal="true">
+    <div class="sheet-griff"><button data-zu aria-label="Schließen"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div id="sheet-inhalt"></div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>const DATEN = /*__DATEN__*/null;</script>
 <script>
-const D = /*__DATEN__*/null;
-const WOCHENTAG = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const PRO_TAG = 15;
+"use strict";
+const D = DATEN, $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WTL = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+const MON = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Dez"];
+const HERZ = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 3 1.5-1.9 3-3 5.1-3 3.9 0 6 3.9 4.5 7.3C19.5 16.4 12 21 12 21Z"/></svg>';
+const HERZ_G = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 3 1.5-1.9 3-3 5.1-3 3.9 0 6 3.9 4.5 7.3C19.5 16.4 12 21 12 21Z"/></svg>';
+const ICON_R = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+const parse = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+const isoVon = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+const istWE = iso => [0, 6].includes(parse(iso).getDay()) || parse(iso).getDay() === 5;  // Fr–So
+const ort = e => D.orte[e.o] || {};
+const ortName = e => ort(e).n || e.or || "Ort unbekannt";
+const istHerz = e => !!ort(e).h;
+const hash = s => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+const plus = (iso, n) => { const d = parse(iso); d.setDate(d.getDate() + n); return isoVon(d); };
+const katName = k => D.kategorien[k] || "Weiteres";
+const zeitText = e => e.t || "–";
+const nachZeit = (a, b) => (a.d + (a.t || "99:99")).localeCompare(b.d + (b.t || "99:99"));
+const kurzDatum = iso => { const d = parse(iso); return `${WT[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`; };
+const langDatum = iso => { const d = parse(iso); return `${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
 
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* ---------- Herzen: aus orte.json (h) plus lokale Änderungen in diesem Browser ---------- */
+const HERZ_KEY = "ddwg-herzen";
+Object.values(D.orte).forEach(o => o.h0 = !!o.h);
+function herzLokal() { try { const x = JSON.parse(localStorage.getItem(HERZ_KEY)); return { an: x?.an || [], weg: x?.weg || [] }; } catch (e) { return { an: [], weg: [] }; } }
+function herzenAnwenden() {
+  const l = herzLokal();
+  const an = l.an.filter(s => D.orte[s] && !D.orte[s].h0), weg = l.weg.filter(s => D.orte[s] && D.orte[s].h0);
+  Object.entries(D.orte).forEach(([s, o]) => o.h = an.includes(s) ? 1 : weg.includes(s) ? 0 : (o.h0 ? 1 : 0));
+  try { localStorage.setItem(HERZ_KEY, JSON.stringify({ an, weg })); } catch (e) {}
+  return { an, weg };
 }
-function addDays(iso, n) {
-  const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("an"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("an"), 2200); }
+function herzUmschalten(slug) {
+  const o = D.orte[slug]; if (!o) return;
+  const l = herzLokal(), neu = !o.h;
+  l.an = l.an.filter(s => s !== slug); l.weg = l.weg.filter(s => s !== slug);
+  if (neu !== o.h0) (neu ? l.an : l.weg).push(slug);
+  try { localStorage.setItem(HERZ_KEY, JSON.stringify(l)); } catch (e) {}
+  herzenAnwenden();
+  toast(neu ? `♥ ${o.n} ist jetzt dein Ort` : `Herz entfernt: ${o.n}`);
+  renderTage();
+  if (S.tab === "karte") renderEntdecken();
 }
-function tagLabel(iso) {
-  const d = new Date(iso + "T12:00:00");
-  const rel = iso === D.heute ? "Heute · " : iso === addDays(D.heute, 1) ? "Morgen · " : "";
-  return rel + WOCHENTAG[d.getDay()] + " " + d.toLocaleDateString("de-DE", {day: "numeric", month: "long"});
-}
-function store(key, val) { try { localStorage.setItem("ddwg." + key, JSON.stringify(val)); } catch (e) {} }
-function stored(key, fallback) {
-  try { const v = localStorage.getItem("ddwg." + key); return v === null ? fallback : JSON.parse(v); }
-  catch (e) { return fallback; }
-}
-
-const state = {
-  zeitraum: "7",                       // "7" | "alle" | ISO-Datum
-  kategorien: stored("kategorien", ["musik", "kultur"]),
-  umland: stored("umland", false),
-  laufend: stored("laufend", false),
-  suche: "",
-  offen: new Set(),
-};
-
-function imZeitraum(ev) {
-  if (state.zeitraum === "alle") return true;
-  if (state.zeitraum === "7") return ev.d < addDays(D.heute, 7);
-  return ev.d === state.zeitraum;
-}
-function passtSuche(ev) {
-  if (!state.suche) return true;
-  const ort = D.orte[ev.o]?.n || ev.or || "";
-  return (ev.ti + " " + ort).toLowerCase().includes(state.suche);
-}
-const istHerz = ev => !!(ev.o && D.orte[ev.o]?.h);
-
-function evHtml(ev) {
-  const ort = D.orte[ev.o];
-  const ortName = ort?.n || ev.or || "";
-  const ortTxt = ort?.w ? `<a href="${esc(ort.w)}" target="_blank" rel="noopener">${esc(ortName)}</a>` : esc(ortName);
-  const halle = ort && ev.or && ev.or !== ort.n ? ` <span class="sep">·</span>${esc(ev.or)}` : "";
-  const titel = ev.url ? `<a class="titel" href="${esc(ev.url)}" target="_blank" rel="noopener">${esc(ev.ti)}</a>` : `<span class="titel">${esc(ev.ti)}</span>`;
-  const teile = [ortTxt + halle];
-  if (ev.p) teile.push(esc(ev.p));
-  teile.push(esc(D.kategorien[ev.k] || ev.k));
-  const badges = (ev.l ? '<span class="badge">läuft</span>' : "") + (ev.r === "umland" ? '<span class="badge">Umland</span>' : "");
-  const q = ev.q.map(s => esc(D.quellen[s] || s)).join(" · ");
-  return `<div class="ev${istHerz(ev) ? " herz" : ""}">
-    <div class="zeit">${esc(ev.t || "–")}</div>
-    <div><div>${titel}${badges}</div><div class="meta">${teile.join('<span class="sep">·</span>')}</div><div class="q">${q}</div></div>
-    ${ev.img ? `<img loading="lazy" src="${esc(ev.img)}" alt="">` : "<span></span>"}
-    ${ev.b ? `<details><summary>Beschreibung</summary><p>${esc(ev.b)}</p></details>` : ""}
-  </div>`;
+function zeigeUebernehmen() {
+  const { an, weg } = herzenAnwenden();
+  const befehl = [an.length ? `python -m ddwg herz ${an.join(" ")}` : "", weg.length ? `python -m ddwg herz --weg ${weg.join(" ")}` : "", "python -m ddwg build"].filter(Boolean).join(" && ");
+  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Herzen übernehmen</div>
+    <h2>${an.length + weg.length} ${an.length + weg.length === 1 ? "Änderung" : "Änderungen"}</h2>
+    <p class="sh-text">Diese Herzen gelten bisher nur in diesem Browser. Mit dem Befehl landen sie in orte.json und nach dem Build auf allen Geräten.</p>
+    <ul class="aend">${an.map(s => `<li class="plus">♥ ${esc(D.orte[s].n)}</li>`).join("")}${weg.map(s => `<li class="minus">${esc(D.orte[s].n)}</li>`).join("")}</ul>
+    <pre class="befehl" id="befehl">${esc(befehl)}</pre>
+    <div class="sh-links"><button class="knopf primaer" data-kopieren>Befehl kopieren</button><button class="knopf" data-verwerfen>Lokale Änderungen verwerfen</button></div></div>`);
 }
 
-function liste(events, ziel, key) {
-  const byDay = new Map();
-  for (const ev of events) {
-    if (!byDay.has(ev.d)) byDay.set(ev.d, []);
-    byDay.get(ev.d).push(ev);
+/* ---------- Tage: Zeitstrahl-Galerie (nur Tage mit Terminen, "laufend" ausgenommen) ---------- */
+const perTag = {}, perTagAlle = {};
+D.events.forEach((e, i) => { e.i = i; if (!e.l) (perTag[e.d] ||= []).push(e); (perTagAlle[e.d] ||= []).push(e); });
+const TAGE = Object.keys(perTag).sort();
+const HEUTE = D.heute;
+const LETZTER_ALLE = Object.keys(perTagAlle).sort().at(-1) || HEUTE;
+const TAGE_ALLE = []; for (let t = HEUTE; t <= LETZTER_ALLE; t = plus(t, 1)) TAGE_ALLE.push(t);
+const relTag = iso => iso === HEUTE ? "Heute" : iso === plus(HEUTE, 1) ? "Morgen" : WTL[parse(iso).getDay()];
+const offen = new Set();
+const ZEIGE = 9;
+function auswahl(iso) {
+  const alle = perTag[iso].slice().sort((a, b) => (a.t || "99").localeCompare(b.t || "99"));
+  if (offen.has(iso)) return { liste: alle, rest: 0 };
+  const wichtig = alle.filter(e => ort(e).h || e.img);
+  const liste = wichtig.filter(e => ort(e).h).concat(wichtig.filter(e => !ort(e).h)).slice(0, ZEIGE)
+    .sort((a, b) => (a.t || "99").localeCompare(b.t || "99"));
+  return { liste, rest: alle.length - liste.length };
+}
+function medium(e) {
+  const text = ort(e).n || e.or || e.ti, p = hash(e.o || e.ti) % 4;
+  if (e.img) return `<img class="medium" src="${esc(e.img)}" alt="" loading="lazy" decoding="async" data-t="${esc(text)}" data-p="${p}" onerror="bildFehler(this)">`;
+  return `<div class="medium poster p${p}">${esc(text)}</div>`;
+}
+window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };
+
+function renderTage() {
+  $("#tage").innerHTML = TAGE.map((iso, k) => {
+    const d = parse(iso), { liste, rest } = auswahl(iso), n = perTag[iso].length;
+    const name = k === 0 ? "Heute" : k === 1 ? "Morgen" : WTL[d.getDay()];
+    return `<section class="tag ${istWE(iso) ? "we" : ""}" data-k="${k}">
+      <h2 class="tag-kopf">${name}, ${d.getDate()}. ${MON[d.getMonth()]}<em>${n} Termine${istWE(iso) ? " · Wochenende" : ""}</em></h2>
+      <div class="raster">${liste.map(e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b">${HERZ}Dein Ort</span>` : ""}
+        <span class="gk-txt"><span class="gk-zeit">${esc(e.t || "")}</span><span class="gk-titel">${esc(e.ti)}</span><span class="gk-ort ${ort(e).h ? "h" : ""}">${esc(ort(e).n || e.or || "")}</span></span></button>`).join("")}
+        ${rest ? `<button class="mehr" data-mehr="${iso}"><b>+${rest}</b>weitere an diesem Tag</button>` : ""}</div></section>`;
+  }).join("");
+  messen();
+}
+
+/* ---------- Zeitstrahl-Leiste: Datum gleitet mit, je 2 Tage an den Rändern ---------- */
+const rail = $("#rail");
+const kurz = k => { const d = parse(TAGE[k]); return `<button class="rd ${istWE(TAGE[k]) ? "we" : ""}" data-k="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}"><small>${k === 0 ? "Heute" : WT[d.getDay()]}</small><b>${d.getDate()}</b></button>`; };
+rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso);
+  return `<div class="tl-datum ${istWE(iso) ? "we" : ""}" data-k="${k}"><span><small>${k === 0 ? "Heute" : WT[d.getDay()]}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("")
+  + `<div class="rand oben" id="rand-oben"></div><div class="rand unten" id="rand-unten"></div>`;
+const labels = [...rail.querySelectorAll(".tl-datum")];
+let tops = [], schritt = 74, mitte = 0;
+function messen() {
+  tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
+  tops.push(document.querySelector("#tage").getBoundingClientRect().bottom + scrollY);
+  schritt = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--schritt")) || 74;
+  mitte = innerHeight * 0.40;
+  zeichnen();
+}
+function position() {
+  const y = scrollY + mitte;
+  if (y <= tops[0]) return 0;
+  for (let k = 0; k < TAGE.length; k++) if (y < tops[k + 1]) return k + (y - tops[k]) / (tops[k + 1] - tops[k]);
+  return TAGE.length - 1;
+}
+let aktiv = -1;
+function zeichnen() {
+  const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
+  const rest = f - k0, schub = rest > 0.82 ? (rest - 0.82) / 0.18 : 0, lage = k0 + schub;
+  labels.forEach((el, k) => {
+    const d = k - lage, a = Math.abs(d);
+    el.style.transform = `translateY(${(d * schritt).toFixed(1)}px) scale(${a < 0.5 ? 1 : 0.84})`;
+    el.style.opacity = (a < 0.5 ? 1 : a < 1 ? (1 - a) * 1.6 : 0).toFixed(2);
+  });
+  if (k0 !== aktiv) {
+    aktiv = k0;
+    labels.forEach((el, k) => el.classList.toggle("aktiv", k === k0));
+    rail.classList.toggle("we", istWE(TAGE[k0]));
+    $("#rand-oben").innerHTML = [k0 - 2, k0 - 1].filter(k => k >= 0).map(k => kurz(k)).join("");
+    $("#rand-unten").innerHTML = [k0 + 1, k0 + 2].filter(k => k < TAGE.length).map(k => kurz(k)).join("");
   }
-  let html = "";
-  for (const [tag, evs] of byDay) {
-    // Dauerangebote hinter die Termine des Tages.
-    evs.sort((a, b) => (a.l || 0) - (b.l || 0));
-    const id = key + tag;
-    const zeig = state.offen.has(id) ? evs : evs.slice(0, PRO_TAG);
-    html += `<div class="tag">${esc(tagLabel(tag))}</div>` + zeig.map(evHtml).join("");
-    if (zeig.length < evs.length) html += `<button class="mehr" data-offen="${id}">+ ${evs.length - zeig.length} weitere</button>`;
-  }
-  ziel.innerHTML = html || '<div class="leer">Nichts im gewählten Zeitraum.</div>';
 }
+let geplant = false;
+addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); } }, { passive: true });
+addEventListener("resize", messen);
+labels.forEach(el => el.style.transition = "transform .12s linear, opacity .2s");
 
-function render() {
-  const basis = D.events.filter(ev => imZeitraum(ev) && passtSuche(ev));
-
-  const herz = basis.filter(istHerz);
-  document.getElementById("herz-n").textContent = herz.length ? herz.length + " Termine" : "";
-  liste(herz, document.getElementById("herz-liste"), "h");
-  const herzOrte = Object.entries(D.orte).filter(([, o]) => o.h);
-  const mitTermin = new Set(herz.map(ev => ev.o));
-  const ohne = herzOrte.filter(([slug]) => !mitTermin.has(slug)).map(([, o]) => o.n);
-  document.getElementById("herz-hinweis").textContent = herzOrte.length
-    ? (ohne.length ? "Ohne Termin im Zeitraum: " + ohne.join(", ") : "")
-    : "Noch keine Herz-Orte – setzen mit: python -m ddwg herz <ort>";
-
-  const rest = basis.filter(ev => !istHerz(ev)
-    && state.kategorien.includes(ev.k)
-    && (state.umland || ev.r !== "umland")
-    && (state.laufend || !ev.l));
-  document.getElementById("entdecken-n").textContent = rest.length + " Termine";
-  liste(rest, document.getElementById("entdecken-liste"), "e");
+/* ---------- Leiste als Schieber: Wischen springt Tag für Tag ---------- */
+let ziel = 0, zielZeit = 0;
+const klemm = k => Math.max(0, Math.min(TAGE.length - 1, k));
+function springe(k, weich) {
+  k = klemm(k); if (k === ziel && Date.now() - zielZeit < 600) return;
+  ziel = k; zielZeit = Date.now();
+  scrollTo({ top: Math.max(0, tops[k] - mitte + 4), behavior: weich ? "smooth" : "instant" });
+  if (navigator.vibrate) try { navigator.vibrate(4); } catch (e) {}
 }
-
-function pill(label, pressed, onClick, cls) {
-  const b = document.createElement("button");
-  b.className = "pill" + (cls ? " " + cls : "");
-  b.textContent = label;
-  b.setAttribute("aria-pressed", pressed ? "true" : "false");
-  b.addEventListener("click", onClick);
-  return b;
-}
-
-function baueTage() {
-  const box = document.getElementById("tage");
-  box.innerHTML = "";
-  const opts = [["7", "Nächste 7 Tage"]];
-  for (let i = 0; i < 7; i++) {
-    const iso = addDays(D.heute, i);
-    const d = new Date(iso + "T12:00:00");
-    opts.push([iso, i === 0 ? "Heute" : i === 1 ? "Morgen" : WOCHENTAG[d.getDay()] + " " + d.getDate() + "."]);
-  }
-  opts.push(["alle", "Alle"]);
-  for (const [key, label] of opts) {
-    box.appendChild(pill(label, state.zeitraum === key, () => { state.zeitraum = key; baueTage(); render(); }));
-  }
-}
-
-function baueFilter() {
-  const kat = document.getElementById("kategorien");
-  kat.innerHTML = "";
-  for (const [key, label] of Object.entries(D.kategorien)) {
-    kat.appendChild(pill(label, state.kategorien.includes(key), () => {
-      state.kategorien = state.kategorien.includes(key) ? state.kategorien.filter(k => k !== key) : [...state.kategorien, key];
-      store("kategorien", state.kategorien); baueFilter(); render();
-    }));
-  }
-  const sch = document.getElementById("schalter");
-  sch.innerHTML = "";
-  sch.appendChild(pill("Umland", state.umland, () => { state.umland = !state.umland; store("umland", state.umland); baueFilter(); render(); }));
-  sch.appendChild(pill("Dauerangebote", state.laufend, () => { state.laufend = !state.laufend; store("laufend", state.laufend); baueFilter(); render(); }));
-}
-
-document.getElementById("stand").textContent = "Stand " + D.stand + " · " + D.events.length + " Termine";
-document.getElementById("suche").addEventListener("input", e => { state.suche = e.target.value.trim().toLowerCase(); render(); });
-document.addEventListener("click", e => {
-  const id = e.target?.dataset?.offen;
-  if (id) { state.offen.add(id); render(); }
+let griff = null;
+rail.addEventListener("pointerdown", e => {
+  if (e.target.closest(".rd")) return;
+  griff = { y: e.clientY, k: aktiv, id: e.pointerId };
+  ziel = aktiv; zielZeit = Date.now();
+  rail.setPointerCapture(e.pointerId); rail.classList.add("greift");
 });
-baueTage(); baueFilter(); render();
+rail.addEventListener("pointermove", e => {
+  if (!griff || e.pointerId !== griff.id) return;
+  springe(griff.k + Math.round((griff.y - e.clientY) / 34), false);
+});
+const loslassen = () => { griff = null; rail.classList.remove("greift"); };
+rail.addEventListener("pointerup", loslassen); rail.addEventListener("pointercancel", loslassen);
+let rad = 0;
+rail.addEventListener("wheel", e => {
+  e.preventDefault(); rad += e.deltaY;
+  if (Math.abs(rad) >= 40) { const basis = Date.now() - zielZeit < 700 ? ziel : aktiv; springe(basis + Math.sign(rad), true); rad = 0; }
+}, { passive: false });
+
+/* ---------- Detail-Blatt ---------- */
+function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; $(".sheet-body").scrollTop = 0; document.body.style.overflow = "hidden"; }
+function sheetZu() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
+function zeigeEvent(i) {
+  const e = D.events[i], o = ort(e), q = (e.q || []).map(s => D.quellen[s] || s).join(", ");
+  sheetAuf(`<div class="sh-bild">${medium(e)}</div><div class="sh">
+    <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
+    <h2>${esc(e.ti)}</h2>
+    <button class="sh-ort" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
+    <div class="chips"><span class="chip">${esc(katName(e.k))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
+    ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
+    <div class="sh-links">${e.url ? `<a class="knopf primaer" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle</a>` : ""}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}</div>
+    <div class="sh-q">Quellen: ${esc(q)}</div></div>`);
+}
+function herzKnopf(slug) {
+  const h = !!D.orte[slug]?.h;
+  return `<button class="herzknopf" data-herz="${esc(slug)}" aria-pressed="${h}">${HERZ_G}${h ? "Herz entfernen" : "Herz setzen"}</button>`;
+}
+function zeigeOrt(slug) {
+  const o = D.orte[slug]; if (!o) return;
+  const evs = D.events.filter(e => e.o === slug).sort(nachZeit);
+  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
+    <h2>${esc(o.n)}</h2>${o.a ? `<div class="sh-text">${esc(o.a)}</div>` : ""}
+    <div class="sh-links">${herzKnopf(slug)}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}${o.lat ? `<button class="knopf" data-aufkarte="${esc(slug)}">Auf der Karte</button>` : ""}</div>
+    <h3 class="abschnitt">Nächste Termine<em>${evs.length} in ${TAGE_ALLE.length} Tagen</em></h3>
+    <div class="sh-liste">${evs.slice(0, 40).map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${esc(katName(e.k))}${e.p ? " · " + esc(e.p) : ""}</span></span></button>`).join("")}</div></div>`);
+}
+
+/* ---------- Entdecken: Karte, Filter, Cluster ---------- */
+function naechsterSamstag() { for (const t of TAGE_ALLE) { const w = parse(t).getDay(); if (w === 6 || (w === 0 && t === HEUTE)) return t; } return TAGE_ALLE.at(-1); }
+function entBereich() {
+  if (S.ez === "heute") return [HEUTE, HEUTE];
+  if (S.ez === "morgen") return [plus(HEUTE, 1), plus(HEUTE, 1)];
+  if (S.ez === "we") { const sa = naechsterSamstag(), fr = plus(sa, -1) >= HEUTE ? plus(sa, -1) : HEUTE; return [fr, plus(sa, 1)]; }
+  return [TAGE_ALLE[0] || HEUTE, TAGE_ALLE.at(-1) || HEUTE];
+}
+const S = { tab: "was", ez: "we", eneu: false, ekat: "alle" };
+let karte = null, markerLayer = null, herzLayer = null, gewaehlt = null, ENT = { orteL: [], proOrt: {} };
+function renderEntdecken() {
+  const [von, bis] = entBereich();
+  const evs = D.events.filter(e => e.d >= von && e.d <= bis && !e.l && e.o && D.orte[e.o]);
+  const katEvs = evs.filter(e => S.ekat === "alle" || e.k === S.ekat), proOrt = {};
+  katEvs.forEach(e => (proOrt[e.o] ||= []).push(e));
+  Object.values(proOrt).forEach(l => l.sort(nachZeit));
+  const orteL = Object.keys(proOrt).filter(s => !(S.eneu && D.orte[s].h)).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
+  ENT = { orteL, proOrt };
+  const mitGeo = orteL.filter(x => x.o.lat);
+  const { an, weg } = herzenAnwenden(), offen2 = an.length + weg.length;
+  const Z = [["heute", "Heute"], ["morgen", "Morgen"], ["we", "Wochenende"], ["alle", `${TAGE_ALLE.length} Tage`]];
+  const zahl = {}; evs.forEach(e => zahl[e.k] = (zahl[e.k] || 0) + 1);
+  $("#ent-filter").innerHTML = `<div class="zeile">${offen2 ? `<button class="fc uebernehmen" data-uebernehmen>♥ ${offen2} übernehmen</button>` : ""}${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}
+      <span class="trenner"></span><button class="fc herzfc" data-eneu aria-pressed="${S.eneu}">${HERZ} ausblenden</button></div>
+    <div class="zeile"><button class="fc" data-ekat="alle" aria-pressed="${S.ekat === "alle"}">Alle<em>${evs.length}</em></button>${Object.keys(D.kategorien).filter(k => zahl[k]).map(k => `<button class="fc" data-ekat="${k}" aria-pressed="${S.ekat === k}">${esc(katName(k))}<em>${zahl[k]}</em></button>`).join("")}</div>`;
+  $("#legende").textContent = `${orteL.length} Orte mit Terminen, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
+  karteZeichnen(mitGeo);
+  if (gewaehlt) zeigeOrtKarte(gewaehlt, false);
+}
+function zeigeOrtKarte(slug, zentrieren = true) {
+  const o = D.orte[slug]; if (!o) return;
+  gewaehlt = slug;
+  const l = ENT.proOrt[slug] || [], Z = { heute: "heute", morgen: "morgen", we: "am Wochenende", alle: `in ${TAGE_ALLE.length} Tagen` }[S.ez];
+  $("#ort-karte").innerHTML = `<div class="ok-kopf"><h3>${o.h ? "♥ " : ""}${esc(o.n)}<small>${esc([o.art, o.a].filter(Boolean).join(" · ") || "Ort")}</small></h3>
+      <button class="ok-zu" data-okzu aria-label="Schließen"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="legende" style="margin:6px 0 4px">${l.length} ${l.length === 1 ? "Termin" : "Termine"} ${Z}</div>
+    ${l.slice(0, 3).map(e => `<button class="ok-ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><b>${esc(e.ti)}</b></button>`).join("")}
+    <div class="ok-aktionen">${herzKnopf(slug)}<button class="knopf" data-ort="${esc(slug)}">Alle Termine</button></div>`;
+  $("#ort-karte").hidden = false;
+  document.querySelectorAll(".mk.gewaehlt").forEach(m => m.classList.remove("gewaehlt"));
+  document.querySelector(`.mk[data-slug="${CSS.escape(slug)}"]`)?.classList.add("gewaehlt");
+  if (zentrieren && karte && o.lat) karte.panTo(karte.unproject(karte.project([o.lat, o.lon]).add([0, karte.getSize().y * .22])));
+}
+function ortKarteZu() { gewaehlt = null; $("#ort-karte").hidden = true; document.querySelectorAll(".mk.gewaehlt").forEach(m => m.classList.remove("gewaehlt")); }
+
+/* Leaflet und das Cluster-Plugin nacheinander laden (das Plugin braucht Leaflet) */
+function ladeSkript(src) { return new Promise((ok, fehler) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fehler; document.head.append(s); }); }
+function ladeCss(href) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = href; document.head.append(l); }
+const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+const kartenLib = ladeSkript(CDN + "leaflet/1.9.4/leaflet.min.js")
+  .then(() => { ladeCss(CDN + "leaflet.markercluster/1.5.3/MarkerCluster.css"); return ladeSkript(CDN + "leaflet.markercluster/1.5.3/leaflet.markercluster.js").catch(() => null); })
+  .then(() => { if (S.tab === "karte") renderEntdecken(); })
+  .catch(() => { $("#karte").innerHTML = `<div class="karte-aus">Karte konnte nicht geladen werden (braucht Internet).</div>`; });
+
+function karteZeichnen(mitGeo) {
+  if (!window.L) {
+    if (!karte) $("#karte").innerHTML = `<div class="karte-aus">Karte lädt …</div>`;
+    return;
+  }
+  if (!karte) {
+    $("#karte").innerHTML = "";
+    karte = L.map("karte", { zoomControl: false }).setView([51.0600, 13.7470], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(karte);
+    karte.on("click", ortKarteZu);
+    markerLayer = L.markerClusterGroup ? L.markerClusterGroup({
+      maxClusterRadius: 42, showCoverageOnHover: false, disableClusteringAtZoom: 16, spiderfyOnMaxZoom: false,
+      iconCreateFunction: c => {
+        const n = c.getAllChildMarkers().reduce((s, m) => s + m.options.n, 0), g = Math.round(30 + Math.min(20, Math.sqrt(n) * 2));
+        return L.divIcon({ className: "", iconSize: [g, g], html: `<div class="mk cl">${n}</div>` });
+      },
+    }) : L.layerGroup();
+    markerLayer.addTo(karte);
+    herzLayer = L.layerGroup().addTo(karte);
+  }
+  markerLayer.clearLayers(); herzLayer.clearLayers();
+  const max = Math.max(1, ...mitGeo.map(x => x.l.length));
+  mitGeo.forEach(x => {
+    const n = x.l.length, s = Math.max(x.o.h ? 30 : 0, Math.round(18 + Math.sqrt(n / max) * 24));
+    const icon = L.divIcon({ className: "", iconSize: [s, s], html: `<div class="mk ${x.o.h ? "h" : ""} ${s < 22 ? "klein" : ""} ${x.slug === gewaehlt ? "gewaehlt" : ""}" data-slug="${esc(x.slug)}">${x.o.h ? "♥" : n}</div>` });
+    const m = L.marker([x.o.lat, x.o.lon], { icon, title: x.o.n, n, zIndexOffset: x.o.h ? 1000 : 0 });
+    m.on("click", ev => { L.DomEvent.stopPropagation(ev); zeigeOrtKarte(x.slug); });
+    m.addTo(x.o.h ? herzLayer : markerLayer);
+  });
+  setTimeout(() => karte.invalidateSize(), 50);
+}
+
+/* ---------- Reiter wechseln ---------- */
+function setTab(t) {
+  S.tab = t;
+  $("#app").dataset.tab = t;
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  $("#tab-was").hidden = t !== "was"; $("#tab-karte").hidden = t !== "karte";
+  if (t === "karte") renderEntdecken();
+  else messen();  // Zeitstrahl neu vermessen: Layout kann sich verändert haben
+  scrollTo({ top: 0 });
+}
+
+/* ---------- Klicks ---------- */
+document.addEventListener("click", e => {
+  const el = e.target.closest("button, [data-zu]"); if (!el) return;
+  const ds = el.dataset;
+  if (el.classList.contains("rd")) return springe(+ds.k, true);
+  if ("zu" in ds) return sheetZu();
+  if (ds.tab) return setTab(ds.tab);
+  if (ds.mehr) { offen.add(ds.mehr); renderTage(); return; }
+  if (ds.ev) return zeigeEvent(+ds.ev);
+  if (ds.ort !== undefined) { if (ds.ort) zeigeOrt(ds.ort); return; }
+  if (ds.herz) { herzUmschalten(ds.herz); if (!$("#sheet").hidden) zeigeOrt(ds.herz); return; }
+  if ("okzu" in ds) return ortKarteZu();
+  if ("uebernehmen" in ds) return zeigeUebernehmen();
+  if ("kopieren" in ds) { const t = $("#befehl").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Befehl kopiert")).catch(() => prompt("Zum Kopieren:", t)); return; }
+  if ("verwerfen" in ds) { try { localStorage.removeItem(HERZ_KEY); } catch (e) {} herzenAnwenden(); sheetZu(); renderTage(); if (S.tab === "karte") renderEntdecken(); return toast("Lokale Herzen verworfen"); }
+  if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
+  if ("eneu" in ds) { S.eneu = !S.eneu; return renderEntdecken(); }
+  if (ds.ekat) { S.ekat = ds.ekat; return renderEntdecken(); }
+  if (ds.aufkarte) { const o = D.orte[ds.aufkarte]; sheetZu(); setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(ds.aufkarte); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") sheetZu(); });
+
+/* ---------- Start ---------- */
+herzenAnwenden();
+$("#stand").textContent = `Stand ${D.stand.replace(/\.\d{4},/, ".,")} · ${D.events.length} Termine`;
+renderTage();
 </script>
 </body>
 </html>

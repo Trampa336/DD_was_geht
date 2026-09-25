@@ -1,0 +1,7 @@
+TeX Gyre Heros
+Ein freier Helvetica-Klon aus dem TeX Gyre Projekt (GUST, Polnische
+TeX-Nutzergruppe): https://www.gust.org.pl/projects/e-foundry/tex-gyre
+
+Lizenz: GUST Font License (GFL), eine Instanz der LaTeX Project Public
+License (LPPL). Volltext und weitere Formate:
+https://www.gust.org.pl/fonts/licenses

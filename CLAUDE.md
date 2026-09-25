@@ -84,8 +84,11 @@ betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
 - Code, Kommentare und UI sind auf Deutsch.
 
 ## Offene Ideen
-- UI-Umbau. Die alte v2-Oberfläche liegt als Referenz unter `docs/historie/ui-v2/`:
-  Liste, Kartenansicht mit Leaflet, Orte-Seiten, Themes.
+- Neue Oberfläche steht: Zeitstrahl-Galerie (Reiter „Was geht“) und Entdecken-Karte
+  mit Leaflet + markercluster von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre
+  Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen werden im
+  Browser gesetzt und per Übernehmen-Befehl (`python -m ddwg herz …`) in orte.json
+  überführt. Entwürfe liegen unter `docs/ui-entwuerfe/`.
 - Kartenansicht: 431 Orte haben schon `lat`/`lon`. `werkzeuge/fetch_venue_locations.py`
   ergänzt weitere, hängt aber noch an der v2-DB und muss auf orte.json umgestellt werden.
 - `werkzeuge/enrich_venues.py` (Homepage und Cover über die Kulturkalender-Ortsseite)
@@ -93,6 +96,7 @@ betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
   (bis 150 min Toleranz bei gleichem Ort und Titel). Festival-Sammeleinträge von
   cybersax können einzelne Programmpunkte an sich ziehen.
+- Datepicker für die Tagesansicht (großzügig springen, Wischen bleibt): in eigener Session besprechen.
 
 ## Historie
 `docs/historie/`: Supervisor-Pläne und Packet-Berichte der v2-Überarbeitung (Sept. 2026),
