@@ -23,6 +23,9 @@ python -m pytest tests           # Kerntests ohne Netz
 - `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 750 Orte
   mit Aliasen, Region, Art, Herz, Homepage, Cover, Adresse und Koordinaten.
   Unbekannte Schreibweisen legt der Scrape als neuen Ort mit `erstmals` an.
+- `orte/flavours.json`: 8 Flavours (voreingestellte Herz-Sets für den ersten Start) und die
+  Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
+  Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.
 - `cache/events.db` (SQLite, gitignored): `listings` (je Quelle roh, pro Lauf ersetzt) →
   `events` (verschmolzen, bei jedem Build komplett neu) + `scrape_runs` + `details`.
   Löschen ist erlaubt, der nächste Scrape baut die Datenbank neu auf.
@@ -59,9 +62,12 @@ Sektor Evolution ist ohne den eigenen Scraper praktisch unsichtbar: Rauze führt
 Termine, KK 1. Resident Advisor ist raus, dort gab es nichts Eigenes.
 
 ## Herzen
-Herzen gibt es **nur für Orte** (`"herz": true` in orte.json), nicht für einzelne Events.
-Events an Herz-Orten stehen oben unter „Deine Orte“. Start-Herzen sind die Orte mit
-eigener Quelle: Sektor, Straße E, Der Lude, GrooveStation, Zentralwerk und AZ Conni.
+Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören dem Browser:**
+Flavours beim ersten Start (ohne Wahl: Club) plus eigene Änderungen am Herz-Knopf.
+`"herz": true` in orte.json ist Davids Liste und steuert nur den Detailabruf beim Scrapen;
+„Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
+Davids Herz-Orte sind die Orte mit eigener Quelle: Sektor, Straße E, Der Lude,
+GrooveStation, Zentralwerk und AZ Conni.
 **Nächster sinnvoller Schritt:** Herz-Orte ohne eigene Quelle bekommen einen eigenen
 Scraper. Kandidaten sind Ostpol, Chemiefabrik, Scheune und Hole of Fame. Welche Orte
 betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
@@ -86,9 +92,8 @@ betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
 ## Offene Ideen
 - Neue Oberfläche steht: Zeitstrahl-Galerie (Reiter „Was geht“) und Entdecken-Karte
   mit Leaflet + markercluster von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre
-  Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen werden im
-  Browser gesetzt und per Übernehmen-Befehl (`python -m ddwg herz …`) in orte.json
-  überführt. Entwürfe liegen unter `docs/ui-entwuerfe/`.
+  Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen und Flavours
+  siehe Abschnitt „Herzen“. Entwürfe liegen unter `docs/ui-entwuerfe/`.
 - Kartenansicht: 431 Orte haben schon `lat`/`lon`. `werkzeuge/fetch_venue_locations.py`
   ergänzt weitere, hängt aber noch an der v2-DB und muss auf orte.json umgestellt werden.
 - `werkzeuge/enrich_venues.py` (Homepage und Cover über die Kulturkalender-Ortsseite)

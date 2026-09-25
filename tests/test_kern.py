@@ -33,6 +33,19 @@ def test_herz_mehrere_slugs_oder_suchtext():
     assert herz_ziele(orte, ["gibt-es-nicht"]) == []
 
 
+def test_flavours_nur_haupt_und_bekannte_orte(tmp_path):
+    import json
+    from ddwg.ausgabe import flavours_laden
+    datei = tmp_path / "flavours.json"
+    datei.write_text(json.dumps({"standard": "club", "flavours": [{"key": "club", "name": "Club"}, {"key": "rock", "name": "Rock"}],
+        "orte": {"strasse-e": {"haupt": "club", "neben": ["rock"]}, "meissner-dom": {"haupt": "unklar", "neben": []},
+                 "gibt-es-nicht": {"haupt": "club", "neben": []}}}), encoding="utf-8")
+    f = flavours_laden(_orte(), str(datei))
+    assert f["standard"] == "club"
+    assert [(x["k"], x["orte"]) for x in f["liste"]] == [("club", ["strasse-e"]), ("rock", [])]
+    assert flavours_laden(_orte(), str(tmp_path / "fehlt.json")) is None
+
+
 def test_uid_stabil():
     a = normalize.make_event_uid("2026-09-26", "20:00", "Konzert", "Ostpol")
     assert a == normalize.make_event_uid("2026-09-26", "20:00", "Konzert", "Ostpol")

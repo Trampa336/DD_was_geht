@@ -161,6 +161,20 @@ main { flex: 1; }
 
 #toast { position: fixed; z-index: 90; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; width: max-content; max-width: min(90vw, 360px); padding: 10px 16px; border-radius: var(--r); background: var(--ink); color: var(--bg); font-weight: 650; font-size: 13.5px; transition: .25s; text-align: center; }
 #toast.an { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Flavours (Start-Blatt) und kleine Optionen unter der Karte ---------- */
+.flw-liste { display: grid; gap: 8px; margin-top: 14px; }
+.flw { display: grid; gap: 3px; width: 100%; padding: 12px 14px 12px 44px; position: relative; border-radius: var(--r-s); background: var(--surface2); border: 1px solid var(--line); }
+.flw::before { content: ""; position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; margin-top: -9px; border-radius: 50%; border: 2px solid var(--faint); }
+.flw[aria-pressed=true] { border-color: var(--heart); background: color-mix(in srgb, var(--heart) 14%, var(--surface2)); }
+.flw[aria-pressed=true]::before { border-color: var(--heart); background: var(--heart) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/12px no-repeat; }
+.flw-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.flw-kopf b { font-weight: 700; font-size: 15.5px; }
+.flw-kopf em { font-style: normal; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.flw-bsp { font-size: 12.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.optionen { position: absolute; left: 8px; bottom: 8px; z-index: 550; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 110px); }
+.optionen:empty { display: none; }
+.optionen button { font-size: 11px; color: var(--soft); padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 78%, transparent); border: 1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -173,6 +187,7 @@ main { flex: 1; }
       <div class="karte-rahmen">
         <div id="karte"></div>
         <div class="karte-oben" id="ent-filter"></div>
+        <div class="optionen" id="ent-optionen"></div>
         <div class="ort-karte" id="ort-karte" hidden></div>
       </div>
       <p class="legende" id="legende"></p>
@@ -219,39 +234,80 @@ const nachZeit = (a, b) => (a.d + (a.t || "99:99")).localeCompare(b.d + (b.t || 
 const kurzDatum = iso => { const d = parse(iso); return `${WT[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`; };
 const langDatum = iso => { const d = parse(iso); return `${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
 
-/* ---------- Herzen: aus orte.json (h) plus lokale Änderungen in diesem Browser ---------- */
-const HERZ_KEY = "ddwg-herzen";
-Object.values(D.orte).forEach(o => o.h0 = !!o.h);
-function herzLokal() { try { const x = JSON.parse(localStorage.getItem(HERZ_KEY)); return { an: x?.an || [], weg: x?.weg || [] }; } catch (e) { return { an: [], weg: [] }; } }
+/* ---------- Herzen: gehören diesem Browser. Flavours beim ersten Start + eigene Änderungen ----------
+   M.fl = gewählte Flavours, M.an = selbst gesetzte Herzen, M.weg = selbst entfernte Flavour-Herzen.
+   Das Herz aus orte.json (o.oj) zählt hier nicht mehr, es steuert nur den Detailabruf beim Scrapen
+   und wird für "Übernehmen" gebraucht. */
+const MEIN_KEY = "ddwg-meine";
+const FL = (D.flavours?.liste || []).filter(f => f.orte.length);
+const FL_STANDARD = FL.some(f => f.k === D.flavours?.standard) ? D.flavours.standard : FL[0]?.k;
+Object.values(D.orte).forEach(o => o.oj = !!o.h);
+function meineLaden() {
+  try { const x = JSON.parse(localStorage.getItem(MEIN_KEY)); if (x && typeof x === "object") return { start: !!x.start, fl: x.fl || [], an: x.an || [], weg: x.weg || [] }; } catch (e) {}
+  const m = { start: false, fl: [], an: [], weg: [] };
+  try {  // Übergang: Herzen der alten Seite (ddwg-herzen, relativ zu orte.json) werden eigene Herzen
+    const alt = JSON.parse(localStorage.getItem("ddwg-herzen"));
+    if (alt) m.an = Object.keys(D.orte).filter(s => (alt.an || []).includes(s) || (D.orte[s].oj && !(alt.weg || []).includes(s)));
+  } catch (e) {}
+  return m;
+}
+let M = meineLaden();
+function meineSpeichern() { try { localStorage.setItem(MEIN_KEY, JSON.stringify(M)); } catch (e) {} }
+function flavourOrte(keys) { const s = new Set(); FL.filter(f => keys.includes(f.k)).forEach(f => f.orte.forEach(o => s.add(o))); return s; }
 function herzenAnwenden() {
-  const l = herzLokal();
-  const an = l.an.filter(s => D.orte[s] && !D.orte[s].h0), weg = l.weg.filter(s => D.orte[s] && D.orte[s].h0);
-  Object.entries(D.orte).forEach(([s, o]) => o.h = an.includes(s) ? 1 : weg.includes(s) ? 0 : (o.h0 ? 1 : 0));
-  try { localStorage.setItem(HERZ_KEY, JSON.stringify({ an, weg })); } catch (e) {}
-  return { an, weg };
+  const vonFl = flavourOrte(M.fl);
+  Object.entries(D.orte).forEach(([s, o]) => o.h = (vonFl.has(s) || M.an.includes(s)) && !M.weg.includes(s) ? 1 : 0);
+  const alle = Object.keys(D.orte);
+  return { an: alle.filter(s => D.orte[s].h && !D.orte[s].oj), weg: alle.filter(s => !D.orte[s].h && D.orte[s].oj) };  // Abweichung zu orte.json
 }
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("an"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("an"), 2200); }
+function allesNeu() { herzenAnwenden(); renderTage(); if (S.tab === "karte") renderEntdecken(); }
 function herzUmschalten(slug) {
   const o = D.orte[slug]; if (!o) return;
-  const l = herzLokal(), neu = !o.h;
-  l.an = l.an.filter(s => s !== slug); l.weg = l.weg.filter(s => s !== slug);
-  if (neu !== o.h0) (neu ? l.an : l.weg).push(slug);
-  try { localStorage.setItem(HERZ_KEY, JSON.stringify(l)); } catch (e) {}
-  herzenAnwenden();
+  const neu = !o.h, vonFl = flavourOrte(M.fl).has(slug);
+  M.an = M.an.filter(s => s !== slug); M.weg = M.weg.filter(s => s !== slug);
+  if (neu && !vonFl) M.an.push(slug);
+  if (!neu && vonFl) M.weg.push(slug);
+  meineSpeichern();
   toast(neu ? `♥ ${o.n} ist jetzt dein Ort` : `Herz entfernt: ${o.n}`);
-  renderTage();
-  if (S.tab === "karte") renderEntdecken();
+  allesNeu();
 }
+
+/* ---------- Flavours: beim ersten Start einmal zeigen, später nur klein im Reiter "Entdecken" ---------- */
+let flWahl = null, startBlatt = false;
+function flavourBlatt() {
+  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">${startBlatt ? "Willkommen" : "Flavours"}</div>
+    <h2>Was magst du?</h2>
+    <p class="sh-text">${startBlatt ? "Wähl eine oder mehrere Richtungen. Ihre Orte bekommen ein Herz und stehen dann vorne. Danach passt du deine Orte selbst an: Herz setzen oder entfernen." : "Neu gewählte Flavours bringen ihre Orte als Herzen mit. Abgewählte nehmen ihre Herzen wieder mit, selbst gesetzte Herzen bleiben."}</p>
+    <div class="flw-liste">${FL.map(f => `<button class="flw" data-flw="${esc(f.k)}" aria-pressed="${flWahl.has(f.k)}">
+      <span class="flw-kopf"><b>${esc(f.n)}</b><em>${f.orte.length} Orte</em></span>
+      <span class="flw-bsp">${esc(f.orte.slice(0, 3).map(s => D.orte[s]?.n).filter(Boolean).join(" · "))}</span></button>`).join("")}</div>
+    <div class="sh-links"><button class="knopf primaer" data-flok>${startBlatt ? "Los geht’s" : "Übernehmen"}</button>${startBlatt ? `<button class="knopf" data-flskip>Überspringen</button>` : ""}</div>
+    ${startBlatt ? `<p class="sh-q">Ohne Auswahl startest du mit „${esc(FL.find(f => f.k === FL_STANDARD)?.n || "")}“.</p>` : ""}</div>`);
+}
+function zeigeFlavours(erster) { flWahl = new Set(erster ? [] : M.fl); startBlatt = erster; flavourBlatt(); }
+function flavoursUebernehmen(keys) {
+  if (startBlatt && !keys.length && FL_STANDARD) keys = [FL_STANDARD];
+  const weg = FL.filter(f => M.fl.includes(f.k) && !keys.includes(f.k)).flatMap(f => f.orte);
+  M.weg = M.weg.filter(s => !weg.includes(s));
+  M.fl = keys; M.start = true;
+  meineSpeichern();
+  startBlatt = false; sheetZu();
+  const n = flavourOrte(keys).size;
+  toast(keys.length ? `♥ ${n} Orte aus ${keys.length === 1 ? FL.find(f => f.k === keys[0]).n : keys.length + " Flavours"}` : "Keine Flavours gewählt");
+  allesNeu();
+}
+
 function zeigeUebernehmen() {
   const { an, weg } = herzenAnwenden();
   const befehl = [an.length ? `python -m ddwg herz ${an.join(" ")}` : "", weg.length ? `python -m ddwg herz --weg ${weg.join(" ")}` : "", "python -m ddwg build"].filter(Boolean).join(" && ");
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Herzen übernehmen</div>
     <h2>${an.length + weg.length} ${an.length + weg.length === 1 ? "Änderung" : "Änderungen"}</h2>
-    <p class="sh-text">Diese Herzen gelten bisher nur in diesem Browser. Mit dem Befehl landen sie in orte.json und nach dem Build auf allen Geräten.</p>
+    <p class="sh-text">Deine Herzen gelten nur in diesem Browser. Mit dem Befehl stehen sie auch in orte.json, dort steuern sie, für welche Orte der Scraper Beschreibungen nachlädt. Andere Nutzer sehen sie nicht.</p>
     <ul class="aend">${an.map(s => `<li class="plus">♥ ${esc(D.orte[s].n)}</li>`).join("")}${weg.map(s => `<li class="minus">${esc(D.orte[s].n)}</li>`).join("")}</ul>
     <pre class="befehl" id="befehl">${esc(befehl)}</pre>
-    <div class="sh-links"><button class="knopf primaer" data-kopieren>Befehl kopieren</button><button class="knopf" data-verwerfen>Lokale Änderungen verwerfen</button></div></div>`);
+    <div class="sh-links"><button class="knopf primaer" data-kopieren>Befehl kopieren</button><button class="knopf" data-verwerfen>Alle Herzen zurücksetzen</button></div></div>`);
 }
 
 /* ---------- Tage: Zeitstrahl-Galerie (nur Tage mit Terminen, "laufend" ausgenommen) ---------- */
@@ -413,10 +469,12 @@ function renderEntdecken() {
   const { an, weg } = herzenAnwenden(), offen2 = an.length + weg.length;
   const Z = [["heute", "Heute"], ["morgen", "Morgen"], ["we", "Wochenende"], ["alle", `${TAGE_ALLE.length} Tage`]];
   const zahl = {}; evs.forEach(e => zahl[e.k] = (zahl[e.k] || 0) + 1);
-  $("#ent-filter").innerHTML = `<div class="zeile">${offen2 ? `<button class="fc uebernehmen" data-uebernehmen>♥ ${offen2} übernehmen</button>` : ""}${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}
+  $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}
       <span class="trenner"></span><button class="fc herzfc" data-eneu aria-pressed="${S.eneu}">${HERZ} ausblenden</button></div>
     <div class="zeile"><button class="fc" data-ekat="alle" aria-pressed="${S.ekat === "alle"}">Alle<em>${evs.length}</em></button>${Object.keys(D.kategorien).filter(k => zahl[k]).map(k => `<button class="fc" data-ekat="${k}" aria-pressed="${S.ekat === k}">${esc(katName(k))}<em>${zahl[k]}</em></button>`).join("")}</div>`;
   $("#legende").textContent = `${orteL.length} Orte mit Terminen, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
+  $("#ent-optionen").innerHTML = (FL.length ? `<button data-flavours>Flavours ändern</button>` : "")
+    + (offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "");
   karteZeichnen(mitGeo);
   if (gewaehlt) zeigeOrtKarte(gewaehlt, false);
 }
@@ -493,7 +551,11 @@ document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-zu]"); if (!el) return;
   const ds = el.dataset;
   if (el.classList.contains("rd")) return springe(+ds.k, true);
-  if ("zu" in ds) return sheetZu();
+  if ("zu" in ds) return startBlatt ? flavoursUebernehmen([]) : sheetZu();
+  if (ds.flw) { flWahl.has(ds.flw) ? flWahl.delete(ds.flw) : flWahl.add(ds.flw); el.setAttribute("aria-pressed", flWahl.has(ds.flw)); return; }
+  if ("flok" in ds) return flavoursUebernehmen(FL.filter(f => flWahl.has(f.k)).map(f => f.k));
+  if ("flskip" in ds) return flavoursUebernehmen([]);
+  if ("flavours" in ds) return zeigeFlavours(false);
   if (ds.tab) return setTab(ds.tab);
   if (ds.mehr) { offen.add(ds.mehr); renderTage(); return; }
   if (ds.ev) return zeigeEvent(+ds.ev);
@@ -502,16 +564,17 @@ document.addEventListener("click", e => {
   if ("okzu" in ds) return ortKarteZu();
   if ("uebernehmen" in ds) return zeigeUebernehmen();
   if ("kopieren" in ds) { const t = $("#befehl").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Befehl kopiert")).catch(() => prompt("Zum Kopieren:", t)); return; }
-  if ("verwerfen" in ds) { try { localStorage.removeItem(HERZ_KEY); } catch (e) {} herzenAnwenden(); sheetZu(); renderTage(); if (S.tab === "karte") renderEntdecken(); return toast("Lokale Herzen verworfen"); }
+  if ("verwerfen" in ds) { M = { start: false, fl: [], an: [], weg: [] }; meineSpeichern(); sheetZu(); allesNeu(); return zeigeFlavours(true); }
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
   if ("eneu" in ds) { S.eneu = !S.eneu; return renderEntdecken(); }
   if (ds.ekat) { S.ekat = ds.ekat; return renderEntdecken(); }
   if (ds.aufkarte) { const o = D.orte[ds.aufkarte]; sheetZu(); setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(ds.aufkarte); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") sheetZu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") startBlatt ? flavoursUebernehmen([]) : sheetZu(); });
 
 /* ---------- Start ---------- */
 herzenAnwenden();
+if (!M.start && FL.length) zeigeFlavours(true);
 $("#stand").textContent = `Stand ${D.stand.replace(/\.\d{4},/, ".,")} · ${D.events.length} Termine`;
 renderTage();
 </script>

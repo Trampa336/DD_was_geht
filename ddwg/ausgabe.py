@@ -20,6 +20,7 @@ from .orte import Orte
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUSGABE_PATH = os.environ.get("DDWG_AUSGABE", os.path.join(ROOT, "ausgabe", "index.html"))
 VORLAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vorlage", "index.html")
+FLAVOURS_PATH = os.path.join(ROOT, "orte", "flavours.json")
 
 KATEGORIEN = {
     "musik": "Musik",
@@ -42,6 +43,25 @@ def _kurz(text):
     return text[:BESCHREIBUNG_MAX].rsplit(" ", 1)[0] + " …"
 
 
+def flavours_laden(orte, pfad=None):
+    """Flavours (voreingestellte Herz-Sets fuer den ersten Start) aus orte/flavours.json.
+
+    Gibt {"standard": key, "liste": [{"k", "n", "orte": [slug, ...]}]} zurueck. Ein Ort
+    zaehlt nur ueber seinen haupt-Flavour, "unklar" und unbekannte slugs fallen weg.
+    Fehlt die Datei, gibt es keine Flavours (None)."""
+    pfad = pfad or FLAVOURS_PATH
+    if not os.path.exists(pfad):
+        return None
+    with open(pfad, encoding="utf-8") as fh:
+        roh = json.load(fh)
+    liste = []
+    for f in roh.get("flavours", []):
+        slugs = [slug for slug, z in roh.get("orte", {}).items()
+                 if z.get("haupt") == f["key"] and orte.get(slug)]
+        liste.append({"k": f["key"], "n": f["name"], "orte": slugs})
+    return {"standard": roh.get("standard"), "liste": liste}
+
+
 def daten(conn, orte, heute=None, tage=None):
     heute = heute or date.today()
     ende = (heute + timedelta(days=tage)).isoformat() if tage else None
@@ -62,8 +82,11 @@ def daten(conn, orte, heute=None, tage=None):
         if ev["ort"]:
             used.add(ev["ort"])
 
+    flavours = flavours_laden(orte)
+    flavour_orte = {slug for f in (flavours or {}).get("liste", []) for slug in f["orte"]}
+
     orte_out = {}
-    for slug in used | set(orte.herz_orte()):
+    for slug in used | set(orte.herz_orte()) | flavour_orte:
         ort = orte.get(slug)
         if not ort:
             continue
@@ -81,6 +104,7 @@ def daten(conn, orte, heute=None, tage=None):
         "events": out,
         "orte": orte_out,
         "kategorien": KATEGORIEN,
+        "flavours": flavours,
         "quellen": {slug: quellen.name(slug) for slug in quellen.slugs()},
     }
 
