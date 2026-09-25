@@ -1289,6 +1289,7 @@
   ],
   "region": "dresden",
   "art": "club",
+  "herz": true,
   "homepage": "http://www.chemiefabrik.info/gigs/",
   "cover": "https://www.kulturkalender-dresden.de/storage/3092/responsive-images/Club-2___thumb_800_450.jpg",
   "beschreibung": "Anlaufstelle für alternative Kunst - hauptsächlich Musik, oft Punk. Aber auch HC, Grind, RocknRoll, Metal, Crust, Industrial, Techno, D&B, Indiezeugs, 80er",
@@ -3278,6 +3279,7 @@
    "Hole of Fame"
   ],
   "region": "dresden",
+  "herz": true,
   "cover": "https://www.kulturkalender-dresden.de/storage/38435/responsive-images/Hole-of-Fame___thumb_1200_675.jpg",
   "adresse": "Königsbrücker Straße 39, 01097 Dresden",
   "lat": 51.069026,
@@ -5448,6 +5450,7 @@
   ],
   "region": "dresden",
   "art": "club",
+  "herz": true,
   "homepage": "https://www.ost-pol.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/3089/responsive-images/ostpol-c-kuka___thumb_800_450.jpg",
   "adresse": "Königsbrücker Straße 47, 01099 Dresden",
@@ -6231,6 +6234,7 @@
    "Scheune Dresden (Vorplatz)"
   ],
   "region": "dresden",
+  "herz": true,
   "cover": "https://www.kulturkalender-dresden.de/storage/455/responsive-images/scheune-dresden-c-emod___thumb_768_460.jpg",
   "adresse": "Alaunstraße 36-40, 01099 Dresden",
   "lat": 51.0662864,
