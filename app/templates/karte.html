@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if mode == 'static' %}
+<meta name="robots" content="noindex, nofollow">
+{% endif %}
+<title>Karte · DD was geht</title>
+<script>
+/* Dieselbe Zweiteilung wie index.html: 'api' spricht mit Flask, 'static' liest
+   die vorgerechneten JSON-Dateien. Die Karte holt in BEIDEN Faellen dieselben
+   Tagesdaten wie die Liste - ein Event ist auf der Karte kein anderer
+   Datensatz, nur eine andere Darstellung. Dazu kommt EINE zusaetzliche Datei
+   mit den Koordinaten der Orte (venues-geo), die sich fast nie aendert. */
+window.DD = {
+  mode: {{ mode | tojson }},
+  categories: {{ categories | tojson }},
+  excluded: {{ default_hidden | tojson }},
+  dataVersion: {{ generated_at | tojson }},
+  urls: { venue: {{ venue_url_pattern | tojson }}, geo: {{ geo_url | tojson }} }
+};
+</script>
+<script src="{{ urls.asset('boot.js') }}"></script>
+<link rel="stylesheet" href="{{ urls.asset('leaflet.min.css') }}">
+<link rel="stylesheet" href="{{ urls.asset('app.css') }}">
+</head>
+<body>
+<div class="page karte-page">
+  <header class="masthead">
+    <h1 class="wordmark"><a class="wordmark-link" href="{{ urls.index }}">Dresden <em>was geht?!</em></a></h1>
+    <div class="masthead-right">
+      <nav class="site-nav"><a href="{{ urls.list_index }}">Eventliste</a>
+        <a href="{{ urls.venues_index }}">Alle Orte</a>
+        <a href="{{ urls.hearts_index }}">{% if mode == 'static' %}Handverlesen{% else %}Herzen{% endif %}</a></nav>
+      <div class="masthead-meta"><div class="city">Elbflorenz · Sachsen</div><div id="today-label"></div></div>
+      <div class="switches">
+        <div class="theme-switch">
+          <button class="theme-btn" id="theme-btn" aria-haspopup="true" aria-expanded="false" aria-label="Farbschema wählen">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"></path>
+            </svg>
+          </button>
+          <div class="theme-menu" id="theme-menu" role="group" aria-label="Farbschema" hidden></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {# Die Karte zeigt genau einen Tag. Ohne Tagesbindung staenden alle 4873
+     kommenden Events gleichzeitig auf 460 Nadeln - lesbar ist das nicht, und
+     die Frage "wo geht heute abend was" waere gerade nicht beantwortet. #}
+  <div class="karte-controls">
+    <div class="date-strip" id="date-strip" role="group" aria-label="Datum wählen"></div>
+    {# Dieselben Chips wie in der Liste (.chip/.chip-toggle, filter-group/
+       filter-row) - die Karte ist eine zweite Sicht auf dieselben Daten und
+       soll sich nicht wie eine zweite Anwendung bedienen. #}
+    <div class="karte-filter">
+      <div class="filter-menu">
+        <button class="filter-btn" id="cat-btn" aria-haspopup="true" aria-expanded="false">Kategorien
+          <span class="filter-badge" id="cat-badge" hidden></span>
+        </button>
+        <div class="filter-panel" id="cat-panel" role="group" aria-label="Filter" hidden>
+          <div class="filter-group">
+            <span class="filters-label">Kategorien</span>
+            <div class="filter-row" id="cat-row"></div>
+          </div>
+          <div class="filter-group">
+            <span class="filters-label">Zeigen</span>
+            <div class="filter-row">
+              <button class="chip chip-toggle" id="umland-toggle" aria-pressed="false"
+                      title="Auch Umland und weiter weg – Radebeul, Freital, Pirna, Meißen, Sächsische Schweiz …">Auch Umland &amp; Umgebung</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="karte-shell">
+    <div id="karte" class="karte-canvas" role="application" aria-label="Karte der Veranstaltungsorte"></div>
+    {# Seitenliste und Karte zeigen dieselbe Auswahl. Ein Klick auf eine Nadel
+       rollt hierher, ein Klick auf eine Zeile springt zur Nadel - sonst ist auf
+       dem Telefon nicht erkennbar, was hinter einem Punkt steckt. #}
+    <aside class="karte-side" id="karte-side">
+      <div class="karte-side-head" id="karte-side-head">Lädt …</div>
+      <div class="karte-side-list" id="karte-side-list"></div>
+    </aside>
+  </div>
+
+  <p class="footnote" id="karte-note"></p>
+</div>
+<script src="{{ urls.asset('chrome.js') }}"></script>
+<script src="{{ urls.asset('leaflet.min.js') }}"></script>
+<script src="{{ urls.asset('karte.js') }}"></script>
+</body>
+</html>

@@ -69,6 +69,8 @@ def _static_urls(asset_v, under_orte=False):
     if under_orte:
         return {
             "index": "../index.html",
+            "list_index": "../liste.html",
+            "map_index": "../karte.html",
             "venues_index": "index.html",
             "hearts_index": "../herzen.html",
             "venue": lambda slug: f"{slug}.html",
@@ -76,6 +78,13 @@ def _static_urls(asset_v, under_orte=False):
         }
     return {
         "index": "index.html",
+        # Seit der Kartenansicht ist index.html die Startseite mit der Wahl
+        # zwischen Liste und Karte; die Liste liegt daneben als liste.html.
+        # Die oeffentliche Adresse der Seite aendert sich dadurch NICHT - nur
+        # was unter ihr steht (Entscheidung #29 laesst die Pages-Einstellung
+        # und die URL unberuehrt).
+        "list_index": "liste.html",
+        "map_index": "karte.html",
         "venues_index": "orte/index.html",
         "hearts_index": "herzen.html",
         "venue": lambda slug: f"orte/{slug}.html",
@@ -153,6 +162,7 @@ def export(out_dir, days_ahead=45, today=None):
         # Die kuratierte Seite (Entscheidung #27). Dieselbe Abfrage wie
         # web.hearts_page - eine Quelle, zwei Aufrufer, wie bei index.html.
         hearts = db.list_hearts(conn)
+        venues_geo = db.venues_geo(conn)
         venues = db.list_venues(conn, today.isoformat())
         venue_events = {}
         venue_last_past = {}
@@ -241,7 +251,40 @@ def export(out_dir, days_ahead=45, today=None):
             asset_v=asset_v,
             urls=_static_urls(asset_v),
         )
-    _write(os.path.join(out_dir, "index.html"), html)
+    # Die Liste sitzt seit der Kartenansicht nicht mehr auf der Wurzel.
+    _write(os.path.join(out_dir, "liste.html"), html)
+
+    # --- Startseite: die Wahl zwischen Liste und Karte -----------------------
+    # index.html bleibt die Adresse, unter der die Seite oeffentlich erreichbar
+    # ist - sie zeigt jetzt die Wahl, nicht sofort die Liste (David,
+    # 2026-09-15). Kein Pages-Setting und kein Link aendert sich dadurch.
+    with flask_app.test_request_context("/"):
+        start_html = flask_app.jinja_env.get_template("start.html").render(
+            mode="static",
+            generated_at_label=datetime.fromisoformat(generated_at).strftime("%d.%m.%Y, %H:%M"),
+            asset_v=asset_v,
+            urls=_static_urls(asset_v),
+        )
+    _write(os.path.join(out_dir, "index.html"), start_html)
+
+    # --- Kartenansicht -------------------------------------------------------
+    # Die Karte liest dieselben Tagesdateien wie die Liste; dazu kommt eine
+    # einzelne Datei mit den Koordinaten der Orte. Die haengt NICHT am
+    # Tagesfenster und bekommt deshalb auch keinen Tages-Hash, sondern denselben
+    # Cache-Buster wie der ganze Export.
+    with flask_app.test_request_context("/"):
+        map_html = flask_app.jinja_env.get_template("karte.html").render(
+            categories=categories,
+            mode="static",
+            default_hidden=default_hidden,
+            generated_at=generated_at,
+            venue_url_pattern="orte/__slug__.html",
+            geo_url="data/orte-geo.json",
+            asset_v=asset_v,
+            urls=_static_urls(asset_v),
+        )
+    _write(os.path.join(out_dir, "karte.html"), map_html)
+    _write(os.path.join(out_dir, "data", "orte-geo.json"), _dump(venues_geo))
 
     # --- Die kuratierte Seite (P6a, Entscheidung #27) ------------------------
     # Oeffentlich ist das ERGEBNIS der Auswahl, nie der Weg dorthin: dieselbe

@@ -1,152 +1,10 @@
-/* Bedienung der Seite: Aussehen (Theme, Hintergrund-Animation), Filter, Liste,
-   Empfehlungszeile und Detail-Popup. Alles, was von Konfiguration oder
-   Betriebsart abhaengt, kommt aus window.DD - gesetzt im Kopf der Vorlage
-   (app/templates/index.html), sonst weiss diese Datei nichts von Jinja. */
+/* Die Eventliste: Filter, Liste, Empfehlungszeile und Detail-Popup. Alles, was
+   von Konfiguration oder Betriebsart abhaengt, kommt aus window.DD - gesetzt im
+   Kopf der Vorlage (app/templates/index.html), sonst weiss diese Datei nichts
+   von Jinja. Aussehen und Klappmenues stehen seit der Kartenansicht in
+   chrome.js, das vor dieser Datei geladen wird. */
 (function () {
   var DD = window.DD;
-  document.getElementById('today-label').textContent = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
-
-  // Aussehen: Farbschema und Hintergrund-Animation. Das Theme-Attribut steht
-  // schon vor dem Stylesheet (Inline-Skript im <head>), hier werden nur die
-  // beiden Menues gebaut und die Wahl persistiert. Jedes Theme bringt eine
-  // Signatur-Animation mit; das Animationsmenue kann sie ueberstimmen.
-  /* Im Privatmodus wirft schon der Zugriff auf localStorage. Statt das an
-     jedem der sechs Lese- und Schreibpunkte einzeln abzufangen, steht es hier
-     einmal: gelesen wird dann eben der Standardwert, geschrieben nichts. */
-  function stored(key, fallback) {
-    try { var raw = window.localStorage.getItem('dd-was-geht.' + key); return raw === null ? fallback : raw; }
-    catch (e) { return fallback; }
-  }
-  function store(key, value) {
-    try { window.localStorage.setItem('dd-was-geht.' + key, value); } catch (e) { /* s.o. */ }
-  }
-  // Schaltzustand fuer eine Gruppe gleichartiger Knoepfe (Chips, Farbpunkte,
-  // Animationsliste) - alle melden ihn ueber aria-pressed.
-  function press(nodes, isOn) {
-    document.querySelectorAll(nodes).forEach(function (el) {
-      el.setAttribute('aria-pressed', isOn(el) ? 'true' : 'false');
-    });
-  }
-
-  var THEMES = [
-    { key: 'industriegelaende', label: 'Industriegelände', swatch: '#d4652a', bg: '#17191a', anim: 'nebel' },
-    { key: 'elbe',              label: 'Elbe Dunkel',      swatch: '#4fc3ba', bg: '#14181a', anim: 'konstellation' },
-    { key: 'neustadt',          label: 'Neustadt Neon',    swatch: '#ff3d8b', bg: '#0e0e12', anim: 'wirbel' },
-    { key: 'pappel',            label: 'Pappel',           swatch: '#7fb349', bg: '#12180f', anim: 'staub' },
-    { key: 'prohlis',           label: 'Prohlis',          swatch: '#4fa8d8', bg: '#16181c', anim: 'puls' }
-  ];
-  var ANIMS = [
-    { key: 'auto',          label: 'Automatisch (zum Thema)' },
-    { key: 'konstellation', label: 'Konstellation' },
-    { key: 'wirbel',        label: 'Wirbel' },
-    { key: 'nebel',         label: 'Nebel' },
-    { key: 'staub',         label: 'Staub' },
-    { key: 'puls',          label: 'Puls' },
-    { key: 'zufall',        label: 'Zufall (bei jedem Laden)' },
-    { key: 'aus',           label: 'Aus' }
-  ];
-
-  var themeBtn = document.getElementById('theme-btn');
-  var themeMenu = document.getElementById('theme-menu');
-  var bgBtn = document.getElementById('bg-btn');
-  var bgMenu = document.getElementById('bg-menu');
-
-  function themeByKey(key) {
-    for (var i = 0; i < THEMES.length; i++) { if (THEMES[i].key === key) { return THEMES[i]; } }
-    return THEMES[0];
-  }
-
-  function bgPref() { return stored('bg', 'auto') || 'auto'; }
-
-  // Setzt data-bg auf die tatsaechlich zu zeichnende Animation und meldet die
-  // Aenderung; das Hintergrund-Skript haengt an genau diesem Event.
-  function applyAppearance() {
-    var pref = bgPref();
-    var active = themeByKey(document.documentElement.dataset.theme);
-    document.documentElement.dataset.bg = pref === 'auto' ? active.anim : pref;
-    syncThemeDots();
-    syncBgOpts();
-    window.dispatchEvent(new CustomEvent('dt-appearance-change'));
-  }
-
-  function setTheme(key) {
-    document.documentElement.dataset.theme = key;
-    store('theme', key);
-    applyAppearance();
-  }
-
-  function setBg(key) {
-    store('bg', key);
-    applyAppearance();
-  }
-
-  function syncThemeDots() {
-    var active = document.documentElement.dataset.theme;
-    press('#theme-menu .theme-dot', function (dot) { return dot.dataset.theme === active; });
-  }
-
-  function syncBgOpts() {
-    var pref = bgPref();
-    press('#bg-menu .bg-opt', function (opt) { return opt.dataset.anim === pref; });
-  }
-
-  THEMES.forEach(function (t) {
-    var dot = document.createElement('button');
-    dot.className = 'theme-dot';
-    dot.dataset.theme = t.key;
-    dot.title = t.label;
-    dot.style.background = 'linear-gradient(135deg,' + t.swatch + ' 50%,' + t.bg + ' 50%)';
-    dot.innerHTML = '<span class="sr-only"></span>';
-    dot.querySelector('.sr-only').textContent = t.label;
-    dot.addEventListener('click', function () { setTheme(t.key); closeMenus(); });
-    themeMenu.appendChild(dot);
-  });
-
-  ANIMS.forEach(function (a) {
-    var opt = document.createElement('button');
-    opt.className = 'bg-opt';
-    opt.dataset.anim = a.key;
-    opt.textContent = a.label;
-    opt.addEventListener('click', function () { setBg(a.key); closeMenus(); });
-    bgMenu.appendChild(opt);
-  });
-
-  /* Alle Klappmenues der Seite haengen an derselben Liste: Animation und
-     - aus dem zweiten Skriptblock heraus angemeldet - das Filter-Menue. So gibt
-     es nur EINEN Klick-daneben- und Escape-Handler, und ein neu geoeffnetes
-     Menue schliesst die anderen automatisch. */
-  var MENUS = [];
-
-  function registerMenu(menu, btn) {
-    MENUS.push({ menu: menu, btn: btn });
-    btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(menu, btn); });
-    menu.addEventListener('click', function (e) { e.stopPropagation(); });
-  }
-
-  function closeMenus() {
-    MENUS.forEach(function (m) {
-      m.menu.hidden = true;
-      m.btn.setAttribute('aria-expanded', 'false');
-    });
-  }
-
-  function toggleMenu(menu, btn) {
-    var wasOpen = !menu.hidden;
-    closeMenus();
-    if (!wasOpen) { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
-  }
-
-  registerMenu(themeMenu, themeBtn);
-  registerMenu(bgMenu, bgBtn);
-  // Der Filterblock laeuft in einer eigenen IIFE und meldet sein Panel hier an.
-  window.ddRegisterMenu = registerMenu;
-  document.addEventListener('click', function () { closeMenus(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeMenus(); }
-  });
-
-  applyAppearance();
-
   // Seit P5b eine Liste (categories-Tabelle, sort_order/default_visible statt
   // dem alten config.CATEGORY_LABELS-Woerterbuch) - fuer die Label-Suche in
   // dieser Datei reicht ein einfaches Nachschlage-Objekt daraus.
@@ -841,24 +699,79 @@
     refresh();
   }
 
-  // Kalender-Popover statt der frueheren Reiter: ein Klick auf einen Tag
-  // uebernimmt ihn, schliesst das Panel und laedt nur die Liste neu (die
-  // Empfehlungszeile haengt nicht am gewaehlten Tag, siehe staticPicks/
-  // /api/fuer-dich - das war bei den Reitern genauso).
+  // Eine Reihe mit den naechsten sieben Tagen deckt den haeufigen Fall in
+  // einem Klick ab; ein kleiner Kalender-Knopf daneben bleibt fuer alles
+  // ausserhalb dieses Fensters (zurueckliegende Tage, mehr als eine Woche
+  // voraus) - siehe die Entscheidung im Chat, den Reiter-Ersatz so
+  // aufzuteilen statt nur den Kalender zu behalten.
+  var dateStripEl = document.getElementById('date-strip');
   var dateBtn = document.getElementById('date-btn');
-  var dateBtnLabel = document.getElementById('date-btn-label');
   var datePanel = document.getElementById('date-panel');
+  var STRIP_DAYS = 7;
+
+  function stripDates() {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var out = [];
+    for (var i = 0; i < STRIP_DAYS; i++) {
+      var d = new Date(today); d.setDate(d.getDate() + i);
+      out.push(d);
+    }
+    return out;
+  }
+
+  function buildDateStrip() {
+    dateStripEl.innerHTML = '';
+    stripDates().forEach(function (d) {
+      var iso = isoDay(d);
+      var pill = document.createElement('button');
+      pill.className = 'date-pill';
+      pill.type = 'button';
+      pill.dataset.date = iso;
+      pill.setAttribute('aria-pressed', 'false');
+      // Kurzform in der Reihe ("Mo"), das volle Datum steht in Titel/ARIA-Label
+      // fuer Tooltip und Screenreader - siehe die Entscheidung im Chat.
+      pill.textContent = d.toLocaleDateString('de-DE', { weekday: 'short' }).replace(/\.$/, '');
+      var full = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' });
+      pill.title = full;
+      pill.setAttribute('aria-label', full);
+      pill.addEventListener('click', function () {
+        setSelectedDate(this.dataset.date);
+        loadList();
+      });
+      dateStripEl.appendChild(pill);
+    });
+  }
+
+  // Ob der gewaehlte Tag ueberhaupt in der sichtbaren Reihe steckt - sonst
+  // zeigt keine Kachel den aktiven Zustand, dafuer bekommt der Kalender-Knopf
+  // eine eigene Markierung (siehe .date-btn.is-active in app.css).
+  function inStrip(iso) {
+    return stripDates().some(function (d) { return isoDay(d) === iso; });
+  }
+
+  function syncDateStrip() {
+    press('.date-pill', function (pill) { return pill.dataset.date === selectedDate; });
+    dateBtn.classList.toggle('is-active', !inStrip(selectedDate));
+  }
+
+  // Der flatpickr-Kalender fuehrt seine eigene Vorstellung vom gewaehlten Tag -
+  // die muss mitziehen, auch wenn die Auswahl aus der Reihe kommt, sonst zeigt
+  // ein spaeter geoeffneter Kalender noch den alten Stand.
+  var fpInstance = null;
 
   function setSelectedDate(iso) {
     selectedDate = iso;
-    dateBtnLabel.textContent = formatDay(selectedDate);
+    syncDateStrip();
+    if (fpInstance) { fpInstance.setDate(iso, false); }
   }
+
+  buildDateStrip();
 
   if (window.flatpickr) {
     if (window.flatpickr.l10ns && window.flatpickr.l10ns.de) {
       window.flatpickr.localize(window.flatpickr.l10ns.de);
     }
-    window.flatpickr('#date-calendar', {
+    fpInstance = window.flatpickr('#date-calendar', {
       inline: true,
       defaultDate: selectedDate,
       onChange: function (dates, dateStr) {

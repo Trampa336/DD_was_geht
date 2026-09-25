@@ -50,7 +50,8 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 # mit Absicht: dort gibt es keinen Server, an den ein Herz ginge, also soll auch
 # der Code dafuer nicht dabei sein (siehe tools/export_static.py). Bis P5c stand
 # an dieser Stelle rating.js, aus demselben Grund.
-PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "orte.js",
+PUBLIC_ASSETS = ("boot.js", "app.css", "app.js", "chrome.js", "background.js",
+                  "orte.js", "karte.js", "leaflet.min.js", "leaflet.min.css",
                   "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
 
 
@@ -100,6 +101,11 @@ def api_urls():
     P5a verifizierte Vertrag (tools/export_static.py:160-172)."""
     return {
         "index": "/",
+        # Seit der Kartenansicht ist "/" die Startseite mit der Wahl zwischen
+        # Liste und Karte (David, 2026-09-15) - die Liste hat eine eigene
+        # Adresse bekommen, statt weiter auf der Wurzel zu sitzen.
+        "list_index": "/liste",
+        "map_index": "/karte",
         "venues_index": "/orte",
         "hearts_index": "/herzen",
         "venue": lambda slug: f"/orte/{slug}",
@@ -116,6 +122,18 @@ def _default_hidden(categories):
 
 
 @app.route("/")
+def start():
+    """Die Wahl zwischen Karte und Eventliste (David, 2026-09-15).
+
+    Bewusst eine eigene Seite und keine Umleitung auf eine der beiden: die
+    Karte ist die zweite gleichberechtigte Sicht auf dieselben Daten, und wer
+    die Wurzel aufruft, soll beide sehen. Die oeffentliche Adresse bleibt
+    dieselbe - nur was dort steht, ist neu (siehe tools/export_static.py)."""
+    return render_template("start.html", mode="api", generated_at_label="",
+                           asset_v=ASSET_VERSION, urls=api_urls())
+
+
+@app.route("/liste")
 def index():
     # mode="api": die Seite spricht mit dieser Flask-App. Dieselbe Vorlage wird
     # von tools/export_static.py ein zweites Mal mit mode="static" gerendert -
@@ -180,6 +198,33 @@ def api_fuer_dich():
         events = db.events_for_range(conn, today.isoformat(), end.isoformat(), categories, exclude_categories=exclude)
         top = scoring.top_picks(conn, events, limit=8)
     return jsonify({"categories": categories, "events": top})
+
+
+# --- Kartenansicht -----------------------------------------------------------
+# Koordinaten haengen an der Venue, nicht am Event (migrations/002_venue_geo.sql):
+# eine Nadel je Ort, die Anzahl der Termine steht darin. Die Karte holt
+# dieselben Tagesdaten wie die Liste (/api/events bzw. die Tagesdateien) und
+# dazu EINE Datei mit den Orten - die aendert sich fast nie und wird gecacht.
+
+@app.route("/karte")
+def map_page():
+    with db.get_conn() as conn:
+        categories = db.list_categories(conn)
+    return render_template("karte.html", categories=categories, mode="api",
+                           default_hidden=_default_hidden(categories),
+                           generated_at="",
+                           # Die Vorlage kennt keine Flask-Routen, deshalb ein
+                           # Muster mit Platzhalter - im statischen Export steht
+                           # hier ein anderer Pfad (siehe _static_urls).
+                           venue_url_pattern="/orte/__slug__",
+                           geo_url="/api/orte-geo",
+                           asset_v=ASSET_VERSION, urls=api_urls())
+
+
+@app.route("/api/orte-geo")
+def api_venues_geo():
+    with db.get_conn() as conn:
+        return jsonify(db.venues_geo(conn))
 
 
 # --- Venue-Seiten (P5b) ------------------------------------------------------

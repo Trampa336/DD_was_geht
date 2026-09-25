@@ -95,12 +95,12 @@ window.DD = {
   </section>
 
   <div class="date-picker">
-    <button class="date-btn" id="date-btn" aria-haspopup="dialog" aria-expanded="false">
+    <div class="date-strip" id="date-strip" role="group" aria-label="Datum wählen"></div>
+    <button class="date-btn" id="date-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Anderes Datum wählen" title="Anderes Datum wählen">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
         <rect x="3" y="5" width="18" height="16" rx="3"></rect>
         <path d="M3 10h18M8 3v4M16 3v4"></path>
       </svg>
-      <span id="date-btn-label"></span>
     </button>
     <div class="date-panel" id="date-panel" role="dialog" aria-label="Datum wählen" hidden>
       <div id="date-calendar"></div>
@@ -216,6 +216,7 @@ window.DD = {
    hier rating.js, aus demselben Grund. #}
 <script src="{{ urls.asset('herzen.js') }}"></script>
 {% endif %}
+<script src="{{ urls.asset('chrome.js') }}"></script>
 <script src="{{ urls.asset('flatpickr.min.js') }}"></script>
 <script src="{{ urls.asset('flatpickr-de.js') }}"></script>
 <script src="{{ urls.asset('app.js') }}"></script>

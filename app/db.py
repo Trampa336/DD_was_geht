@@ -36,6 +36,21 @@ SCHEMA_V2_PATH = _MIGRATIONS_DIR / "001_schema_v2.sql"
 # idempotent ueber PRAGMA table_info, weil Schema v2 laut CUTOVER.md keinen
 # Migrationsweg kennt. Beide mit DEFAULT, sonst lehnt SQLite ADD COLUMN NOT
 # NULL ab.
+# Spalten fuer die Kartenansicht (migrations/002_venue_geo.sql). Dasselbe
+# idempotente Muster wie HEARTS_ADDED_COLUMNS unten: Schema v2 kennt laut
+# CUTOVER.md keinen Migrationsweg, eine bestehende DB bekommt die Spalten
+# deshalb hier nachgezogen statt ueber ein ALTER-Geruest. Alle NULL-bar -
+# "kein Standort bekannt" ist eine gueltige Antwort, siehe venues_geo().
+VENUES_GEO_COLUMNS = {
+    "street": "TEXT",
+    "postcode": "TEXT",
+    "city": "TEXT",
+    "lat": "REAL",
+    "lon": "REAL",
+    "geo_source": "TEXT",
+    "geo_fetched_at": "TEXT",
+}
+
 HEARTS_ADDED_COLUMNS = {
     "run_key": "TEXT NOT NULL DEFAULT ''",
     "member_uids": "TEXT",
@@ -81,6 +96,7 @@ def init_db():
         if not exists:
             conn.executescript(SCHEMA_V2_PATH.read_text(encoding="utf-8"))
         _ensure_hearts_schema(conn)
+        _ensure_venue_geo_schema(conn)
         _retire_reactions(conn)
         _seed_tags(conn)
 
@@ -102,6 +118,23 @@ def _ensure_hearts_schema(conn):
         if name not in have:
             conn.execute(f"ALTER TABLE hearts ADD COLUMN {name} {ddl}")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_hearts_run ON hearts(run_key)")
+
+
+def _ensure_venue_geo_schema(conn):
+    """Adresse und Koordinaten an `venues` nachruesten (Kartenansicht).
+
+    Der CHECK auf geo_source aus migrations/002_venue_geo.sql laesst sich per
+    ALTER TABLE nicht nachtragen - SQLite kann einer bestehenden Tabelle keine
+    Bedingung hinzufuegen. Geschrieben wird die Spalte ausschliesslich von
+    tools/fetch_venue_locations.py, und dort steht der erlaubte Wertebereich
+    ('kk_page' | 'nominatim'); eine frisch aus der Migration angelegte DB
+    traegt den CHECK ohnehin."""
+    have = {row["name"] for row in conn.execute("PRAGMA table_info(venues)")}
+    for name, ddl in VENUES_GEO_COLUMNS.items():
+        if name not in have:
+            conn.execute(f"ALTER TABLE venues ADD COLUMN {name} {ddl}")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_venues_geo "
+                 "ON venues(lat, lon) WHERE lat IS NOT NULL")
 
 
 def _retire_reactions(conn):
@@ -1483,3 +1516,30 @@ def relink_hearts(conn):
         logger.info("Herzen geprueft: %d ok, %d neu verknuepft, %d verwaist.",
                     summary["ok"], summary["neu_verknuepft"], summary["verwaist"])
     return summary
+
+
+def venues_geo(conn):
+    """Alle verorteten Venues als Nachschlagewerk fuer die Kartenansicht.
+
+    Schmal gehalten, weil die Datei bei jedem Kartenaufruf ueber die Leitung
+    geht und sich fast nie aendert: Name, Koordinaten, Region, Art. Alles
+    andere (Cover, Beschreibung, Telefon) steht auf der Ortsseite, die von der
+    Nadel aus einen Klick entfernt ist.
+
+    Kurze Schluessel (n/r/k statt name/region/kind) - bei ~460 Orten macht das
+    im Export rund ein Viertel der Dateigroesse aus.
+
+    Treffpunkte fehlen hier wie ueberall (siehe list_venues), Venues ohne
+    Koordinaten ebenso: NULL heisst "kein Standort bekannt" und ist eine
+    gueltige Antwort, keine Luecke zum Auffuellen (siehe
+    migrations/002_venue_geo.sql).
+    """
+    rows = conn.execute(
+        "SELECT slug, name, lat, lon, region, kind FROM venues "
+        "WHERE lat IS NOT NULL AND lon IS NOT NULL AND is_meeting_point = 0"
+    ).fetchall()
+    return {
+        r["slug"]: {"n": r["name"], "lat": r["lat"], "lon": r["lon"],
+                    "r": r["region"], "k": r["kind"]}
+        for r in rows
+    }

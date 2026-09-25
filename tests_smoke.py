@@ -1449,7 +1449,10 @@ check("Highlight: Standard im Code ist 80",
       open(os.path.join(_ROOT, "app", "config.py"), encoding="utf-8").read())
 
 _client_web = web.app.test_client()
-_page = _client_web.get("/").get_data(as_text=True)
+# Seit der Kartenansicht ist "/" die Startseite mit der Wahl zwischen Liste und
+# Karte (David, 2026-09-15); die Liste - und damit alles, was hier unten
+# geprueft wird - sitzt auf /liste.
+_page = _client_web.get("/liste").get_data(as_text=True)
 
 
 def _bundle(html, asset_dir):
@@ -1476,8 +1479,11 @@ _page_all = _bundle(_page, os.path.join(_ROOT, "app", "static"))
 # (Kalender-Popover) kommen die drei flatpickr-Dateien dazu; die Liste ist die
 # einzige Stelle, die eine neue Datei kennen muss - Serve-Check und Anzahl
 # leiten sich beide von ihr ab, damit sie nie wieder auseinanderlaufen.
-_LINKED_ASSETS = ("boot.js", "app.css", "app.js", "background.js", "herzen.js",
-                  "flatpickr.min.js", "flatpickr.min.css", "flatpickr-de.js")
+# chrome.js seit der Kartenansicht: Theme- und Klappmenue-Mechanik stand bis
+# dahin oben in app.js und wird jetzt von vier Seiten gebraucht.
+_LINKED_ASSETS = ("boot.js", "app.css", "app.js", "chrome.js", "background.js",
+                  "herzen.js", "flatpickr.min.js", "flatpickr.min.css",
+                  "flatpickr-de.js")
 for _asset in _LINKED_ASSETS:
     check(f"Flask liefert static/{_asset} aus",
           _client_web.get("/static/" + _asset).status_code == 200)
@@ -1554,8 +1560,20 @@ check("Export: Score liegt im gueltigen Bereich", 0 <= _beatpol["score"] <= 100)
 check("Export: keine Merkmalsschluessel mehr im Export", "fk" not in _beatpol)
 check("Export: leere Felder fliegen raus", "image_url" not in _beatpol)
 
-_static_html = open(os.path.join(_export_dir, "index.html"), encoding="utf-8").read()
+# Seit der Kartenansicht liegt die Liste als liste.html neben der Startseite -
+# alles, was hier unten geprueft wird, ist die Liste.
+_static_html = open(os.path.join(_export_dir, "liste.html"), encoding="utf-8").read()
 _static_all = _bundle(_static_html, os.path.join(_export_dir, "static"))
+# Die Startseite und die Karte sind zwei WEITERE oeffentliche Seiten. Decision
+# #8 gilt fuer jede davon, nicht nur fuer die Liste - deshalb wird der
+# Schreibweg unten gegen alle drei geprueft und nicht nur gegen _static_all.
+_static_start = open(os.path.join(_export_dir, "index.html"), encoding="utf-8").read()
+_static_karte = open(os.path.join(_export_dir, "karte.html"), encoding="utf-8").read()
+_static_public_all = "\n".join([
+    _static_all,
+    _bundle(_static_start, os.path.join(_export_dir, "static")),
+    _bundle(_static_karte, os.path.join(_export_dir, "static")),
+])
 check("Export: Seite laeuft im static-Modus", 'mode: "static"' in _static_html)
 # Der Export muss die Dateien mitnehmen, sonst liegt auf GitHub Pages eine Seite
 # ohne Stylesheet und ohne Skripte.
@@ -1576,8 +1594,8 @@ check("Export: auch ein rating.js aus einem Export vor P5c bleibt draußen",
 # stehen und laeuft nie, weil CAN_HEART im static-Modus false ist.
 check("Export: oeffentliche Seite kann nicht herzen",
       "var CAN_HEART = MODE === 'api';" in _static_all
-      and "/api/herz" not in _static_all
-      and "window.ddHerzButton = " not in _static_all)
+      and "/api/herz" not in _static_public_all
+      and "window.ddHerzButton = " not in _static_public_all)
 check("Export: keine Gast-Bewertung im localStorage mehr",
       "guestReact" not in _static_all and "guest.weights" not in _static_all.split("removeItem")[0])
 check("Export: Empfehlungszeile heisst oeffentlich anders",
@@ -1782,6 +1800,53 @@ check("feed.venue_cover: ohne venues.og_image_url faellt es auf das Event-Bild z
       feed.venue_cover(_thin_venue, _thin_upcoming) == "https://cdn.example/testclub-event.jpg")
 check("feed.venue_cover: ganz ohne Bild bleibt es None",
       feed.venue_cover({"og_image_url": None}, [{"image_url": None}]) is None)
+
+# --- Startseite, Karte und Venue-Koordinaten ---------------------------------
+# Die Karte zeigt dieselben Events wie die Liste, nur nach Ort gruppiert. Was
+# hier festgenagelt wird, ist genau das, was dabei schiefgehen kann: dass ein
+# Ort OHNE Koordinaten auf der Karte landet, dass ein Treffpunkt doch eine
+# Nadel bekommt, und dass die Startseite eine der beiden Sichten verliert.
+with db.get_conn() as conn:
+    conn.execute("UPDATE venues SET lat = ?, lon = ?, geo_source = 'kk_page', "
+                 "street = ?, postcode = ?, city = ? WHERE slug = ?",
+                 (51.0504, 13.7373, "Teststrasse 1", "01067", "Dresden", _enriched_slug))
+    # Der Treffpunkt bekommt ABSICHTLICH Koordinaten: nur so prueft der Test
+    # unten wirklich die is_meeting_point-Bedingung und nicht bloss NULL.
+    conn.execute("UPDATE venues SET lat = ?, lon = ? WHERE slug = ?",
+                 (51.0600, 13.7400, _meeting_slug))
+    _geo = db.venues_geo(conn)
+
+check("venues_geo: verortete Venue ist dabei", _enriched_slug in _geo)
+check("venues_geo: Venue ohne Koordinaten fehlt", _thin_slug not in _geo)
+check("venues_geo: Treffpunkt bekommt keine Nadel, auch mit Koordinaten",
+      _meeting_slug not in _geo)
+check("venues_geo: liefert Name, Koordinaten, Region und Art",
+      set(_geo[_enriched_slug]) == {"n", "lat", "lon", "r", "k"})
+check("venues_geo: Koordinaten bleiben Zahlen",
+      isinstance(_geo[_enriched_slug]["lat"], float)
+      and isinstance(_geo[_enriched_slug]["lon"], float))
+
+_start_page = _client_web.get("/").get_data(as_text=True)
+check("Startseite bietet beide Sichten an",
+      'href="/liste"' in _start_page and 'href="/karte"' in _start_page)
+check("Startseite zeigt selbst keine Events",
+      "fuer-dich-row" not in _start_page and 'id="list"' not in _start_page)
+
+_karte_resp = _client_web.get("/karte")
+check("/karte antwortet", _karte_resp.status_code == 200)
+_karte_page = _karte_resp.get_data(as_text=True)
+check("/karte bindet Leaflet ein",
+      "leaflet.min.js" in _karte_page and "leaflet.min.css" in _karte_page)
+check("/karte laedt die Orte ueber die API", '"/api/orte-geo"' in _karte_page)
+check("/karte nennt OpenStreetMap als Quelle",
+      "karte.js" in _karte_page
+      and "OpenStreetMap" in open(os.path.join(_ROOT, "app", "static", "karte.js"),
+                                  encoding="utf-8").read())
+
+_geo_resp = _client_web.get("/api/orte-geo")
+check("/api/orte-geo liefert JSON", _geo_resp.status_code == 200)
+check("/api/orte-geo enthaelt die verortete Testvenue",
+      _enriched_slug in _geo_resp.get_json())
 
 # --- /orte und /orte/<slug> (Flask) ------------------------------------------
 _orte_page = _client_web.get("/orte").get_data(as_text=True)
