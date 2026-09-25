@@ -1,0 +1,599 @@
+"""Doppelungen über Quellen hinweg erkennen.
+
+Warum das nötig wurde: rauze.de und ra.co listen weitgehend dieselben Dresdner
+Clubnächte (objekt klein a, Sektor Evolution, Club Paula ...). Die stabile
+Event-ID aus normalize.make_event_uid() fällt nur zusammen, wenn Datum, Zeit,
+Titel und Ort *identisch* geschrieben sind - real heißt dieselbe Nacht auf der
+einen Seite "Pangaea invites" und auf der anderen "Pangaea Invites w/ Xiorro",
+und der Ort einmal "objekt klein a", einmal "OKA". Ohne den Abgleich hier
+stünde jede solche Nacht doppelt im Newsletter.
+
+Zwei Grundregeln, die Fehltreffer verhindern:
+
+1. **Nur quellenübergreifend.** Zwei Einträge *derselben* Quelle sind nie eine
+   Doppelung - eine Führung, die am selben Tag um 11:00 und um 15:00 startet,
+   ist zweimal derselbe Titel am selben Ort und trotzdem zweimal ein Event.
+   Genau eine Ausnahme, siehe _festival_groups(): die Zeilen eines Line-ups,
+   die derselbe Scraper unter einem gemeinsamen Veranstaltungsnamen geliefert
+   hat.
+2. **Uhrzeit als Gegenprobe.** Liegen zwei Startzeiten mehr als
+   MAX_TIME_DELTA_MINUTES auseinander, sind es verschiedene Termine - auch bei
+   identischem Titel. Ausnahme: bei gleichem Ort und praktisch deckungsgleichem
+   Titel gilt das weitere Fenster MAX_TIME_DELTA_STRONG_MINUTES, weil die
+   Quellen dort Einlass und Beginn meinen (Open Air: zwei bis drei Stunden).
+
+Seit v3 liefert dieses Modul nur noch GRUPPEN (cluster()): alle Einträge, die
+dieselbe Veranstaltung meinen, stehen zusammen, der ranghöchste zuerst (Rang
+aus ddwg/quellen, Standard: die Seite des Hauses vor rauze vor kulturkalender
+vor cybersax). Was aus einer Gruppe wird, entscheidet ddwg/merge.py - dort
+werden die Felder verschmolzen, statt einen Gewinner zu küren und den Rest
+auszublenden. Kein Eintrag bekommt mehr ein duplicate_of.
+"""
+import collections
+import difflib
+import logging
+import re
+
+from . import normalize, quellen
+# Sammel-Eintraege entstehen ausschliesslich in diesem Scraper; von dort kommt
+# auch das Wissen, welche Abschnittsueberschrift eine Rubrik ist und welche ein
+# Veranstaltungsname (siehe _festival_groups).
+from .quellen import cybersax
+
+logger = logging.getLogger("dd-was-geht.dedup")
+
+# Zwei Startzeiten dürfen so weit auseinanderliegen und noch dasselbe Event
+# meinen (Quellen zählen mal den Einlass, mal den Beginn).
+MAX_TIME_DELTA_MINUTES = 90
+
+# Bei starker Evidenz darf der Abstand deutlich größer sein. Open-Air-Bühnen
+# nennen einmal den Einlass und einmal den Beginn, und dazwischen liegen dort
+# zwei bis drei Stunden. Real am 21.08.2026: rauze "Wincent Weiss" 17:00 und
+# kulturkalender "Wincent Weiss Sommertour 2026" 19:00, beide Filmnächte am
+# Elbufer - gleicher Ortsschlüssel, Wort-Überdeckung 1.00, und trotzdem hat das
+# 90-Minuten-Fenster die beiden getrennt gelassen. Das Konzert stand danach
+# zweimal im Newsletter.
+#
+# Warum 150 und nicht mehr: der reale Abstand betraegt 120 Minuten, und ab etwa
+# drei Stunden ist es glaubhaft ein zweiter Termin am selben Abend (fruehe und
+# spaete Vorstellung). Genau diese Grenze prueft tests_smoke.py mit "Cats &
+# Dogs" 19:00/22:00. Im Zweifel wird nicht zusammengefasst - lieber ein Event
+# zweimal im Newsletter als eines, das stillschweigend verschwindet.
+MAX_TIME_DELTA_STRONG_MINUTES = 150
+
+# Ab dieser Wort-Überdeckung gilt der Titel ZUSAMMEN mit gleichem Ort als
+# starke Evidenz. Bewusst höher als SAME_VENUE_MIN_OVERLAP: "MODUS: Akua" vs.
+# "MODUS: Anetha" liegt bei 0.50 und bleibt damit beim engen Fenster - zwei
+# Termine derselben Reihe am selben Abend dürfen nicht verschmelzen.
+STRONG_TITLE_OVERLAP = 0.8
+
+# Zweiter Weg zu derselben starken Evidenz, über die Zeichen-Ähnlichkeit.
+#
+# Warum es ihn braucht: die Wort-Überdeckung ist nicht immer definiert.
+# _title_tokens() wirft Wörter unter drei Zeichen weg, und es gibt Titel, von
+# denen danach NICHTS übrig bleibt - dann liefert _title_scores() zwangsläufig
+# overlap=0.0, ganz gleich wie ähnlich die Titel wirklich sind. Weil die erste
+# Zeile von _RULES bisher ausschliesslich die Wort-Überdeckung abfragte, war
+# das weite Zeitfenster für solche Titel unerreichbar - auch bei buchstäblich
+# identischem Text.
+#
+# Real am 12.09.2026 im Ostpol: kulturkalender "S.Y.N.T.H.E.T.I.C
+# S.I.G.N.A.L.S" 20:00 und rauze "S.Y.N.T.H.E.T.I.C S.I.G.N.A.L.S" 22:00 -
+# gleicher Ortsschlüssel, Zeichen-Ähnlichkeit 1.00, Abstand 120 Minuten (also
+# innerhalb von MAX_TIME_DELTA_STRONG_MINUTES, Einlass gegen Beginn). Der
+# Klubabend stand trotzdem zweimal in der Liste, weil jedes Wort des Titels
+# nach dem Punkt-Aufbrechen nur ein Zeichen lang ist und die Wort-Überdeckung
+# damit auf 0.0 fiel.
+#
+# Warum 0.95 und nicht niedriger: dieser Weg soll NUR praktisch deckungsgleiche
+# Titel durchlassen. Alles Schwächere gehört weiter in die zweite Zeile von
+# _RULES mit dem engen 90-Minuten-Fenster. "MODUS: Akua" vs. "MODUS: Anetha"
+# liegt bei 0.72 und bleibt damit aussen vor - genau wie bisher.
+STRONG_TITLE_RATIO = 0.95
+
+# Titel-Ähnlichkeit (0-1), ab der zwei Einträge als dasselbe Event gelten.
+# Gleicher Ort + gleicher Tag + passende Zeit ist schon starke Evidenz, deshalb
+# darf der Titel dort stärker abweichen als bei unklarem Ort.
+#
+# Bei gleichem Ort zählen zwei Maße getrennt, und zwar mit Absicht: die
+# Wort-Überdeckung darf großzügig sein ("Pangaea Invites" vs. "Pangaea Invites
+# w/ Xiorro"), die reine Zeichen-Ähnlichkeit nicht. Sonst verschmelzen zwei
+# echte Termine derselben Reihe, deren Titel sich nur im Gastnamen
+# unterscheiden ("MODUS: Akua" vs. "MODUS: Anetha" liegt bei 0.72 Zeichen-
+# Ähnlichkeit, aber nur 0.5 Wort-Überdeckung).
+SAME_VENUE_MIN_OVERLAP = 0.6
+SAME_VENUE_MIN_RATIO = 0.75
+TITLE_MIN_UNKNOWN_VENUE = 0.85
+TITLE_MIN_OTHER_VENUE = 0.9
+
+# Ortsnamen, die dieselbe Location meinen. Links steht, was slugify() aus der
+# jeweiligen Schreibweise macht, rechts der gemeinsame Schlüssel. Gepflegt wird
+# das in ddwg/quellen/__init__.py. Seit v3 kommt der Ortsname meist schon
+# aufgelöst aus orte/orte.json (ddwg/pipeline.py setzt den kanonischen Namen),
+# das hier ist das Sicherheitsnetz für Schreibweisen, die dort noch fehlen.
+VENUE_ALIASES = quellen.venue_aliases()
+
+# Füllwörter in Ortsnamen: "Club Paula" (RA) und "Paula" (Rauze) sind derselbe
+# Laden, "Chemiefabrik e.V." und "Chemiefabrik" auch.
+_GENERIC_VENUE_WORDS = {"club", "dresden", "e", "v", "ev", "der", "die", "das", "im", "in"}
+
+# Ort unbekannt - dann darf der Ort weder für noch gegen eine Doppelung zählen.
+# (Rauze schreibt Platzhalter in dieses Feld, statt es leer zu lassen.)
+_UNKNOWN_VENUES = {
+    "tba", "tbc", "unknown", "unbekannt", "secret-location", "ort-folgt",
+    "location-siehe-beschreibung", "siehe-beschreibung", "geheim", "secret",
+    "location-tba", "wird-noch-bekannt-gegeben",
+}
+
+# Titel-Beiwerk, das je Quelle unterschiedlich mitgeschleppt wird.
+_TITLE_STOPWORDS = {
+    "the", "und", "and", "mit", "with", "feat", "featuring", "presents",
+    "praesentiert", "pres", "der", "die", "das", "dresden", "party", "im", "in",
+}
+
+
+def _venue_key(venue):
+    """Vergleichbarer Ortsschlüssel. Leerer String = Ort unbekannt."""
+    slug = normalize.slugify(venue or "")
+    if not slug or slug in _UNKNOWN_VENUES:
+        return ""
+    parts = [p for p in slug.split("-") if p and p not in _GENERIC_VENUE_WORDS]
+    slug = "-".join(parts) or slug
+    return VENUE_ALIASES.get(slug, slug)
+
+
+def _title_tokens(slug):
+    return {w for w in slug.split("-") if len(w) >= 3 and w not in _TITLE_STOPWORDS}
+
+
+# Was der Titelvergleich hergibt. ratio und overlap sind bewusst zwei getrennte
+# Maße (siehe _title_scores), words ist die Wortzahl des kürzeren Titels - die
+# braucht die Regel für den unbekannten Ort als Gegenprobe.
+_TitleScores = collections.namedtuple("_TitleScores", "ratio overlap words")
+
+
+def _title_scores(title_a, title_b):
+    """Zeichen-Ähnlichkeit, Wort-Überdeckung und Wortzahl des kürzeren Titels.
+
+    Die Wort-Überdeckung ("wie viele bedeutsame Wörter des kürzeren Titels
+    stecken im längeren") ist das entscheidende Maß, weil die Quellen genau so
+    auseinandergehen: Rauze kürzt auf den Reihennamen, RA hängt das Line-up an.
+    Real gemessen am 21.08.2026:
+
+        Rauze "Modus"          / RA "MODUS: Akua"                  -> 1.00
+        Rauze "Sachsentrance"  / RA "Sachsentrance Sommerfest"     -> 1.00
+        Rauze "Bratty"         / RA "bratty with charli xcx ..."   -> 1.00
+
+    Die Zeichen-Ähnlichkeit liegt in allen drei Fällen unter 0.75 und taugt
+    dafür nicht. Umgekehrt bleibt die Wort-Überdeckung streng genug, wenn beide
+    Titel gleich lang sind und sich im entscheidenden Wort unterscheiden
+    ("MODUS: Akua" vs. "MODUS: Anetha" -> 0.50).
+
+    Weil ein einzelnes enthaltenes Wort für sich schwach ist, darf dieses Maß
+    nur zusammen mit einem übereinstimmenden Ort voll zählen; ohne Ort verlangt
+    match() zusätzlich vollständige Überdeckung von mindestens zwei Wörtern.
+    """
+    slug_a, slug_b = normalize.slugify(title_a or ""), normalize.slugify(title_b or "")
+    if not slug_a or not slug_b:
+        return _TitleScores(0.0, 0.0, 0)
+    ratio = difflib.SequenceMatcher(None, slug_a, slug_b).ratio()
+
+    tokens_a, tokens_b = _title_tokens(slug_a), _title_tokens(slug_b)
+    smaller = min(len(tokens_a), len(tokens_b))
+    if not smaller:
+        return _TitleScores(ratio, 0.0, 0)
+    return _TitleScores(ratio, len(tokens_a & tokens_b) / smaller, smaller)
+
+
+_TIME_RE = re.compile(r"^(\d{1,2}):(\d{2})$")
+
+
+def _minutes(time_text):
+    match = _TIME_RE.match((time_text or "").strip())
+    if not match:
+        return None
+    return int(match.group(1)) * 60 + int(match.group(2))
+
+
+def _time_compatible(time_a, time_b, max_delta=MAX_TIME_DELTA_MINUTES):
+    """Fehlt eine Zeit, zählt sie weder für noch gegen die Doppelung.
+    Der Abstand wird über Mitternacht hinweg gemessen (23:30 vs. 00:30 = 60 min).
+    Wie groß max_delta sein darf, entscheidet match() anhand der übrigen
+    Evidenz (siehe MAX_TIME_DELTA_STRONG_MINUTES)."""
+    minutes_a, minutes_b = _minutes(time_a), _minutes(time_b)
+    if minutes_a is None or minutes_b is None:
+        return True
+    delta = abs(minutes_a - minutes_b)
+    return min(delta, 1440 - delta) <= max_delta
+
+
+# --- Die Entscheidungstabelle ----------------------------------------------
+# Ob zwei Einträge dasselbe Event sind, hängt an drei Größen: der Ortslage, der
+# Titel-Evidenz und dem Abstand der Startzeiten. Jede Ortslage kombiniert sie
+# anders, und genau das steht unten als Tabelle - eine Zeile je
+# (Ortslage -> nötige Titel-Evidenz -> erlaubter Zeitabstand).
+#
+# match() liest _RULES von oben nach unten und nimmt die erste Zeile, die
+# vollständig passt: richtige Ortslage, mindestens einer der beiden
+# Titel-Schwellwerte erreicht, Startzeiten innerhalb des Zeitfensters und - wo
+# vorhanden - die Zusatzprobe bestanden. Passt keine Zeile, sind es zwei
+# verschiedene Termine.
+
+_SAME_VENUE = "gleicher Ort"
+_OTHER_VENUE = "zwei verschiedene, bekannte Orte"
+_UNKNOWN_VENUE = "mindestens ein Ort unbekannt"
+
+# Welche Maße ein Treffer als Ähnlichkeit ausweist (der größere gewinnt).
+_BOTH_MEASURES = ("ratio", "overlap")
+_RATIO_ONLY = ("ratio",)
+_OVERLAP_ONLY = ("overlap",)
+
+# min_overlap/min_ratio: None heißt "dieses Maß zählt in dieser Zeile nicht".
+_Rule = collections.namedtuple(
+    "_Rule", "venue min_overlap min_ratio max_delta score_from reason extra"
+)
+
+
+def _venue_situation(event_a, event_b):
+    """Welche der drei Ortslagen liegt vor?"""
+    key_a, key_b = _venue_key(event_a.get("venue")), _venue_key(event_b.get("venue"))
+    if not (key_a and key_b):
+        return _UNKNOWN_VENUE
+    return _SAME_VENUE if key_a == key_b else _OTHER_VENUE
+
+
+def _neither_is_umbrella(event_a, event_b, scores):
+    """Sammel-Einträge sind per Konstruktion an EINEN Ort gebunden und tragen
+    alle denselben Titel (den Festivalnamen). Über die Titel-Regel würden
+    deshalb sämtliche Spielorte eines Festivaltags zu einem Eintrag verketten -
+    real am 13.09.2026: die sieben Denkmäler des "Tags des Offenen Denkmals"
+    fielen zu einem einzigen zusammen."""
+    return not (_is_umbrella(event_a) or _is_umbrella(event_b))
+
+
+def _two_words_and_both_times(event_a, event_b, scores):
+    """Ein einzelnes enthaltenes Wort ist ohne Ort zu wenig ("Sommerfest" steckt
+    in "Sommerfest der Feuerwehr"). Verlangt werden deshalb mindestens zwei
+    Wörter und beidseitig eine bekannte Uhrzeit."""
+    return scores.words >= 2 and bool(event_a.get("time") and event_b.get("time"))
+
+
+_RULES = (
+    # Gleicher Ort UND ein praktisch deckungsgleicher Titel - die stärkste
+    # Evidenz, die es hier gibt. Nur sie weitet das Zeitfenster: die Quellen
+    # meinen dann Einlass und Beginn (Open Air, siehe
+    # MAX_TIME_DELTA_STRONG_MINUTES).
+    #
+    # "Praktisch deckungsgleich" wird auf beiden Maßen gemessen, und eines
+    # genügt (_title_evidence_enough verodert sie): die Wort-Überdeckung deckt
+    # den Normalfall ab, die Zeichen-Ähnlichkeit die Titel, aus denen
+    # _title_tokens() gar kein Wort übriglässt (siehe STRONG_TITLE_RATIO).
+    _Rule(venue=_SAME_VENUE,
+          min_overlap=STRONG_TITLE_OVERLAP, min_ratio=STRONG_TITLE_RATIO,
+          max_delta=MAX_TIME_DELTA_STRONG_MINUTES,
+          score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
+    # Gleicher Ort, schwächerer Titel: eines der beiden Maße genügt, das enge
+    # Zeitfenster bleibt aber die Gegenprobe (Grundregel 2).
+    _Rule(venue=_SAME_VENUE,
+          min_overlap=SAME_VENUE_MIN_OVERLAP, min_ratio=SAME_VENUE_MIN_RATIO,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
+    # Verschiedene Orte: nur ein praktisch identischer Titel zählt, und die
+    # großzügige Wort-Überdeckung bleibt hier bewusst außen vor.
+    _Rule(venue=_OTHER_VENUE,
+          min_overlap=None, min_ratio=TITLE_MIN_OTHER_VENUE,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_RATIO_ONLY, reason="titel", extra=_neither_is_umbrella),
+    # Mindestens ein Ort unbekannt ("Location siehe Beschreibung" bei Rauze,
+    # "TBA" bei RA). Dann trägt ein fast identischer Titel allein ...
+    _Rule(venue=_UNKNOWN_VENUE,
+          min_overlap=None, min_ratio=TITLE_MIN_UNKNOWN_VENUE,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_RATIO_ONLY, reason="titel", extra=None),
+    # ... oder ein Titel, dessen sämtliche Wörter im anderen stecken - aber nur
+    # unter den Auflagen von _two_words_and_both_times.
+    _Rule(venue=_UNKNOWN_VENUE,
+          min_overlap=1.0, min_ratio=None,
+          max_delta=MAX_TIME_DELTA_MINUTES,
+          score_from=_OVERLAP_ONLY, reason="titel+zeit",
+          extra=_two_words_and_both_times),
+)
+
+
+def _title_evidence_enough(rule, scores):
+    """Reicht der Titel für diese Zeile? Ein erreichter Schwellwert genügt."""
+    return ((rule.min_overlap is not None and scores.overlap >= rule.min_overlap)
+            or (rule.min_ratio is not None and scores.ratio >= rule.min_ratio))
+
+
+def match(event_a, event_b):
+    """Sind das zwei Einträge derselben Veranstaltung?
+    Gibt (score, grund) zurück oder None - entschieden wird nach _RULES."""
+    if event_a["date"] != event_b["date"]:
+        return None
+    if event_a["source"] == event_b["source"]:
+        return None  # siehe Grundregel 1 im Modul-Docstring
+
+    situation = _venue_situation(event_a, event_b)
+    scores = _title_scores(event_a.get("title"), event_b.get("title"))
+
+    for rule in _RULES:
+        if rule.venue != situation:
+            continue
+        if not _title_evidence_enough(rule, scores):
+            continue
+        if not _time_compatible(event_a.get("time"), event_b.get("time"), rule.max_delta):
+            continue
+        if rule.extra is not None and not rule.extra(event_a, event_b, scores):
+            continue
+        return max(getattr(scores, name) for name in rule.score_from), rule.reason
+    return None
+
+
+# --- Line-ups einer Quelle unter einem gemeinsamen Namen -------------------
+# Die einzige Ausnahme von Grundregel 1. Hintergrund: das SAX-Terminal listet
+# ein Open Air als Überschrift plus eine Zeile je Programmpunkt ("Klang&Kruste"
+# im Alaunpark: zehn Zeilen am 22.08.2026). scrapers/cybersax.py fasst solche
+# Gruppen zu einem zusätzlichen Sammel-Eintrag zusammen und markiert ihn, indem
+# der Veranstaltungsname sowohl als Titel als auch als raw_category dransteht.
+# Hier werden die Einzelzeilen an diesen Sammel-Eintrag gehängt.
+#
+# Warum das keine echten Termine verschluckt: verlangt werden gleicher Tag,
+# gleiche Quelle, gleicher Ort UND dieselbe Rohkategorie, und es passiert nur,
+# wenn ein Eintrag der Gruppe genau diese Rohkategorie als Titel trägt. Über den
+# gesamten Bestand (5500 Zeilen, 22.08.2026) trifft das auf keinen einzigen
+# Eintrag zufällig zu - die Markierung entsteht ausschließlich im Scraper.
+MATCH_REASON_HEADING = "ueberschrift"
+
+
+def _is_umbrella(event):
+    """Sammel-Eintrag einer Line-up-Gruppe?
+
+    Drei Bedingungen, alle noetig: der Eintrag stammt aus der einzigen Quelle,
+    die solche Gruppen bildet, seine Rohkategorie ist dort ein
+    Veranstaltungsname und keine Rubrik, und er traegt genau diesen Namen als
+    Titel. Ohne die ersten beiden wuerde ein Event, das zufaellig wie seine
+    Rubrik heisst ("Musik" im Blue Note), seine Nachbarzeilen einsammeln.
+    """
+    if event.get("source") != cybersax.SOURCE:
+        return False
+    raw_category = event.get("raw_category")
+    if not cybersax.is_festival_heading(raw_category):
+        return False
+    return normalize.slugify(event.get("title") or "") == normalize.slugify(raw_category)
+
+
+def _umbrella_key(event):
+    """Schlüssel der Line-up-Gruppe, oder None wenn der Eintrag keiner angehört."""
+    raw_category = normalize.slugify(event.get("raw_category") or "")
+    venue_key = _venue_key(event.get("venue"))
+    if not raw_category or not venue_key:
+        return None
+    return (event["source"], event["date"], venue_key, raw_category)
+
+
+def _festival_groups(events):
+    """{Sammel-Eintrag-uid: [uids der Einzelzeilen]} - siehe Modul-Docstring."""
+    groups = {}
+    for event in events:
+        key = _umbrella_key(event)
+        if key is not None:
+            groups.setdefault(key, []).append(event)
+
+    result = {}
+    for members in groups.values():
+        umbrellas = [e for e in members if _is_umbrella(e)]
+        others = [e for e in members if not _is_umbrella(e)]
+        if not umbrellas or len(members) < 2:
+            continue
+        # Mehrere Sammel-Einträge derselben Gruppe gibt es, wenn die Quelle den
+        # Beginn verschoben hat (die Startzeit steckt in der uid): der frühere
+        # gewinnt, der ältere hängt sich als Doppelung darunter.
+        umbrellas.sort(key=lambda e: (e.get("time") or "99:99", e["uid"]))
+        head, rest = umbrellas[0], umbrellas[1:]
+        result[head["uid"]] = [e["uid"] for e in rest + others]
+    return result
+
+
+def _source_rank(source):
+    return quellen.rang(source)
+
+
+def _best_rank(event):
+    """Bester Quellen-Rang dieses Eintrags - über ALLE Quellen, die ihn
+    geliefert haben, nicht nur über events.source.
+
+    Der Umweg ist nötig, weil es zwei Arten von Doppelung gibt. Schreiben zwei
+    Quellen Datum, Zeit, Titel und Ort identisch, fallen sie schon über die uid
+    in dieselbe Zeile, und in events.source steht dann nur, wer zuerst da war
+    (siehe die Tabelle event_sources). Ohne diese Funktion verliert eine solche
+    Zeile gegen einen Aggregator, obwohl die bessere Quelle sie ebenfalls
+    geliefert hat.
+
+    Real am 22.08.2026 bei "GLUT x ELOS" im Sektor Evolution: der Eintrag trug
+    bereits den Link auf sektor-evolution.de, stand aber als "kulturkalender"
+    in der Zeile - und wurde deshalb zugunsten des ra.co-Eintrags ausgeblendet.
+    Im Newsletter zeigte der Link damit wieder auf RA.
+
+    Fehlt die Liste (reine Unit-Tests), zählt events.source.
+    """
+    sources = event.get("sources") or [event["source"]]
+    return min(_source_rank(s) for s in sources)
+
+
+def _canonical_key(event):
+    """Sortierschlüssel für die Gewinnerwahl.
+
+    Die Quellen-Priorität steht bewusst ganz vorn: bei "Klang & Kruste" liefert
+    rauze.de denselben Tag als ein Event mit Permalink, Bild und Preis - dieser
+    Eintrag soll gewinnen, nicht der aus dem Line-up gebaute Sammel-Eintrag.
+    Erst INNERHALB derselben Quelle schlägt der Sammel-Eintrag seine
+    Einzelzeilen (sonst hieße der Termin im Newsletter "DJ Pappenheimer"), und
+    unter zwei Sammel-Einträgen der mit der früheren Startzeit.
+    """
+    umbrella = _is_umbrella(event)
+    return (
+        _best_rank(event),
+        0 if umbrella else 1,
+        (event.get("time") or "99:99") if umbrella else "",
+        event.get("first_seen") or "",
+        event["uid"],
+    )
+
+
+def _canonical_of(cluster):
+    """Aus einer Gruppe zusammengehöriger Einträge den Gewinner wählen:
+    Quellen-Priorität, dann der Sammel-Eintrag einer Line-up-Gruppe, dann der
+    ältere Eintrag, dann die uid (nur damit das Ergebnis bei Gleichstand stabil
+    bleibt)."""
+    return min(cluster, key=_canonical_key)
+
+
+class _Groups:
+    """Union-Find: verschmilzt Paare schrittweise zu Gruppen.
+
+    Nötig, weil Doppelungen paarweise gemessen werden, aber in Gruppen
+    auftreten: liefern drei Quellen dieselbe Nacht, misst match() nur die drei
+    Paare - übrig bleiben soll trotzdem genau ein Eintrag.
+
+    Seit v3 mit einer Sperre: eine Gruppe enthält von jeder Quelle höchstens
+    EINEN Eintrag (Ausnahme: die Zeilen eines Line-ups, force=True). Ohne die
+    Sperre verkettete der Sammel-Eintrag eines Festivals über die Paare mit
+    rauze und Kulturkalender sämtliche Programmpunkte des Tages zu einem
+    Event - real am 25.09.2026: 14 verschiedene Lesungen von "Literatur
+    JETZT!" im Zentralwerk, übrig blieb eine.
+    """
+
+    def __init__(self, events):
+        self._parent = {e["uid"]: e["uid"] for e in events}
+        self._sources = {e["uid"]: {e["source"]} for e in events}
+        self._size = {e["uid"]: 1 for e in events}
+
+    def root(self, uid):
+        parent = self._parent
+        while parent[uid] != uid:
+            parent[uid] = parent[parent[uid]]
+            uid = parent[uid]
+        return uid
+
+    def size_one(self, uid):
+        return self._size[self.root(uid)] == 1
+
+    def merge(self, uid_a, uid_b, force=False):
+        """Verschmilzt die Gruppen von a und b. Gibt False zurück, wenn die
+        Sperre greift (beide Gruppen haben schon einen Eintrag derselben Quelle)."""
+        root_a, root_b = self.root(uid_a), self.root(uid_b)
+        if root_a == root_b:
+            return True
+        if not force and self._sources[root_a] & self._sources[root_b]:
+            return False
+        self._parent[root_b] = root_a
+        self._sources[root_a] |= self._sources.pop(root_b)
+        self._size[root_a] += self._size.pop(root_b)
+        return True
+
+    def all(self):
+        """[[uid, ...], ...] - Gruppen in der Reihenfolge der Eingabe."""
+        grouped = {}
+        for uid in self._parent:
+            grouped.setdefault(self.root(uid), []).append(uid)
+        return list(grouped.values())
+
+
+def _by_date(events):
+    days = {}
+    for event in events:
+        days.setdefault(event["date"], []).append(event)
+    return days
+
+
+def _grouped(events):
+    """Union-Find über alle Paare + Line-up-Gruppen.
+    Gibt (by_uid, groups, evidence, lineup_members) zurück - siehe find_duplicates().
+
+    Reihenfolge der Verschmelzung (wichtig wegen der Quellen-Sperre in _Groups):
+      1. Paare ohne Sammel-Eintrag, stärkster Treffer zuerst - das sind die
+         echten Doppelungen einzelner Termine.
+      2. Paare mit einem Sammel-Eintrag (Festivalname gegen rauze-Eintrag).
+      3. Line-up-Zeilen an ihren Sammel-Eintrag - aber nur Zeilen, die bis
+         dahin allein geblieben sind. Führt eine andere Quelle den
+         Programmpunkt einzeln, ist er ein eigener Termin.
+    """
+    by_uid = {e["uid"]: e for e in events}
+    groups = _Groups(events)
+    # Bester (score, grund) je verschmolzenem Paar, für die Protokollierung.
+    evidence = {}
+
+    pairs = []
+    for day_events in _by_date(events).values():
+        for index, event_a in enumerate(day_events):
+            for event_b in day_events[index + 1:]:
+                result = match(event_a, event_b)
+                if result is None:
+                    continue
+                umbrella = _is_umbrella(event_a) or _is_umbrella(event_b)
+                pairs.append((umbrella, -result[0], event_a["uid"], event_b["uid"], result))
+    pairs.sort(key=lambda p: (p[0], p[1], p[2], p[3]))
+    for _umbrella, _neg, uid_a, uid_b, result in pairs:
+        if groups.merge(uid_a, uid_b):
+            evidence[frozenset((uid_a, uid_b))] = result
+
+    # Die Ausnahme von Grundregel 1: Zeilen desselben Line-ups an ihren
+    # Sammel-Eintrag hängen (siehe _festival_groups).
+    lineup_members = set()
+    for umbrella_uid, member_uids in _festival_groups(events).items():
+        for member_uid in member_uids:
+            if not groups.size_one(member_uid):
+                continue
+            groups.merge(umbrella_uid, member_uid, force=True)
+            evidence[frozenset((umbrella_uid, member_uid))] = (1.0, MATCH_REASON_HEADING)
+            lineup_members.add(member_uid)
+    return by_uid, groups, evidence, lineup_members
+
+
+def cluster(events):
+    """events: Liste von dicts (uid/source/date/time/title/venue/raw_category,
+    optional sources/first_seen). "uid" muss hier je EINTRAG eindeutig sein -
+    ddwg/pipeline.py gibt jeder Zeile ihren eigenen Schlüssel.
+
+    Gibt eine Liste von Gruppen zurück; jede Gruppe ist eine Liste der
+    Eingabe-dicts, der ranghöchste Eintrag (siehe _canonical_key) zuerst. Auch
+    Einzelgänger sind eine Gruppe (Länge 1). Ohne Netzwerk und ohne Datenbank.
+    """
+    by_uid, groups, _evidence, _members = _grouped(events)
+    out = []
+    for uids in groups.all():
+        members = sorted((by_uid[uid] for uid in uids), key=_canonical_key)
+        out.append(members)
+    return out
+
+
+def find_duplicates(events):
+    """events: Liste von Event-dicts (uid/source/date/time/title/venue/first_seen).
+    Gibt {duplikat_uid: (kanonische_uid, score, grund)} zurück.
+
+    Die paarweise Sicht auf dieselben Gruppen wie cluster() - für Tests und die
+    Diagnose (python -m ddwg doppelungen).
+    """
+    by_uid, groups, evidence, lineup_members = _grouped(events)
+    mapping = {}
+    for uids in groups.all():
+        if len(uids) < 2:
+            continue
+        canonical_uid = _canonical_of([by_uid[uid] for uid in uids])["uid"]
+        for uid in uids:
+            if uid == canonical_uid:
+                continue
+            # Gewinnt eine bessere Quelle die ganze Gruppe (rauze bei
+            # "Klang & Kruste"), gibt es zur Einzelzeile kein direkt gemessenes
+            # Paar - der Grund bleibt trotzdem die gemeinsame Überschrift.
+            default = ((1.0, MATCH_REASON_HEADING) if uid in lineup_members
+                       else (0.0, "gruppe"))
+            score, reason = evidence.get(frozenset((uid, canonical_uid)), default)
+            mapping[uid] = (canonical_uid, score, reason)
+    return mapping
+
+
+def is_unknown_venue(venue):
+    """Ist das ein Platzhalter statt eines Ortes ("Location siehe Beschreibung")?"""
+    return not _venue_key(venue)

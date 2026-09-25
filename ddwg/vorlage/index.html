@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DD was geht</title>
+<style>
+:root {
+  --bg: #f6f4ef; --surface: #ffffff; --ink: #1d1f20; --ink-soft: #5b6064; --ink-faint: #8a8f93;
+  --line: #e2ded5; --accent: #1f8a82; --accent-soft: #dff1ee; --heart: #d6336c; --heart-soft: #fbe3ec;
+  --radius: 12px; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131718; --surface: #1b2022; --ink: #e8eaeb; --ink-soft: #a7adb1; --ink-faint: #737a7e;
+    --line: #2a3134; --accent: #4fc3ba; --accent-soft: #1b3533; --heart: #ff6b9a; --heart-soft: #3a1f2a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 60px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 14px; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
+.stand { color: var(--ink-faint); font-size: 13px; }
+#suche { margin-left: auto; min-width: 220px; flex: 0 1 280px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; }
+.leiste { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 18px; }
+.pill { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); font: inherit; font-size: 13.5px; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+.pill[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.pill.herz[aria-pressed="true"] { background: var(--heart-soft); border-color: var(--heart); }
+section { margin-top: 26px; }
+section > h2 { font-size: 19px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
+section > h2 .n { font-size: 13px; font-weight: 500; color: var(--ink-faint); }
+.hinweis { color: var(--ink-faint); font-size: 13px; margin: 2px 0 10px; }
+.tag { margin: 18px 0 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.ev { display: grid; grid-template-columns: 52px 1fr auto; gap: 4px 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 6px; }
+.ev.herz { border-left: 3px solid var(--heart); }
+.ev .zeit { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-soft); padding-top: 1px; }
+.ev .titel { font-weight: 650; color: var(--ink); text-decoration: none; }
+.ev a.titel:hover { text-decoration: underline; }
+.ev .meta { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.ev .meta a { color: inherit; }
+.ev .meta .sep { color: var(--ink-faint); margin: 0 5px; }
+.ev .q { font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; }
+.ev img { width: 76px; height: 54px; object-fit: cover; border-radius: 8px; background: var(--line); }
+.ev details { grid-column: 2 / 4; font-size: 13.5px; color: var(--ink-soft); }
+.ev summary { cursor: pointer; color: var(--accent); font-size: 12.5px; list-style: none; }
+.ev summary::-webkit-details-marker { display: none; }
+.ev details p { margin: 6px 0 0; white-space: pre-line; }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--ink-soft); margin-left: 6px; vertical-align: 1px; }
+.mehr { appearance: none; border: 1px dashed var(--line); background: transparent; color: var(--accent); font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px; cursor: pointer; margin: 2px 0 6px; }
+.leer { color: var(--ink-faint); font-size: 14px; padding: 12px 0; }
+.filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.filter .trenner { width: 1px; background: var(--line); margin: 0 4px; }
+@media (max-width: 560px) {
+  #suche { margin-left: 0; flex: 1 1 100%; }
+  .ev { grid-template-columns: 44px 1fr; }
+  .ev img { display: none; }
+  .ev details { grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DD was geht</h1>
+    <span class="stand" id="stand"></span>
+    <input id="suche" type="search" placeholder="Suchen: Titel oder Ort" autocomplete="off">
+  </header>
+
+  <div class="leiste" id="tage" role="group" aria-label="Zeitraum"></div>
+
+  <section id="herz">
+    <h2>♥ Deine Orte <span class="n" id="herz-n"></span></h2>
+    <div class="hinweis" id="herz-hinweis"></div>
+    <div id="herz-liste"></div>
+  </section>
+
+  <section id="entdecken">
+    <h2>Entdecken <span class="n" id="entdecken-n"></span></h2>
+    <div class="filter" id="kategorien" role="group" aria-label="Kategorien"></div>
+    <div class="filter" id="schalter" role="group" aria-label="Weitere Filter"></div>
+    <div id="entdecken-liste"></div>
+  </section>
+</div>
+
+<script>
+const D = /*__DATEN__*/null;
+const WOCHENTAG = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+const PRO_TAG = 15;
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function addDays(iso, n) {
+  const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+function tagLabel(iso) {
+  const d = new Date(iso + "T12:00:00");
+  const rel = iso === D.heute ? "Heute · " : iso === addDays(D.heute, 1) ? "Morgen · " : "";
+  return rel + WOCHENTAG[d.getDay()] + " " + d.toLocaleDateString("de-DE", {day: "numeric", month: "long"});
+}
+function store(key, val) { try { localStorage.setItem("ddwg." + key, JSON.stringify(val)); } catch (e) {} }
+function stored(key, fallback) {
+  try { const v = localStorage.getItem("ddwg." + key); return v === null ? fallback : JSON.parse(v); }
+  catch (e) { return fallback; }
+}
+
+const state = {
+  zeitraum: "7",                       // "7" | "alle" | ISO-Datum
+  kategorien: stored("kategorien", ["musik", "kultur"]),
+  umland: stored("umland", false),
+  laufend: stored("laufend", false),
+  suche: "",
+  offen: new Set(),
+};
+
+function imZeitraum(ev) {
+  if (state.zeitraum === "alle") return true;
+  if (state.zeitraum === "7") return ev.d < addDays(D.heute, 7);
+  return ev.d === state.zeitraum;
+}
+function passtSuche(ev) {
+  if (!state.suche) return true;
+  const ort = D.orte[ev.o]?.n || ev.or || "";
+  return (ev.ti + " " + ort).toLowerCase().includes(state.suche);
+}
+const istHerz = ev => !!(ev.o && D.orte[ev.o]?.h);
+
+function evHtml(ev) {
+  const ort = D.orte[ev.o];
+  const ortName = ort?.n || ev.or || "";
+  const ortTxt = ort?.w ? `<a href="${esc(ort.w)}" target="_blank" rel="noopener">${esc(ortName)}</a>` : esc(ortName);
+  const halle = ort && ev.or && ev.or !== ort.n ? ` <span class="sep">·</span>${esc(ev.or)}` : "";
+  const titel = ev.url ? `<a class="titel" href="${esc(ev.url)}" target="_blank" rel="noopener">${esc(ev.ti)}</a>` : `<span class="titel">${esc(ev.ti)}</span>`;
+  const teile = [ortTxt + halle];
+  if (ev.p) teile.push(esc(ev.p));
+  teile.push(esc(D.kategorien[ev.k] || ev.k));
+  const badges = (ev.l ? '<span class="badge">läuft</span>' : "") + (ev.r === "umland" ? '<span class="badge">Umland</span>' : "");
+  const q = ev.q.map(s => esc(D.quellen[s] || s)).join(" · ");
+  return `<div class="ev${istHerz(ev) ? " herz" : ""}">
+    <div class="zeit">${esc(ev.t || "–")}</div>
+    <div><div>${titel}${badges}</div><div class="meta">${teile.join('<span class="sep">·</span>')}</div><div class="q">${q}</div></div>
+    ${ev.img ? `<img loading="lazy" src="${esc(ev.img)}" alt="">` : "<span></span>"}
+    ${ev.b ? `<details><summary>Beschreibung</summary><p>${esc(ev.b)}</p></details>` : ""}
+  </div>`;
+}
+
+function liste(events, ziel, key) {
+  const byDay = new Map();
+  for (const ev of events) {
+    if (!byDay.has(ev.d)) byDay.set(ev.d, []);
+    byDay.get(ev.d).push(ev);
+  }
+  let html = "";
+  for (const [tag, evs] of byDay) {
+    // Dauerangebote hinter die Termine des Tages.
+    evs.sort((a, b) => (a.l || 0) - (b.l || 0));
+    const id = key + tag;
+    const zeig = state.offen.has(id) ? evs : evs.slice(0, PRO_TAG);
+    html += `<div class="tag">${esc(tagLabel(tag))}</div>` + zeig.map(evHtml).join("");
+    if (zeig.length < evs.length) html += `<button class="mehr" data-offen="${id}">+ ${evs.length - zeig.length} weitere</button>`;
+  }
+  ziel.innerHTML = html || '<div class="leer">Nichts im gewählten Zeitraum.</div>';
+}
+
+function render() {
+  const basis = D.events.filter(ev => imZeitraum(ev) && passtSuche(ev));
+
+  const herz = basis.filter(istHerz);
+  document.getElementById("herz-n").textContent = herz.length ? herz.length + " Termine" : "";
+  liste(herz, document.getElementById("herz-liste"), "h");
+  const herzOrte = Object.entries(D.orte).filter(([, o]) => o.h);
+  const mitTermin = new Set(herz.map(ev => ev.o));
+  const ohne = herzOrte.filter(([slug]) => !mitTermin.has(slug)).map(([, o]) => o.n);
+  document.getElementById("herz-hinweis").textContent = herzOrte.length
+    ? (ohne.length ? "Ohne Termin im Zeitraum: " + ohne.join(", ") : "")
+    : "Noch keine Herz-Orte – setzen mit: python -m ddwg herz <ort>";
+
+  const rest = basis.filter(ev => !istHerz(ev)
+    && state.kategorien.includes(ev.k)
+    && (state.umland || ev.r !== "umland")
+    && (state.laufend || !ev.l));
+  document.getElementById("entdecken-n").textContent = rest.length + " Termine";
+  liste(rest, document.getElementById("entdecken-liste"), "e");
+}
+
+function pill(label, pressed, onClick, cls) {
+  const b = document.createElement("button");
+  b.className = "pill" + (cls ? " " + cls : "");
+  b.textContent = label;
+  b.setAttribute("aria-pressed", pressed ? "true" : "false");
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function baueTage() {
+  const box = document.getElementById("tage");
+  box.innerHTML = "";
+  const opts = [["7", "Nächste 7 Tage"]];
+  for (let i = 0; i < 7; i++) {
+    const iso = addDays(D.heute, i);
+    const d = new Date(iso + "T12:00:00");
+    opts.push([iso, i === 0 ? "Heute" : i === 1 ? "Morgen" : WOCHENTAG[d.getDay()] + " " + d.getDate() + "."]);
+  }
+  opts.push(["alle", "Alle"]);
+  for (const [key, label] of opts) {
+    box.appendChild(pill(label, state.zeitraum === key, () => { state.zeitraum = key; baueTage(); render(); }));
+  }
+}
+
+function baueFilter() {
+  const kat = document.getElementById("kategorien");
+  kat.innerHTML = "";
+  for (const [key, label] of Object.entries(D.kategorien)) {
+    kat.appendChild(pill(label, state.kategorien.includes(key), () => {
+      state.kategorien = state.kategorien.includes(key) ? state.kategorien.filter(k => k !== key) : [...state.kategorien, key];
+      store("kategorien", state.kategorien); baueFilter(); render();
+    }));
+  }
+  const sch = document.getElementById("schalter");
+  sch.innerHTML = "";
+  sch.appendChild(pill("Umland", state.umland, () => { state.umland = !state.umland; store("umland", state.umland); baueFilter(); render(); }));
+  sch.appendChild(pill("Dauerangebote", state.laufend, () => { state.laufend = !state.laufend; store("laufend", state.laufend); baueFilter(); render(); }));
+}
+
+document.getElementById("stand").textContent = "Stand " + D.stand + " · " + D.events.length + " Termine";
+document.getElementById("suche").addEventListener("input", e => { state.suche = e.target.value.trim().toLowerCase(); render(); });
+document.addEventListener("click", e => {
+  const id = e.target?.dataset?.offen;
+  if (id) { state.offen.add(id); render(); }
+});
+baueTage(); baueFilter(); render();
+</script>
+</body>
+</html>

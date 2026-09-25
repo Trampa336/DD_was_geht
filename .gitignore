@@ -1,13 +1,13 @@
-# NIEMALS committen: enthält lokale Zugangsdaten/Pfade
-.env
-
-# Laufzeitdaten (Datenbank, heruntergeladenes HTML zum Debuggen)
+# Wegwerf-Cache: Event-DB, Venue-Cache, Archiv - baut `python -m ddwg scrape` neu
+cache/
+# erzeugt von `python -m ddwg build`
+ausgabe/
+# Altlast v2 (lokale DBs)
 data/
 *.db
 
-# Python
 __pycache__/
 *.pyc
-*.pyo
 .venv/
 venv/
+.pytest_cache/
