@@ -2,9 +2,10 @@
 
 Persönlicher Dresdner Veranstaltungskalender von David. Scraper holen Termine aus
 Sammelkalendern und direkt von den Seiten der Orte. Daraus entsteht **eine statische
-HTML-Datei** (`ausgabe/index.html`). Es gibt keinen Server, kein Docker und kein
-Deployment. Seit 2026-09-25 wird das Projekt nur noch in Claude Cowork bearbeitet
-(v3). Der alte Stand liegt als Tag `v2-final` in git.
+HTML-Datei** (`ausgabe/index.html`) plus drei kleine PWA-Begleitdateien (Manifest,
+Service Worker, Icons) im selben Ordner, siehe Abschnitt „Website (GitHub Pages)“.
+Es gibt keinen eigenen Server und kein Docker. Seit 2026-09-25 wird das Projekt nur
+noch in Claude Cowork bearbeitet (v3). Der alte Stand liegt als Tag `v2-final` in git.
 
 ## Befehle
 ```
@@ -42,6 +43,23 @@ python -m pytest tests           # Kerntests ohne Netz
 5. Für Events an Herz-Orten lädt die Pipeline fehlende Beschreibungen von
    Kulturkalender-Detailseiten nach, höchstens 120 pro Lauf, zwischengespeichert in `details`.
 6. `ausgabe.py` füllt `ddwg/vorlage/index.html` mit JSON → `ausgabe/index.html`.
+
+## Website (GitHub Pages)
+Seit 2026-09-26 laeuft `.github/workflows/publish.yml` taeglich (und manuell ueber
+„Run workflow“): scraped frisch und veroeffentlicht den Ordner `ausgabe/` auf dem
+Branch `gh-pages`. Adresse: `https://trampa336.github.io/DD_was_geht/`. Einmalig
+noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
+„Pages“ die Quelle auf Branch `gh-pages` (Ordner `/`) stellen.
+
+`ddwg/vorlage/pwa/` enthaelt Manifest, Service Worker (`sw.js`) und Icons.
+`ausgabe.py` kopiert sie beim Bauen neben `index.html`. Lokal per Doppelklick
+geoeffnet (`file://`) aendert sich nichts, der Service Worker registriert sich
+nur online (http/https). Der Service Worker cacht die Seite „network-first“:
+online kommen immer frische Termine, offline der zuletzt geladene Stand. Wer
+die Liste der gecachten Dateien in `sw.js` (`ASSETS`) aendert, muss den
+`CACHE`-Namen hochzaehlen, sonst bleibt der alte Stand haengen. Die
+Entdecken-Karte braucht wegen Leaflet/markercluster von cdnjs und den
+Kartenkacheln weiterhin Internet, auch offline-installiert.
 
 ## Quellen und Rang (ddwg/quellen/__init__.py, kleiner = besser)
 Seiten der Orte selbst (derlude 10, strassee 20, groovestation 30, zentralwerk 40,

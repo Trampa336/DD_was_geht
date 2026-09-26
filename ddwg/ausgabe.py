@@ -12,6 +12,7 @@ Oberflaeche baut, aendert die Vorlage - dieses Modul liefert nur die Daten
 import base64
 import json
 import os
+import shutil
 from datetime import date, datetime, timedelta
 
 from . import db, quellen
@@ -20,6 +21,10 @@ from .orte import Orte
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUSGABE_PATH = os.environ.get("DDWG_AUSGABE", os.path.join(ROOT, "ausgabe", "index.html"))
 VORLAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vorlage", "index.html")
+PWA_DIR = os.path.join(os.path.dirname(VORLAGE_PATH), "pwa")
+# Manifest, Service Worker und Icons fuer die installierbare/offline-faehige
+# Variante (wirkt nur online ueber https, siehe ddwg/vorlage/index.html).
+PWA_DATEIEN = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-180.png"]
 FLAVOURS_PATH = os.path.join(ROOT, "orte", "flavours.json")
 
 KATEGORIEN = {
@@ -140,4 +145,6 @@ def schreiben(conn=None, orte=None, pfad=None, heute=None):
     os.makedirs(os.path.dirname(pfad), exist_ok=True)
     with open(pfad, "w", encoding="utf-8") as fh:
         fh.write(html)
+    for datei in PWA_DATEIEN:
+        shutil.copyfile(os.path.join(PWA_DIR, datei), os.path.join(os.path.dirname(pfad), datei))
     return pfad

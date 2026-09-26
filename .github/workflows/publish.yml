@@ -1,0 +1,35 @@
+name: Website veröffentlichen
+
+# Scraped taeglich frisch und veroeffentlicht ausgabe/ auf dem Branch gh-pages.
+# Einmalig noetig: in den Repo-Einstellungen unter Pages die Quelle auf den
+# Branch "gh-pages" (Ordner /) stellen, siehe CLAUDE.md.
+on:
+  schedule:
+    - cron: "0 5 * * *"  # 05:00 UTC, ca. 6-7 Uhr in Dresden
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-und-veroeffentlichen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhaengigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Scrapen und ausgabe/index.html bauen
+        run: python -m ddwg scrape
+
+      - name: Auf gh-pages veroeffentlichen
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ausgabe
+          publish_branch: gh-pages
