@@ -8,8 +8,13 @@ Es gibt keinen eigenen Server und kein Docker. Seit 2026-09-25 wird das Projekt 
 noch in Claude Cowork bearbeitet (v3). Der alte Stand liegt als Tag `v2-final` in git.
 
 ## Befehle
+Der Projektordner liegt auf dem Proxmox-Server und ist eingebunden. Symlinks funktionieren
+dort nicht, deshalb liegt die Python-Umgebung mit `--copies` unter `venv/`. Keine `.venv`
+anlegen: Die alte ist an einem kaputten Symlink gescheitert und ließ sich nur direkt auf
+dem Server löschen.
 ```
-pip install -r requirements.txt
+python3 -m venv --copies venv    # einmalig, danach venv/bin/python statt python
+venv/bin/pip install -r requirements.txt
 python -m ddwg scrape            # alle Quellen holen, Events bauen, Ausgabe schreiben (~5–10 min)
 python -m ddwg scrape --quelle rauze sektor --ohne-details   # nur ausgewählte Quellen
 python -m ddwg build             # ohne Netz: Events neu bauen + ausgabe/index.html
@@ -84,10 +89,11 @@ Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören 
 Flavours beim ersten Start (ohne Wahl: Club) plus eigene Änderungen am Herz-Knopf.
 `"herz": true` in orte.json ist Davids Liste und steuert nur den Detailabruf beim Scrapen;
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
-Davids Herz-Orte sind die Orte mit eigener Quelle: Sektor, Straße E, Der Lude,
-GrooveStation, Zentralwerk und AZ Conni.
-**Nächster sinnvoller Schritt:** Herz-Orte ohne eigene Quelle bekommen einen eigenen
-Scraper. Kandidaten sind Ostpol, Chemiefabrik, Scheune und Hole of Fame. Welche Orte
+Davids Herz-Orte sind inzwischen zehn: Sektor, Straße E, Der Lude, GrooveStation,
+Zentralwerk und AZ Conni mit eigener Quelle, dazu seit 2026-09-25 (Commit 8d8583f)
+Ostpol, Chemiefabrik, Scheune und Hole of Fame ohne eigene Quelle.
+**Nächster sinnvoller Schritt:** Für die vier Herz-Orte ohne eigene Quelle (Ostpol,
+Chemiefabrik, Scheune, Hole of Fame) einen eigenen Scraper bauen. Welche Orte
 betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
 
 ## Regeln (gelernt, bitte einhalten)
