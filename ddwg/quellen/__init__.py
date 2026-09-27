@@ -58,6 +58,9 @@ QUELLEN = {
     # Herz-Ort seit 2026-09-25, ICS-Abo. Termine an anderen Orten (Kulturpalast,
     # Schauburg) behalten ihren echten Ort, siehe scheune.py.
     "scheune": {"name": "Scheune", "rang": 66, "ort": "scheune"},
+    # Herz-Ort seit 2026-09-25. Holt je Termin die Detailseite (Beginn,
+    # Beschreibung, Preis), siehe chemiefabrik.py.
+    "chemiefabrik": {"name": "Chemiefabrik", "rang": 67, "ort": "chemiefabrik"},
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
