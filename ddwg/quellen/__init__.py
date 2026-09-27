@@ -55,6 +55,9 @@ QUELLEN = {
     # Herz-Ort seit 2026-09-25. Rang 65: nach den bisherigen Orte-Seiten, aber
     # vor rauze - die Seite des Hauses gewinnt (Davids Regel).
     "ostpol": {"name": "Ostpol", "rang": 65, "ort": "ostpol"},
+    # Herz-Ort seit 2026-09-25, ICS-Abo. Termine an anderen Orten (Kulturpalast,
+    # Schauburg) behalten ihren echten Ort, siehe scheune.py.
+    "scheune": {"name": "Scheune", "rang": 66, "ort": "scheune"},
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
