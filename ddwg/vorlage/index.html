@@ -314,8 +314,13 @@ function zeigeUebernehmen() {
 }
 
 /* ---------- Tage: Zeitstrahl-Galerie (nur Tage mit Terminen, "laufend" ausgenommen) ---------- */
+/* Standardmäßig ausgeblendet: Führungen passen kaum zu Club, Konzert, Subkultur. Im Zeitstrahl
+   fehlen sie ganz, in Entdecken zählt "Alle" ohne sie, der eigene Chip zeigt sie. Die Seite
+   eines Ortes zeigt weiter alle Termine. */
+const AUSGEBLENDET = new Set(["fuehrungen"]);
+const sichtbar = e => !AUSGEBLENDET.has(e.k);
 const perTag = {}, perTagAlle = {};
-D.events.forEach((e, i) => { e.i = i; if (!e.l) (perTag[e.d] ||= []).push(e); (perTagAlle[e.d] ||= []).push(e); });
+D.events.forEach((e, i) => { e.i = i; if (!e.l && sichtbar(e)) (perTag[e.d] ||= []).push(e); (perTagAlle[e.d] ||= []).push(e); });
 const TAGE = Object.keys(perTag).sort();
 const HEUTE = D.heute;
 const LETZTER_ALLE = Object.keys(perTagAlle).sort().at(-1) || HEUTE;
@@ -463,7 +468,7 @@ let karte = null, markerLayer = null, herzLayer = null, gewaehlt = null, ENT = {
 function renderEntdecken() {
   const [von, bis] = entBereich();
   const evs = D.events.filter(e => e.d >= von && e.d <= bis && !e.l && e.o && D.orte[e.o]);
-  const katEvs = evs.filter(e => S.ekat === "alle" || e.k === S.ekat), proOrt = {};
+  const katEvs = evs.filter(e => S.ekat === "alle" ? sichtbar(e) : e.k === S.ekat), proOrt = {};
   katEvs.forEach(e => (proOrt[e.o] ||= []).push(e));
   Object.values(proOrt).forEach(l => l.sort(nachZeit));
   const orteL = Object.keys(proOrt).filter(s => !(S.eneu && D.orte[s].h)).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
@@ -474,7 +479,7 @@ function renderEntdecken() {
   const zahl = {}; evs.forEach(e => zahl[e.k] = (zahl[e.k] || 0) + 1);
   $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}
       <span class="trenner"></span><button class="fc herzfc" data-eneu aria-pressed="${S.eneu}">${HERZ} ausblenden</button></div>
-    <div class="zeile"><button class="fc" data-ekat="alle" aria-pressed="${S.ekat === "alle"}">Alle<em>${evs.length}</em></button>${Object.keys(D.kategorien).filter(k => zahl[k]).map(k => `<button class="fc" data-ekat="${k}" aria-pressed="${S.ekat === k}">${esc(katName(k))}<em>${zahl[k]}</em></button>`).join("")}</div>`;
+    <div class="zeile"><button class="fc" data-ekat="alle" aria-pressed="${S.ekat === "alle"}">Alle<em>${evs.filter(sichtbar).length}</em></button>${Object.keys(D.kategorien).filter(k => zahl[k]).map(k => `<button class="fc" data-ekat="${k}" aria-pressed="${S.ekat === k}">${esc(katName(k))}<em>${zahl[k]}</em></button>`).join("")}</div>`;
   $("#legende").textContent = `${orteL.length} Orte mit Terminen, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
   $("#ent-optionen").innerHTML = (FL.length ? `<button data-flavours>Flavours ändern</button>` : "")
     + (offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "");

@@ -94,7 +94,7 @@ Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS)
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
-(z. B. Führungen standardmäßig ausblenden, Tag springen).
+(z. B. Tag springen).
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de
 und nominatim (Stand 2026-09-27). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
@@ -121,6 +121,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   mit Leaflet + markercluster von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre
   Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen und Flavours
   siehe Abschnitt „Herzen“. Entwürfe liegen unter `docs/ui-entwuerfe/`.
+- Führungen sind standardmäßig ausgeblendet (`AUSGEBLENDET` in der Vorlage): nicht im
+  Zeitstrahl, in Entdecken nicht unter „Alle“, nur über den eigenen Chip. Die Seite eines
+  Ortes zeigt weiter alle Termine.
 - Kartenansicht: 431 Orte haben schon `lat`/`lon`. `werkzeuge/fetch_venue_locations.py`
   ergänzt weitere, hängt aber noch an der v2-DB und muss auf orte.json umgestellt werden.
 - `werkzeuge/enrich_venues.py` (Homepage und Cover über die Kulturkalender-Ortsseite)
