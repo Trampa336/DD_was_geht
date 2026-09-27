@@ -68,7 +68,7 @@ Kartenkacheln weiterhin Internet, auch offline-installiert.
 
 ## Quellen und Rang (ddwg/quellen/__init__.py, kleiner = besser)
 Seiten der Orte selbst (derlude 10, strassee 20, groovestation 30, zentralwerk 40,
-sektor 50, azconni 60) < rauze 70 < kulturkalender 90 < cybersax 100.
+sektor 50, azconni 60, ostpol 65) < rauze 70 < kulturkalender 90 < cybersax 100.
 Davids Regel: **Venue-Seite > Rauze > KK/cybersax.** Die Sammelkalender dienen der
 Vollständigkeit und dem Entdecken.
 
@@ -90,11 +90,14 @@ Flavours beim ersten Start (ohne Wahl: Club) plus eigene Änderungen am Herz-Kno
 `"herz": true` in orte.json ist Davids Liste und steuert nur den Detailabruf beim Scrapen;
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
 Davids Herz-Orte sind inzwischen zehn: Sektor, Straße E, Der Lude, GrooveStation,
-Zentralwerk und AZ Conni mit eigener Quelle, dazu seit 2026-09-25 (Commit 8d8583f)
-Ostpol, Chemiefabrik, Scheune und Hole of Fame ohne eigene Quelle.
-**Nächster sinnvoller Schritt:** Für die vier Herz-Orte ohne eigene Quelle (Ostpol,
-Chemiefabrik, Scheune, Hole of Fame) einen eigenen Scraper bauen. Welche Orte
+Zentralwerk, AZ Conni und seit 2026-09-27 Ostpol mit eigener Quelle, dazu seit
+2026-09-25 (Commit 8d8583f) Chemiefabrik, Scheune und Hole of Fame ohne eigene Quelle.
+**Nächster sinnvoller Schritt:** Für die drei Herz-Orte ohne eigene Quelle
+(Chemiefabrik, Scheune, Hole of Fame) einen eigenen Scraper bauen. Welche Orte
 betroffen sind, zeigt `python -m ddwg status` zusammen mit orte.json.
+**Netz:** Die Netzfreigabe von Cowork sperrt ost-pol.de, kulturkalender-dresden.de
+und nominatim (Stand 2026-09-27). Seiten dann im Browser (Claude in Chrome)
+ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 
 ## Regeln (gelernt, bitte einhalten)
 - **Nichts erfinden.** Beschreibungen kommen nur aus gescraptem Text. Das gilt auch für

@@ -166,6 +166,9 @@ _TOUR_FALSE_FRIENDS_RE = re.compile(
 _TOUR_MUSIC_VENUE_RE = re.compile(
     r"chemiefabrik-dresden|theater-am-wettiner-platz|beatpol-dresden"
     r"|dixiebahnhof-dresden|tante-ju-liveclub"
+    # Ostpol (2026-09-27): reiner Konzert-/Clubort, "Heckspoiler - Bock auf
+    # Stress Tour" landete sonst in fuehrungen.
+    r"|(?:^|-)ostpol(?:-|$)"
 )
 
 

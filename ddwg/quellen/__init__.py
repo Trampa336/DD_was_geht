@@ -52,6 +52,9 @@ QUELLEN = {
         "venue_key": "groovestation", "alias": ["groove-station"],
     },
     "zentralwerk": {"name": "Zentralwerk", "rang": 40, "ort": "zentralwerk"},
+    # Herz-Ort seit 2026-09-25. Rang 65: nach den bisherigen Orte-Seiten, aber
+    # vor rauze - die Seite des Hauses gewinnt (Davids Regel).
+    "ostpol": {"name": "Ostpol", "rang": 65, "ort": "ostpol"},
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
