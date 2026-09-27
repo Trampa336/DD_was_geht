@@ -61,6 +61,8 @@ QUELLEN = {
     # Herz-Ort seit 2026-09-25. Holt je Termin die Detailseite (Beginn,
     # Beschreibung, Preis), siehe chemiefabrik.py.
     "chemiefabrik": {"name": "Chemiefabrik", "rang": 67, "ort": "chemiefabrik"},
+    # Herz-Ort seit 2026-09-25. Detailseiten fuer Tag und Beginn, siehe holeoffame.py.
+    "holeoffame": {"name": "Hole of Fame", "rang": 68, "ort": "hole-of-fame"},
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
