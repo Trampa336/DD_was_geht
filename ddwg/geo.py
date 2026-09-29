@@ -49,7 +49,7 @@ NEARBY_TOWNS = {
     "pesterwitz", "friedewald", "serkowitz", "zuschendorf", "grosssedlitz",
     "sonnenstein", "boxdorf", "reichenberg", "ottendorf-okrilla",
     "duerrroehrsdorf", "wachau", "seifersdorf", "mohorn", "unkersdorf",
-    "constappel",
+    "constappel", "cossmannsdorf",
 }
 
 FAR_TOWNS = {
@@ -71,6 +71,8 @@ FAR_TOWNS = {
     "schirgiswalde", "marienberg", "mortka", "domsdorf", "hinterhermsdorf",
     "kleinhennersdorf", "niederau", "proschwitz", "jahnishausen", "altdoebern",
     "tiefenau", "gostewitz", "mahlitzsch", "goedelitz", "saechsische-schweiz",
+    # Zusammengesetzt, damit die Dresdner Neustadt nicht mitgemeint ist
+    "neustadt-in-sachsen",
 }
 
 # Haeuser, deren Name den Ort nicht verraet. Ohne diese Liste laege der
@@ -130,6 +132,15 @@ VENUE_REGIONS = (
     ("brikettfabrik-louise", REGION_WEITER),     # Domsdorf
     ("naturerlebniszentrum-hebelei", REGION_WEITER),  # Saechsische Schweiz
     ("heymannbaude", REGION_WEITER),             # Kleinhennersdorf
+    # Gesichtet am 29.09.2026 (als Dresden durchgerutscht)
+    ("belantis", REGION_WEITER),                 # Freizeitpark bei Leipzig
+    ("mittelsaechsisches-theater", REGION_WEITER),  # Freiberg/Doebeln
+    ("sorbisches-national", REGION_WEITER),      # Sorbisches National-Ensemble, Bautzen
+    ("nationalparkzentrum", REGION_WEITER),      # Bad Schandau
+    ("schloss-bieberstein", REGION_WEITER),      # bei Freiberg
+    ("kuckuckstein", REGION_WEITER),             # Liebstadt
+    ("toskana-therme", REGION_WEITER),           # Bad Schandau
+    ("dreilaendereck", REGION_WEITER),           # VHS im Salzhaus, Zittau
     ("karrasburg", REGION_UMLAND),               # Coswig
     ("adams-gasthof", REGION_UMLAND),            # Moritzburg
 )

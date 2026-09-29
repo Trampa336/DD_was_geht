@@ -79,6 +79,15 @@ def test_fuehrungen_werden_verworfen(tmp_path):
         assert [e["title"] for e in db.events(conn, HEUTE.isoformat())] == ["Konzert"]
 
 
+def test_region_gesichtete_orte():
+    from ddwg import geo
+    for name in ["BELANTIS Abenteuerpark", "Mittelsächsisches Theater Döbeln", "Sorbisches National-Ensemble",
+                 "Toskana Therme", "Neustadthalle - Neustadt in Sachsen", "Schloss Kuckuckstein"]:
+        assert geo.classify_region(name) == "weiter", name
+    assert geo.classify_region("Ballsäle Coßmannsdorf") == "umland"
+    assert geo.classify_region("Scheune Neustadt") == "dresden"   # Dresdner Neustadt bleibt
+
+
 def test_merge_feldweise_nach_rang():
     group = dedup.cluster([
         _ev("1", "kulturkalender", "TOWER TRANSMISSIONS XII", "Straße E", image_url="kk.jpg"),
