@@ -38,6 +38,11 @@ QUELLEN = {
     # hinter den Seiten der Orte und rauze. Nur Demos, Konzerte, Kuefa/Kneipe,
     # Film/Theater, siehe terminaldigital.py.
     "terminaldigital": {"name": "terminal.digital", "rang": 85},
+    # Demos (seit 2026-09-29). Die Omas nennen Uhrzeit und Treffpunkt ihrer
+    # Aufrufe, die Stadt fuehrt alle angezeigten Versammlungen - bei derselben
+    # Demo gewinnen die Omas, siehe dedup.match (Demo am selben Ort).
+    "omasgegenrechts": {"name": "Omas gegen Rechts", "rang": 80},
+    "versammlungen": {"name": "Versammlungen", "rang": 95},
     "azconni": {
         "name": "AZ Conni", "rang": 60, "ort": "az-conni",
         # Das Haus schreibt sich selbst "AZ Conni", rauze.de listet es genauso,

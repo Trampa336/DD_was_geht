@@ -317,6 +317,15 @@ def match(event_a, event_b):
     situation = _venue_situation(event_a, event_b)
     scores = _title_scores(event_a.get("title"), event_b.get("title"))
 
+    # Demos: gleicher Ort (bzw. Startpunkt), gleicher Tag, beide Zeiten bekannt
+    # und passend -> dieselbe Versammlung, auch bei ganz anderem Titel. Die
+    # Stadt nennt das Thema der Anmeldung ("Dresden fuer die Pruefung der
+    # rechtsextremen Parteien"), die Omas den Aufruf ("6. PRUEF-Demo in Dresden").
+    if (situation == _SAME_VENUE and event_a.get("category") == "demo" == event_b.get("category")
+            and event_a.get("time") and event_b.get("time")
+            and _time_compatible(event_a.get("time"), event_b.get("time"))):
+        return 1.0, "Demo am selben Ort"
+
     for rule in _RULES:
         if rule.venue != situation:
             continue
