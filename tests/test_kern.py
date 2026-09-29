@@ -69,14 +69,63 @@ def test_weiter_wird_verworfen():
 def test_fuehrungen_werden_verworfen(tmp_path):
     from ddwg import db
     orte = _orte()
-    rows, _ = pipeline.listing_rows(
+    rows, dropped = pipeline.listing_rows(
         [_ev("a", "rauze", "Konzert", "Reithalle Straße E"),
-         _ev("b", "kulturkalender", "Stadtführung", "Reithalle Straße E", time="14:00", category="fuehrungen")],
+         _ev("b", "kulturkalender", "Stadtführung", "Haltestelle Linie 3", time="14:00", category="fuehrungen")],
         orte, HEUTE)
+    # schon beim Einlesen raus, und fuer den Treffpunkt entsteht kein neuer Ort
+    assert dropped == 1 and [r["title"] for r in rows] == ["Konzert"] and orte.neu == []
+    # build() verwirft auch, was erst dort Fuehrung ist (z. B. geerbt ueber den Ort)
+    rows.append(dict(rows[0], uid="c", title="Domführung", time="11:00", category="fuehrungen"))
     with db.connect(str(tmp_path / "t.db")) as conn:
         db.replace_listings(conn, "test", rows)
         assert pipeline.build(conn, orte, HEUTE) == 1
         assert [e["title"] for e in db.events(conn, HEUTE.isoformat())] == ["Konzert"]
+
+
+def test_details_nachladen_alle_events(tmp_path, monkeypatch):
+    from ddwg import db
+    monkeypatch.setattr(pipeline.base.time_module, "sleep", lambda s: None)
+    kk = "https://www.kulturkalender-dresden.de/veranstaltung/"
+    orte = _orte()
+    evs = [_ev(str(i), "kulturkalender", f"Abend {i}", "Neuer Laden", time=f"1{i}:00", url=kk + f"e{i}") for i in range(3)]
+    evs += [dict(_ev("x", "kulturkalender", "Ausstellung", "Neuer Laden", time=None, url=kk + "a"), date=d)
+            for d in ("2026-09-26", "2026-09-27")]
+    rows, _ = pipeline.listing_rows(evs, orte, HEUTE)
+    abrufe = []
+
+    def fetch(ev):
+        abrufe.append(ev["url"])
+        if ev["url"].endswith("e1"):
+            return {"ok": False}
+        return {"ok": True, "description": "Text von der Seite", "price_text": None, "image_url": None}
+
+    with db.connect(str(tmp_path / "t.db")) as conn:
+        db.replace_listings(conn, "kulturkalender", rows)
+        pipeline.build(conn, orte, HEUTE)
+        # kein Herz-Ort noetig; die Ausstellung (zwei Tage, eine Seite) nur einmal
+        assert pipeline.details_nachladen(conn, orte, HEUTE, fetch=fetch) == 3
+        assert sorted(abrufe) == sorted(kk + x for x in ("a", "e0", "e1", "e2"))
+        assert set(db.details(conn)) == {kk + "a", kk + "e0", kk + "e2"}   # Fehlschlag nicht gemerkt
+        abrufe.clear()
+        assert pipeline.details_nachladen(conn, orte, HEUTE, fetch=fetch) == 0
+        assert abrufe == [kk + "e1"]                                        # naechster Lauf versucht es wieder
+
+
+def test_details_nachladen_bricht_ab(tmp_path, monkeypatch):
+    from ddwg import db
+    monkeypatch.setattr(pipeline.base.time_module, "sleep", lambda s: None)
+    monkeypatch.setattr(pipeline, "DETAIL_ABBRUCH_NACH_FEHLERN", 3)
+    kk = "https://www.kulturkalender-dresden.de/veranstaltung/"
+    evs = [_ev(str(i), "kulturkalender", f"Abend {i}", "Neuer Laden", time=f"1{i}:00", url=kk + f"e{i}") for i in range(6)]
+    orte = _orte()
+    rows, _ = pipeline.listing_rows(evs, orte, HEUTE)
+    abrufe = []
+    with db.connect(str(tmp_path / "t.db")) as conn:
+        db.replace_listings(conn, "kulturkalender", rows)
+        pipeline.build(conn, orte, HEUTE)
+        assert pipeline.details_nachladen(conn, orte, HEUTE, fetch=lambda ev: abrufe.append(1) or {"ok": False}) == 0
+        assert len(abrufe) == 3
 
 
 def test_region_gesichtete_orte():

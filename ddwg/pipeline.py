@@ -1,9 +1,9 @@
 """Der Ablauf: Quellen holen -> listings -> Gruppen -> Events -> Ausgabe.
 
-    scrape()    holt alle (oder ausgewaehlte) Quellen, ordnet jede Zeile einem
-                Ort aus orte/orte.json zu, verwirft Region "weiter" und
-                ersetzt die listings der Quelle. Danach build() und - fuer die
-                Herz-Orte - das Nachladen fehlender Beschreibungen.
+    scrape()    holt alle (oder ausgewaehlte) Quellen, verwirft Fuehrungen,
+                ordnet jede Zeile einem Ort aus orte/orte.json zu, verwirft
+                Region "weiter" und ersetzt die listings der Quelle. Danach
+                build() und das Nachladen fehlender Beschreibungen.
     build()     baut die Tabelle events komplett neu aus den listings und
                 verwirft dabei Fuehrungen (VERWORFENE_KATEGORIEN).
 
@@ -23,8 +23,10 @@ logger = logging.getLogger("ddwg")
 # Kategorien, die gar nicht erst auf die Seite kommen (Davids Entscheidung vom
 # 29.09.2026): Fuehrungen aller Art - Stadt-, Museums-, Schiffs- und
 # Familienfuehrungen. Erkannt werden sie weiter (normalize), damit sie sauber
-# herausfallen. Verworfen wird erst nach der Kategorie-Vergabe ueber den Ort
-# (Stufe 3), sonst rutschte eine dort vererbte Fuehrung durch.
+# herausfallen. Zweimal verworfen: schon beim Einlesen (listing_rows), damit
+# fuer Fuehrungen keine Treffpunkt-Orte in orte.json entstehen, und noch
+# einmal in build() nach der Kategorie-Vergabe ueber den Ort (Stufe 3), sonst
+# rutschte eine dort vererbte Fuehrung durch.
 VERWORFENE_KATEGORIEN = {"fuehrungen"}
 
 # So viele Tage voraus wird gescrapt.
@@ -35,10 +37,18 @@ TAGE_VORAUS = 31
 # nach hinten.
 LAUFEND_AB_TAGEN = 7
 
-# Detailseiten nachladen: nur fuer Events an Herz-Orten, nur Kulturkalender
+# Detailseiten nachladen: fuer alle Events ohne Beschreibung, nur Kulturkalender
 # (dort fehlt die Beschreibung in 98 % der Zeilen - rauze und die Seiten der
-# Haeuser liefern sie schon in der Liste mit), hoechstens so viele je Lauf.
-DETAIL_MAX_JE_LAUF = 120
+# Haeuser liefern sie schon in der Liste mit), naechste Tage zuerst, jede Seite
+# nur einmal. Die Ergebnisse bleiben in der Tabelle details; GitHub Actions
+# behaelt cache/events.db von Lauf zu Lauf (actions/cache in publish.yml), so
+# kommen nach dem ersten Lauf taeglich nur neue Termine dazu. Gemessen am
+# 29.09.2026: 2.331 Events mit Kulturkalender-Seite ohne Beschreibung - der
+# Deckel liegt knapp darueber, der erste Lauf dauert bei 1,2 s Pause ~45 min.
+DETAIL_MAX_JE_LAUF = 2500
+# So viele Fehlschlaege in Folge, dann bricht das Nachladen ab: Ist die Seite
+# ganz weg, wartete der Lauf sonst 2.500 x 8 s Timeout.
+DETAIL_ABBRUCH_NACH_FEHLERN = 20
 DETAIL_HOSTS = ("kulturkalender-dresden.de",)
 
 
@@ -102,15 +112,19 @@ def scrape_quelle(conn, orte, slug, heute, ende, module=None):
     rows, dropped = listing_rows(found, orte, heute)
     db.replace_listings(conn, slug, rows)
     db.record_run(conn, slug, started, _jetzt(), ok=True, event_count=len(found), dropped=dropped)
-    logger.info("%s: %d Einträge, %d davon 'weiter weg' verworfen.", name, len(found), dropped)
+    logger.info("%s: %d Einträge, %d davon verworfen (Führung oder weiter weg).", name, len(found), dropped)
     return len(rows)
 
 
 def listing_rows(found, orte, heute):
-    """Scraper-dicts -> listings-Zeilen. Region "weiter" wird verworfen."""
+    """Scraper-dicts -> listings-Zeilen. Fuehrungen und Region "weiter" werden
+    verworfen, bevor ein neuer Ort entsteht bzw. danach."""
     scraped_at = _jetzt()
     rows, dropped = [], 0
     for ev in found:
+        if ev.get("category") in VERWORFENE_KATEGORIEN:
+            dropped += 1
+            continue
         raw_venue = (ev.get("venue") or "").strip() or None
         ort = orte.resolve(raw_venue, heute)
         region = (orte[ort].get("region") if ort else None) or geo.classify_region(raw_venue)
@@ -204,25 +218,39 @@ def _laufend(out):
 # --- Detailseiten ----------------------------------------------------------
 
 def details_nachladen(conn, orte, heute, fetch=detail_fetch.fetch_detail, limit=DETAIL_MAX_JE_LAUF):
-    """Fehlende Beschreibungen fuer Events an Herz-Orten von der Detailseite holen."""
-    herz = set(orte.herz_orte())
-    if not herz:
-        return 0
+    """Fehlende Beschreibungen von der Detailseite holen (siehe DETAIL_MAX_JE_LAUF).
+    db.events liefert nach Datum sortiert, also kommen die naechsten Tage zuerst.
+    Eine Ausstellung steht an vielen Tagen mit derselben Seite - die wird nur
+    einmal geholt. Seiten ohne Text bleiben in details (leer) und werden nicht
+    erneut abgefragt."""
     known = db.details(conn)
-    candidates = [
-        ev for ev in db.events(conn, heute.isoformat())
-        if ev["ort"] in herz and not ev["description"] and ev["url"]
-        and ev["url"] not in known and any(h in ev["url"] for h in DETAIL_HOSTS)
-    ][:limit]
-    for ev in candidates:
-        result = fetch({"url": ev["url"], "source": "kulturkalender"})
+    urls = []
+    for ev in db.events(conn, heute.isoformat()):
+        url = ev["url"]
+        if (not ev["description"] and url and url not in known and url not in urls
+                and any(h in url for h in DETAIL_HOSTS)):
+            urls.append(url)
+    candidates = urls[:limit]
+    gespeichert = fehler = in_folge = 0
+    for url in candidates:
+        if in_folge >= DETAIL_ABBRUCH_NACH_FEHLERN:
+            logger.warning("Detailseiten: %d Fehlschläge in Folge, Abbruch für diesen Lauf.", in_folge)
+            break
+        result = fetch({"url": url, "source": "kulturkalender"})
+        base.time_module.sleep(base.REQUEST_DELAY_SECONDS)
+        if not result.get("ok"):
+            fehler += 1   # Netzfehler: nicht merken, der naechste Lauf versucht es wieder
+            in_folge += 1
+            continue
+        in_folge = 0
         desc = result.get("description")
         if desc == detail_fetch.FALLBACK_DESCRIPTION:
             desc = None
-        db.save_detail(conn, ev["url"], desc, result.get("price_text"),
+        db.save_detail(conn, url, desc, result.get("price_text"),
                        result.get("image_url"), _jetzt())
         conn.commit()
-        base.time_module.sleep(base.REQUEST_DELAY_SECONDS)
+        gespeichert += 1
     if candidates:
-        logger.info("%d Detailseiten für Herz-Orte nachgeladen.", len(candidates))
-    return len(candidates)
+        logger.info("Detailseiten: %d gespeichert, %d fehlgeschlagen, %d noch offen.",
+                    gespeichert, fehler, len(urls) - gespeichert)
+    return gespeichert

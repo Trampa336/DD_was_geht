@@ -38,16 +38,20 @@ python -m pytest tests           # Kerntests ohne Netz
 
 ## Ablauf (ddwg/pipeline.py)
 1. Jede Quelle (`ddwg/quellen/<slug>.py`, Funktion `scrape_range(start, ende)`) liefert Event-dicts.
-2. Jede Zeile wird über `orte.resolve()` einem Ort zugeordnet. **Region `weiter` wird
+2. Führungen fallen gleich raus (so entstehen für sie keine Treffpunkt-Orte). Jede übrige
+   Zeile wird über `orte.resolve()` einem Ort zugeordnet. **Region `weiter` wird
    verworfen**, also Meißen, Bautzen usw. (Davids Entscheidung). Umland bleibt gespeichert.
 3. `dedup.cluster()` bildet Gruppen derselben Veranstaltung. Eine Gruppe enthält von
    jeder Quelle höchstens einen Eintrag.
 4. `merge.merge()` verschmilzt Feld für Feld nach Quellen-Rang: Datum, Zeit und Titel
    kommen von der ranghöchsten Quelle, Beschreibung, Preis und Bild von der
    ranghöchsten Quelle, die sie hat.
-   Danach verwirft `build()` alle Führungen (Kategorie `fuehrungen`).
-5. Für Events an Herz-Orten lädt die Pipeline fehlende Beschreibungen von
-   Kulturkalender-Detailseiten nach, höchstens 120 pro Lauf, zwischengespeichert in `details`.
+   Danach verwirft `build()` noch einmal alle Führungen (auch über den Ort geerbte).
+5. Für alle Events ohne Beschreibung lädt die Pipeline die Kulturkalender-Detailseite
+   nach (seit 2026-09-29, vorher nur Herz-Orte): nächste Tage zuerst, jede Seite nur
+   einmal, höchstens 2.500 pro Lauf, Abbruch nach 20 Fehlschlägen in Folge. Ergebnisse
+   liegen in der Tabelle `details`; Netzfehler werden nicht gemerkt, sondern beim
+   nächsten Lauf erneut versucht.
 6. `ausgabe.py` füllt `ddwg/vorlage/index.html` mit JSON → `ausgabe/index.html`.
 
 ## Website (GitHub Pages)
@@ -56,6 +60,9 @@ Seit 2026-09-26 laeuft `.github/workflows/publish.yml` taeglich (und manuell ueb
 Branch `gh-pages`. Adresse: `https://trampa336.github.io/DD_was_geht/`. Einmalig
 noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
 „Pages“ die Quelle auf Branch `gh-pages` (Ordner `/`) stellen.
+Der Workflow behaelt `cache/events.db` per `actions/cache` von Lauf zu Lauf, damit
+die nachgeladenen Beschreibungen (`details`) erhalten bleiben. Fehlt der Cache
+(z. B. nach 7 Tagen ohne Lauf), laedt der erste Lauf alle Detailseiten neu (~45 min).
 
 `ddwg/vorlage/pwa/` enthaelt Manifest, Service Worker (`sw.js`) und Icons.
 `ausgabe.py` kopiert sie beim Bauen neben `index.html`. Lokal per Doppelklick
@@ -88,7 +95,7 @@ Termine, KK 1. Resident Advisor ist raus, dort gab es nichts Eigenes.
 ## Herzen
 Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören dem Browser:**
 Flavours beim ersten Start (ohne Wahl: Club) plus eigene Änderungen am Herz-Knopf.
-`"herz": true` in orte.json ist Davids Liste und steuert nur den Detailabruf beim Scrapen;
+`"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr);
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
 Davids Herz-Orte sind zehn, seit 2026-09-27 alle mit eigener Quelle: Sektor,
 Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS),
@@ -126,7 +133,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   `build()` verwirft die Kategorie `fuehrungen` (`VERWORFENE_KATEGORIEN` in
   `pipeline.py`), also Stadt-, Museums-, Schiffs- und Familienführungen. Erkannt werden
   sie weiter in `normalize.py`. `AUSGEBLENDET` in der Vorlage ist damit ohne Wirkung.
-  Orte, die nur Startpunkt einer Führung sind (Haltestellen usw.), haben `"treffpunkt": true`.
+  Seit sie schon beim Einlesen rausfallen, entstehen keine Treffpunkt-Orte mehr.
 - Werkzeuge für orte.json (füllen nur leere Felder): `werkzeuge/enrich_venues.py`
   (Homepage, Cover, Kurzbeschreibung über die Kulturkalender-Ortsseite) und
   `werkzeuge/fetch_venue_locations.py` (Adresse, Koordinaten über KK und nominatim).

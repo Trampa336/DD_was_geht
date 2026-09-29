@@ -24,6 +24,17 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: pip install -r requirements.txt
 
+      # Die Event-Datenbank vom letzten Lauf mitnehmen, vor allem die Tabelle
+      # details (nachgeladene Beschreibungen). So holt jeder Lauf nur die
+      # Detailseiten neuer Termine. Gespeichert wird am Ende des Jobs, nur wenn
+      # er erfolgreich war. Fehlt der Cache, baut der Scrape alles neu auf.
+      - name: Event-Datenbank vom letzten Lauf holen
+        uses: actions/cache@v4
+        with:
+          path: cache/events.db
+          key: events-db-${{ github.run_id }}
+          restore-keys: events-db-
+
       - name: Scrapen und ausgabe/index.html bauen
         run: python -m ddwg scrape
 

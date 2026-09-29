@@ -2618,22 +2618,6 @@
   ],
   "region": "dresden"
  },
- "haltestelle-leonardo-da-vinci-strasse": {
-  "name": "Haltestelle Leonardo-da-Vinci-Straße (Line 63)",
-  "aliase": [
-   "Haltestelle Leonardo-da-Vinci-Straße (Line 63)"
-  ],
-  "region": "dresden",
-  "treffpunkt": true
- },
- "haltestelle-linie-68-altleubnitz": {
-  "name": "Haltestelle Linie 68 Altleubnitz",
-  "aliase": [
-   "Haltestelle Linie 68 Altleubnitz"
-  ],
-  "region": "dresden",
-  "treffpunkt": true
- },
  "haltestelle-merianplatz-gorbitz": {
   "name": "Haltestelle Merianplatz - Dresden Gorbitz",
   "aliase": [
@@ -3500,14 +3484,6 @@
   "lat": 51.1659359,
   "lon": 13.6733553,
   "geo_quelle": "nominatim"
- },
- "kaethe-kollwitz-platz": {
-  "name": "Käthe-Kollwitz-Platz (Hst. Linie 7)",
-  "aliase": [
-   "Käthe-Kollwitz-Platz (Hst. Linie 7)"
-  ],
-  "region": "dresden",
-  "treffpunkt": true
  },
  "kakadu-bar-im-parkhotel": {
   "name": "Kakadu Bar im Parkhotel",
@@ -5555,14 +5531,6 @@
   "lon": 13.8486658,
   "geo_quelle": "nominatim"
  },
- "querallee": {
-  "name": "Querallee (Hst. Linie 9, 13, 75)",
-  "aliase": [
-   "Querallee (Hst. Linie 9, 13, 75)"
-  ],
-  "region": "dresden",
-  "treffpunkt": true
- },
  "radeberger-biertheater": {
   "name": "Radeberger Biertheater",
   "aliase": [
@@ -7231,14 +7199,6 @@
   "lat": 51.0523814,
   "lon": 13.722588,
   "geo_quelle": "nominatim"
- },
- "toeplerstrasse-12": {
-  "name": "Toeplerstraße 12",
-  "aliase": [
-   "Toeplerstraße 12"
-  ],
-  "region": "dresden",
-  "treffpunkt": true
  },
  "tom-pauls-theater": {
   "name": "Tom Pauls Theater",
