@@ -5,8 +5,8 @@
 //
 // CACHE-Namen hochzaehlen, wenn sich die Liste der ASSETS aendert, sonst
 // bleiben alte Dateien haengen.
-const CACHE = "ddwg-v1";
-const ASSETS = ["./", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const CACHE = "ddwg-v2";
+const ASSETS = ["./", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./favicon-64.png"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
