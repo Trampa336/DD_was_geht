@@ -1229,16 +1229,6 @@
   ],
   "region": "dresden"
  },
- "city": {
-  "name": "Dresden City",
-  "aliase": [
-   "Dresden City"
-  ],
-  "region": "dresden",
-  "art": "treffpunkt",
-  "treffpunkt": true,
-  "cover": "https://www.kulturkalender-dresden.de/storage/10392/responsive-images/Dresden-mit-Blick-auf-die-Elbe-%28c%29-Kuka___thumb_800_450.jpg"
- },
  "citybeach": {
   "name": "Citybeach Dresden",
   "aliase": [
@@ -6984,16 +6974,6 @@
   "lon": 13.3400898,
   "geo_quelle": "nominatim"
  },
- "terrassenufer": {
-  "name": "Terrassenufer Dresden",
-  "aliase": [
-   "Terrassenufer Dresden"
-  ],
-  "region": "dresden",
-  "art": "treffpunkt",
-  "treffpunkt": true,
-  "cover": "https://www.kulturkalender-dresden.de/storage/20271/responsive-images/20030812100DR_Dresden_Terrassenufer_Wei%C3%9Fe_Flotte___thumb_1000_572.jpg"
- },
  "thalia-haus-des-buches": {
   "name": "Thalia Dresden - Haus des Buches",
   "aliase": [
@@ -7103,8 +7083,6 @@
    "Theaterplatz Dresden"
   ],
   "region": "dresden",
-  "art": "treffpunkt",
-  "treffpunkt": true,
   "cover": "https://www.kulturkalender-dresden.de/storage/10404/responsive-images/Theaterplatz-%28c%29-KuKa___thumb_800_450.jpg"
  },
  "theaterplatz-reiterdenkmal": {

@@ -110,9 +110,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 ## Regeln (gelernt, bitte einhalten)
 - **Nichts erfinden.** Beschreibungen kommen nur aus gescraptem Text. Das gilt auch für
   Orte, die man kennt. Öffentlich über echte Dresdner Läden zu schreiben verlangt das.
-- **`sonstiges` ist eine gültige Antwort.** Kategorie-Reihenfolge: Rohkategorie der
-  Quelle → Titel-Stichwort (`normalize.py`) → Art des Ortes, nur wenn der Ort genau
-  eine Kategorie hat → `sonstiges`. Nichts wird zwangsweise einsortiert.
+- **`sonstiges` ist eine gültige Antwort.** Kategorie-Reihenfolge: **Titel-Stichwort für Demos und Führungen**
+  (`_titel_entscheidet` in `normalize.py`, seit 2026-09-29, schlägt die Quelle) →
+  Rohkategorie der Quelle → Titel-Stichwort (`normalize.py`) → Art des Ortes, nur wenn
+  der Ort genau eine Kategorie hat → `sonstiges`. Nichts wird zwangsweise einsortiert.
+  Demos sind ausdrücklich erwünscht und haben die Kategorie `demo` („Demos“).
 - **Scraper höflich:** `base.REQUEST_DELAY_SECONDS` (1,2 s) zwischen Requests,
   Detailabrufe gedeckelt.
 - **Nach Änderungen an einem Scraper `status` prüfen.** Ein Lauf mit 0 Events, wo es

@@ -30,6 +30,7 @@ FLAVOURS_PATH = os.path.join(ROOT, "orte", "flavours.json")
 KATEGORIEN = {
     "musik": "Musik",
     "kultur": "Kultur",
+    "demo": "Demos",
     "familie": "Familie",
     "outdoor": "Feste & Märkte",
     "sport": "Sport",

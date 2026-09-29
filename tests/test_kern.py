@@ -137,6 +137,29 @@ def test_region_gesichtete_orte():
     assert geo.classify_region("Scheune Neustadt") == "dresden"   # Dresdner Neustadt bleibt
 
 
+def test_titel_entscheidet_demos_und_fuehrungen():
+    c = normalize.classify_category
+    # Demos: auch gegen die Rohkategorie der Quelle, aber ohne Fehlerfreunde
+    assert c("kultur", "PRÜF-Demonstration für Demokratie") == "demo"
+    assert c("", "Critical Mass – Fahrraddemo") == "demo"
+    assert c("", "Kundgebung am Altmarkt") == "demo"
+    assert c("", "Schaufärben – Demonstration des Färbevorgangs") != "demo"
+    assert c("vortrag", "Vortrag: Demokratie in Gefahr") == "kultur"
+    assert c("konzert", "Musik der protestantischen Diaspora") == "musik"
+    # Fuehrungen schlagen die Rohkategorie (Kulturkalender: "Kultur", "Kinder")
+    assert c("kultur", "Semperoper & Dresdner Altstadt: Führung auf Deutsch") == "fuehrungen"
+    assert c("kultur", "Der geheimnisvolle Nachtwächter Rundgang") == "fuehrungen"
+    assert c("kinder", "Kostümführung für Kinder") == "fuehrungen"
+    assert c("", "Geführter Kuppelaufstieg") == "fuehrungen"
+    # ... aber nicht Vorfuehrung, Auffuehrung, Einfuehrung, Entfuehrung, Fuehrungskraefte
+    assert c("film", "Filmvorführung: Checker Tobi") == "kultur"
+    assert c("oper", "Die Entführung aus dem Serail") == "kultur"
+    assert c("theater", "Uraufführung: Faust") == "kultur"
+    assert c("", "1. Aufführungsabend") != "fuehrungen"
+    assert c("", "Einführung in die Fotografie") != "fuehrungen"
+    assert c("", "Workshop für Führungskräfte") != "fuehrungen"
+
+
 def test_merge_feldweise_nach_rang():
     group = dedup.cluster([
         _ev("1", "kulturkalender", "TOWER TRANSMISSIONS XII", "Straße E", image_url="kk.jpg"),

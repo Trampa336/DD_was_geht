@@ -24,6 +24,9 @@ RAW_CATEGORY_MAP = {
     "rundgang": "fuehrungen", "entdeckungen": "fuehrungen",
     "markt": "outdoor",
     "sport": "sport", "fitness": "sport", "bewegung": "sport",
+    # Bewusst nur "kundgebung", nicht "demo": per Teilstring fienge das
+    # "Demokratie" (Vortragsreihen, Diskussionen).
+    "kundgebung": "demo",
     # Bewusst NICHT hier: "Fest". Die Schluessel werden per Teilstring geprueft,
     # "fest" wuerde also auch auf "Festival" passen und damit die oben bewusst
     # entfernte Zuordnung durch die Hintertuer wieder einfuehren (gemessen:
@@ -79,7 +82,7 @@ KEYWORD_CATEGORY_MAP = {
     "-rave": "musik", "techno": "musik", "openair": "musik", "open-air": "musik",
     # "nachtwaechter" muss vor "nacht" stehen: die Nachtwaechter-Rundgaenge sind
     # kostuemierte Stadtfuehrungen und haben mit Nightlife nichts zu tun.
-    "nachtwaechter": "kultur",
+    "nachtwaechter": "fuehrungen",
     "nacht": "musik", "night": "musik", "invites": "musik", "vinyl": "musik",
     # Klassik und Genre-Namen: ohne diese landeten die "Wiener Philharmoniker"
     # und "Drei Joker des Jazz" in sonstiges, seit "Festival" nichts mehr
@@ -94,14 +97,10 @@ KEYWORD_CATEGORY_MAP = {
     "schauspiel": "kultur", "premiere": "kultur", "komoedie": "kultur",
     "zirkus": "kultur", "kulturtage": "kultur",
     "kinder": "familie", "familie": "familie",
-    "fuehrung": "fuehrungen", "rundgang": "fuehrungen",
+    # "fuehrung" und "rundgang" stehen seit 29.09.2026 nicht mehr hier: Stufe 0
+    # (_titel_entscheidet) erkennt sie als ganze Woerter und kennt die
+    # Fehlerfreunde (Vorfuehrung, Einfuehrung, Fuehrungskraefte ...).
     "stadtrundfahrt": "fuehrungen",
-    # "fuehrung" faengt die Substantiv-Form, aber nicht die gebeugten
-    # Partizip-Formen ("geführter", "geführte", "geführten") - "Geführter
-    # Kuppelaufstieg" oder "...an kostenlosen geführten Rundgängen teil"
-    # enthalten "fuehrung" nirgends im Slug. "gefuehrt" faengt alle Beugungen
-    # in einem Rutsch; keine Kollisionen im Bestand gefunden (P4e, 2026-09-11).
-    "gefuehrt": "fuehrungen",
     # Die größten Gruppen, die bisher ohne Rohkategorie in "sonstiges" landeten
     # (aus 1734 sonstiges-Titeln der Live-DB ausgezählt): Elbdampfer und
     # Stadtrundfahrten, Werks- und Schlossbesichtigungen, Museumsangebote.
@@ -111,7 +110,7 @@ KEYWORD_CATEGORY_MAP = {
     "schiff": "fuehrungen", "schloesserfahrt": "fuehrungen",
     "stadtfahrt": "fuehrungen", "elbfahrt": "fuehrungen",
     "dampfer": "fuehrungen", "besichtigung": "fuehrungen",
-    "audioguide": "fuehrungen", "stadtrundgang": "fuehrungen",
+    "audioguide": "fuehrungen",
     "schauwerkstatt": "kultur", "museum": "kultur", "sonderausstellung": "kultur",
     "vortrag": "kultur", "lesung": "kultur",
     "workshop": "kultur", "matinee": "kultur",
@@ -349,6 +348,43 @@ def run_key_for_event(event):
     return run_key(event["date"], event.get("venue"), event.get("title"))
 
 
+# --- Stufe 0: Titel vor Quelle (Davids Entscheidung vom 29.09.2026) ---------
+# Fuer Demos und Fuehrungen entscheidet der Titel, noch vor der Rohkategorie
+# der Quelle. Gemessen am 29.09.: Der Kulturkalender liefert fuer ~145 von
+# 3.273 Fuehrungen "Kultur" oder "Familie" ("Semperoper & Dresdner Altstadt:
+# Fuehrung auf Deutsch", Nachtwaechter-Rundgaenge, Kostuemfuehrungen), und die
+# einzigen zwei Demos standen als "Kultur" bzw. "Sport" drin.
+_DEMO_TITLE_RE = re.compile(
+    r"(?:^|-)(?:demo|demos|gegendemo|fahrraddemo|raddemo|demonstration|kundgebung"
+    r"|mahnwache|menschenkette|critical-mass|csd|christopher-street-day)(?=-|$)"
+)
+# "Demonstration des Faerbevorgangs" ist eine Vorfuehrung, keine Demo.
+_DEMO_FALSE_FRIENDS_RE = re.compile(
+    r"demonstration-(?:des|der|eines|einer|von|vom|am|zum|zur|mit|an)(?=-|$)"
+)
+# Ganze Woerter, die auf "fuehrung(en)" enden (Familienfuehrung,
+# Kuratorenfuehrung, Sonderfuehrung ...), dazu Rundgaenge und "gefuehrt".
+_FUEHRUNG_TITLE_RE = re.compile(
+    r"(?:^|-)([a-z]*fuehrung(?:en)?|[a-z]*rundgang|[a-z]*rundgaenge|gefuehrte?[nrs]?"
+    r"|stadtrundfahrt(?:en)?|nachtwaechter[a-z]*)(?=-|$)"
+)
+# Keine Fuehrungen: Film-/Theater-Vorfuehrung, Auffuehrung, Einfuehrung,
+# "Die Entfuehrung aus dem Serail", Unterfuehrung, Ausfuehrung ...
+_FUEHRUNG_FALSE_FRIENDS = ("vorfuehrung", "auffuehrung", "einfuehrung", "entfuehrung",
+                           "unterfuehrung", "ausfuehrung", "durchfuehrung", "verfuehrung",
+                           "ueberfuehrung", "zufuehrung", "fortfuehrung", "weiterfuehrung")
+
+
+def _titel_entscheidet(slug):
+    """Stufe 0: 'demo', 'fuehrungen' oder None."""
+    if _DEMO_TITLE_RE.search(slug) and not _DEMO_FALSE_FRIENDS_RE.search(slug):
+        return "demo"
+    for m in _FUEHRUNG_TITLE_RE.finditer(slug):
+        if not any(w in m.group(1) for w in _FUEHRUNG_FALSE_FRIENDS):
+            return "fuehrungen"
+    return None
+
+
 def classify_category(raw_category, title, venue=None):
     """Ordnet eine rohe Quellkategorie + Titel einem unserer Buckets zu.
 
@@ -358,6 +394,9 @@ def classify_category(raw_category, title, venue=None):
     allgemeine Stichwortsuche selbst.
     """
     slug = slugify(title)
+    stufe0 = _titel_entscheidet(slug)
+    if stufe0:
+        return stufe0
     if _is_sport(slug):
         return "sport"
     key = slugify(raw_category).replace("-", "")
