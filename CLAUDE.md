@@ -94,7 +94,7 @@ Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS)
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
-(z. B. Tag springen).
+(z. B. Flavours verfeinern).
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de
 und nominatim (Stand 2026-09-27). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
@@ -131,7 +131,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
   (bis 150 min Toleranz bei gleichem Ort und Titel). Festival-Sammeleinträge von
   cybersax können einzelne Programmpunkte an sich ziehen.
-- Datepicker für die Tagesansicht (großzügig springen, Wischen bleibt): in eigener Session besprechen.
+- Tag springen: Ein kurzer Tipp aufs große Datum in der Leiste öffnet einen Kalender
+  (`zeigeKalender` in der Vorlage), Wischen bleibt. Tage ohne Termine sind grau. Man muss
+  den Tipp kennen, ein Kalender-Knopf im Kopf wäre der einfachste Zusatz.
 
 ## Historie
 `docs/historie/`: Supervisor-Pläne und Packet-Berichte der v2-Überarbeitung (Sept. 2026),

@@ -162,6 +162,17 @@ main { flex: 1; }
 .sh-liste { margin: 10px -18px 0; }
 .sh-liste .ev { grid-template-columns: 76px 1fr; gap: 10px; width: 100%; margin: 0; padding: 10px 18px; background: none; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
 
+/* ---------- Kalender: Tipp aufs große Datum in der Leiste ---------- */
+.kal-monat { margin: 16px 0 6px; font-size: 15px; font-weight: 700; color: var(--soft); }
+.kal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.kal-wt { padding: 2px 0 4px; text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.kt { display: grid; place-items: center; aspect-ratio: 1; border-radius: var(--r-s); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+button.kt { background: var(--surface2); }
+.kt.we { color: var(--accent2); }
+.kt.leer { color: var(--faint); opacity: .45; font-weight: 400; }
+.kt.heute { box-shadow: inset 0 0 0 1.5px var(--soft); }
+.kt.an { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+
 #toast { position: fixed; z-index: 90; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; width: max-content; max-width: min(90vw, 360px); padding: 10px 16px; border-radius: var(--r); background: var(--ink); color: var(--bg); font-weight: 650; font-size: 13.5px; transition: .25s; text-align: center; }
 #toast.an { opacity: 1; transform: translate(-50%, 0); }
 
@@ -417,10 +428,16 @@ rail.addEventListener("pointerdown", e => {
 });
 rail.addEventListener("pointermove", e => {
   if (!griff || e.pointerId !== griff.id) return;
+  if (Math.abs(griff.y - e.clientY) > 8) griff.bewegt = true;
   springe(griff.k + Math.round((griff.y - e.clientY) / 34), false);
 });
 const loslassen = () => { griff = null; rail.classList.remove("greift"); };
-rail.addEventListener("pointerup", loslassen); rail.addEventListener("pointercancel", loslassen);
+// Kurzer Tipp ohne Bewegung auf das große Datum (Mitte der Leiste) öffnet den Kalender
+rail.addEventListener("pointerup", e => {
+  const tipp = griff && e.pointerId === griff.id && !griff.bewegt && Math.abs(griff.y - mitte) < 32;
+  loslassen(); if (tipp) zeigeKalender();
+});
+rail.addEventListener("pointercancel", loslassen);
 let rad = 0;
 rail.addEventListener("wheel", e => {
   e.preventDefault(); rad += e.deltaY;
@@ -428,6 +445,23 @@ rail.addEventListener("wheel", e => {
 }, { passive: false });
 
 /* ---------- Detail-Blatt ---------- */
+/* ---------- Kalender: je Monat ein Raster Mo–So, Tage ohne Termine grau ---------- */
+const MONL = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+function zeigeKalender() {
+  const index = Object.fromEntries(TAGE.map((iso, k) => [iso, k])), bloecke = [];
+  for (let t = TAGE[0]; t <= TAGE.at(-1); t = plus(t, 1)) {
+    const d = parse(t), k = index[t];
+    let b = bloecke.at(-1);
+    if (!b || b.m !== d.getMonth()) bloecke.push(b = { m: d.getMonth(), y: d.getFullYear(), zellen: Array((d.getDay() + 6) % 7).fill("<span></span>") });
+    const kl = `kt${istWE(t) ? " we" : ""}${t === HEUTE ? " heute" : ""}${k === aktiv ? " an" : ""}`;
+    b.zellen.push(k === undefined
+      ? `<span class="${kl} leer">${d.getDate()}</span>`
+      : `<button class="${kl}" data-kal="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MONL[d.getMonth()]}">${d.getDate()}</button>`);
+  }
+  const kopf = [1, 2, 3, 4, 5, 6, 0].map(i => `<span class="kal-wt">${WT[i]}</span>`).join(""), jahr = parse(HEUTE).getFullYear();
+  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Zu einem Tag springen</div>
+    ${bloecke.map(b => `<h3 class="kal-monat">${MONL[b.m]}${b.y !== jahr ? " " + b.y : ""}</h3><div class="kal">${kopf}${b.zellen.join("")}</div>`).join("")}</div>`);
+}
 function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; $(".sheet-body").scrollTop = 0; document.body.style.overflow = "hidden"; }
 function sheetZu() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
 function zeigeEvent(i) {
@@ -560,6 +594,7 @@ document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-zu]"); if (!el) return;
   const ds = el.dataset;
   if (el.classList.contains("rd")) return springe(+ds.k, true);
+  if (ds.kal !== undefined) { sheetZu(); return springe(+ds.kal, false); }
   if ("zu" in ds) return startBlatt ? flavoursUebernehmen([]) : sheetZu();
   if (ds.flw) { flWahl.has(ds.flw) ? flWahl.delete(ds.flw) : flWahl.add(ds.flw); el.setAttribute("aria-pressed", flWahl.has(ds.flw)); return; }
   if ("flok" in ds) return flavoursUebernehmen(FL.filter(f => flWahl.has(f.k)).map(f => f.k));
