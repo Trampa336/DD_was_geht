@@ -128,12 +128,11 @@
   "geo_quelle": "nominatim"
  },
  "alte-kirche": {
-  "name": "Alte Kirche",
+  "name": "Alte Kirche Coswig",
   "aliase": [
    "Alte Kirche"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "alte-kirche-klotzsche": {
   "name": "Alte Kirche Klotzsche",
@@ -181,8 +180,7 @@
   "aliase": [
    "Alter Jüdischer Friedhof"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "alter-schlachthof": {
   "name": "Alter Schlachthof Dresden",
@@ -204,8 +202,7 @@
   "aliase": [
    "Altes Pumpenhaus (Marienbrücke)"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "altes-wettbuero": {
   "name": "Altes Wettbüro",
@@ -251,8 +248,7 @@
   "aliase": [
    "Ankerplatz"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "annenkirche": {
   "name": "Annenkirche Dresden",
@@ -361,8 +357,7 @@
   "aliase": [
    "Atze e.V. Soziokulturelles Zentrum Pirna-Sonnstein"
   ],
-  "region": "umland",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "auferstehungskirche-plauen": {
   "name": "Auferstehungskirche Dresden-Plauen",
@@ -445,8 +440,7 @@
   "aliase": [
    "Bahnhof Meissen"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "bahnhof-mitte-eingangshalle": {
   "name": "Bahnhof Dresden-Mitte, Eingangshalle",
@@ -488,21 +482,12 @@
   ],
   "region": "dresden"
  },
- "ballhaus-watzke": {
-  "name": "Ballhaus Watzke",
-  "aliase": [
-   "Ballhaus Watzke"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "ballsaele-cossmannsdorf": {
   "name": "Ballsäle Cossmannsdorf",
   "aliase": [
    "Ballsäle Cossmannsdorf"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "ballsportarena": {
   "name": "BallsportARENA Dresden",
@@ -520,8 +505,7 @@
   "aliase": [
    "Barnyard Club"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "barockgarten-grosssedlitz-heidenau": {
   "name": "Barockgarten Großsedlitz Heidenau",
@@ -599,16 +583,14 @@
   "aliase": [
    "Begegnungsstätte Pentacon e. V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "belantis-das-abenteuerreich": {
   "name": "BELANTIS - Das AbenteuerReich",
   "aliase": [
    "BELANTIS - Das AbenteuerReich"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "besucherbergwerk-zinnkammern": {
   "name": "Besucherbergwerk Zinnkammern",
@@ -653,18 +635,11 @@
   "lon": 13.807820817957696,
   "geo_quelle": "kk_page"
  },
- "bibliothek-buehlau": {
-  "name": "Bibliothek Bühlau",
-  "aliase": [
-   "Bibliothek Bühlau"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "bibliothek-buehlau-staedtische-bibliotheken": {
   "name": "Bibliothek Bühlau – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Bühlau – Städtische Bibliotheken Dresden"
+   "Bibliothek Bühlau – Städtische Bibliotheken Dresden",
+   "Bibliothek Bühlau"
   ],
   "region": "dresden",
   "adresse": "Bautzner Landstraße 130, 01324 Dresden",
@@ -695,8 +670,7 @@
   "aliase": [
    "Bibliothek Gompitz"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "bibliothek-gorbitz": {
   "name": "Bibliothek Gorbitz",
@@ -818,18 +792,11 @@
   "lon": 13.7624702,
   "geo_quelle": "nominatim"
  },
- "bibliothek-neustadt": {
-  "name": "Bibliothek Neustadt",
-  "aliase": [
-   "Bibliothek Neustadt"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "bibliothek-neustadt-staedtische-bibliotheken": {
   "name": "Bibliothek Neustadt – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Neustadt – Städtische Bibliotheken Dresden"
+   "Bibliothek Neustadt – Städtische Bibliotheken Dresden",
+   "Bibliothek Neustadt"
   ],
   "region": "dresden",
   "adresse": "Königsbrücker Straße 26, 01099 Dresden",
@@ -888,18 +855,11 @@
   "lon": 13.706115,
   "geo_quelle": "nominatim"
  },
- "bibliothek-prohlis": {
-  "name": "Bibliothek Prohlis",
-  "aliase": [
-   "Bibliothek Prohlis"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "bibliothek-prohlis-staedtische-bibliotheken": {
   "name": "Bibliothek Prohlis – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Prohlis – Städtische Bibliotheken Dresden"
+   "Bibliothek Prohlis – Städtische Bibliotheken Dresden",
+   "Bibliothek Prohlis"
   ],
   "region": "dresden",
   "adresse": "Torhaus am Jacob-Winter-Platz, Prohliser Allee 10, 01239 Dresden",
@@ -925,18 +885,11 @@
   "lon": 13.7221366,
   "geo_quelle": "nominatim"
  },
- "bibliothek-weissig": {
-  "name": "Bibliothek Weißig",
-  "aliase": [
-   "Bibliothek Weißig"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "bibliothek-weissig-staedtische-bibliotheken": {
   "name": "Bibliothek Weißig – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Weißig – Städtische Bibliotheken Dresden"
+   "Bibliothek Weißig – Städtische Bibliotheken Dresden",
+   "Bibliothek Weißig"
   ],
   "region": "dresden",
   "adresse": "Bautzner Landstraße 291, 01328 Dresden",
@@ -1099,8 +1052,7 @@
   "aliase": [
    "Brigitte-Reimann-Stadtbibliothek"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "bronold-jacquemin-werner-teerausch-gbr": {
   "name": "Bronold, Jacquemin & Werner TEERAUSCH GbR",
@@ -1108,7 +1060,7 @@
    "Bronold, Jacquemin & Werner TEERAUSCH GbR"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "adresse": "Görlitzer Straße 25, 01099 Dresden"
  },
  "buddhistisches-studien-und-meditationszentrum-jetsuen-milarepa": {
   "name": "Buddhistisches Studien- und Meditationszentrum Jetsün Milarepa",
@@ -1134,8 +1086,7 @@
   "aliase": [
    "Bühne in der Borngasse"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "buerger-innenbuero-wahlkreisbuero-mdb-kassem-taher-saleh-mdl-thomas-loeser": {
   "name": "Bürger:innenbüro, Wahlkreisbüro MdB Kassem Taher Saleh & MdL Thomas Löser",
@@ -1172,14 +1123,6 @@
   "lat": 51.1058215,
   "lon": 13.7621114,
   "geo_quelle": "nominatim"
- },
- "bundesarchiv-stasi-unterlagen-archiv-aussenstelle": {
-  "name": "Bundesarchiv - Stasi-Unterlagen-Archiv - Außenstelle Dresden",
-  "aliase": [
-   "Bundesarchiv - Stasi-Unterlagen-Archiv - Außenstelle Dresden"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
  },
  "burg-dohna": {
   "name": "Burg Dohna",
@@ -1236,16 +1179,15 @@
   "aliase": [
    "Cafe Courage von Treibhaus e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "cafe-pawlow": {
   "name": "Cafe Pawlow",
   "aliase": [
-   "Cafe Pawlow"
+   "Cafe Pawlow",
+   "Pawlow"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "carl-maria-von-weber-museum": {
   "name": "Carl-Maria-von-Weber-Museum (Museum Dresden)",
@@ -1357,8 +1299,7 @@
   "aliase": [
    "Circie"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "city": {
   "name": "Dresden City",
@@ -1571,8 +1512,7 @@
   "aliase": [
    "disputhek"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "diverso-produzenten-galerie-und-laden": {
   "name": "DIVERSO: Produzenten-Galerie und Laden",
@@ -1828,8 +1768,7 @@
   "aliase": [
    "Ev. Kirche Moritzburg"
   ],
-  "region": "umland",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "ev-luth-gemeindezentrum": {
   "name": "Ev.-luth. Gemeindezentrum",
@@ -1927,8 +1866,7 @@
   "aliase": [
    "Evang. Jugendbildungsprojekt Wintergrüne"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "evangelisch-lutherische-christuskirche-strehlen": {
   "name": "Evangelisch-Lutherische Christuskirche Dresden-Strehlen",
@@ -2038,8 +1976,7 @@
   "aliase": [
    "Feiermanufaktur am Waldbad Weixdorf"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "feldschloesschen-stammhaus": {
   "name": "Feldschlößchen-Stammhaus",
@@ -2086,8 +2023,7 @@
   "aliase": [
    "Festsaal Piano-Salon Dürrröhrsdorf-Dittersbach"
   ],
-  "region": "umland",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "festung-koenigstein": {
   "name": "Festung Königstein",
@@ -2251,8 +2187,7 @@
   "aliase": [
    "Freunde Aktueller Kunst e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "friedenskirche": {
   "name": "Friedenskirche",
@@ -2325,8 +2260,7 @@
   "aliase": [
    "Galerie Brüderstraße"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "galerie-der-kustodie": {
   "name": "Galerie der Kustodie",
@@ -2503,14 +2437,7 @@
  "geh8": {
   "name": "Geh8",
   "aliase": [
-   "Geh8"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
- "geh8-kunstraum-und-ateliers": {
-  "name": "geh8 Kunstraum und Ateliers e.V.",
-  "aliase": [
+   "Geh8",
    "geh8 Kunstraum und Ateliers e.V."
   ],
   "region": "dresden",
@@ -2572,8 +2499,7 @@
   "aliase": [
    "Gemeindezentrum Niedersedlitz"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "generationengarten-schaeferstrasse": {
   "name": "Generationengarten Schäferstraße",
@@ -2615,8 +2541,7 @@
   "aliase": [
    "Gewandhaus Leipzig"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "glaeserne-manufaktur": {
   "name": "Gläserne Manufaktur (Volkswagen)",
@@ -2643,18 +2568,11 @@
   "lon": 13.6586632,
   "geo_quelle": "nominatim"
  },
- "goldener-reiter": {
-  "name": "Goldener Reiter",
-  "aliase": [
-   "Goldener Reiter"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "goldener-reiter-neustaedter-markt": {
   "name": "Goldener Reiter - Neustädter Markt",
   "aliase": [
-   "Goldener Reiter - Neustädter Markt"
+   "Goldener Reiter - Neustädter Markt",
+   "Goldener Reiter"
   ],
   "region": "dresden"
  },
@@ -3114,16 +3032,14 @@
   "aliase": [
    "Heymannbaude"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "hfbk-bruehlsche-terrasse": {
   "name": "HfBK Brühlsche Terrasse",
   "aliase": [
    "HfBK Brühlsche Terrasse"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "himmelfahrtskirche-leuben": {
   "name": "Himmelfahrtskirche Leuben",
@@ -3166,8 +3082,7 @@
   "aliase": [
    "Hochschule für Musik"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "hochschule-fuer-musik-carl-maria-von-weber-kleiner-saal": {
   "name": "Hochschule für Musik Carl Maria von Weber (Musikhochschule), Kleiner Saal",
@@ -3223,8 +3138,7 @@
   "aliase": [
    "Hofcafé & Hoftheater zu Proschwitz"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "hoffnungskirche-loebtau": {
   "name": "Hoffnungskirche Dresden Löbtau",
@@ -3307,8 +3221,7 @@
   "aliase": [
    "Hoy 31"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "hst-wilhelminenstrasse": {
   "name": "Hst. Wilhelminenstraße",
@@ -3647,8 +3560,7 @@
   "aliase": [
    "Kadampa Meditationszentrum Dresden e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "kaethe-kollwitz-haus-moritzburg": {
   "name": "Käthe Kollwitz Haus Moritzburg",
@@ -3681,8 +3593,7 @@
   "aliase": [
    "Kalkofen Maxen"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "kanonenhof": {
   "name": "Kanonenhof Dresden (Eingang neben Bärenzwinger)",
@@ -3970,14 +3881,6 @@
   ],
   "region": "umland"
  },
- "kirchencafe-lockwitz": {
-  "name": "Kirchencafè Lockwitz (Schlosskirche Lockwitz)",
-  "aliase": [
-   "Kirchencafè Lockwitz (Schlosskirche Lockwitz)"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "kleinbauernmuseum-reitzendorf": {
   "name": "Kleinbauernmuseum Reitzendorf",
   "aliase": [
@@ -4127,8 +4030,7 @@
   "aliase": [
    "Kosmotique"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "kraftwerk-mitte": {
   "name": "KRAFTWERK Mitte",
@@ -4175,8 +4077,7 @@
   "aliase": [
    "Kreativraum Malspiel Dresden"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "kreativzentrum-omnibus": {
   "name": "Kreativzentrum Omnibus",
@@ -4271,8 +4172,7 @@
   "aliase": [
    "Kukulida"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "kulturbahnhof": {
   "name": "Kulturbahnhof",
@@ -4924,8 +4824,7 @@
   "aliase": [
    "Matthäuskirche Dresden"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "max-jacob-theater-hohnstein": {
   "name": "Max Jacob Theater Hohnstein",
@@ -5031,26 +4930,17 @@
  "mittelsaechsisches-theater": {
   "name": "Mittelsächsisches Theater",
   "aliase": [
-   "Mittelsächsisches Theater"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
- "mittelsaechsisches-theater-freiberg": {
-  "name": "Mittelsächsisches Theater Freiberg",
-  "aliase": [
+   "Mittelsächsisches Theater",
    "Mittelsächsisches Theater Freiberg"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "modellstrassenbahnclub-der-dvb-ag": {
   "name": "Modellstraßenbahnclub der DVB AG e.V.",
   "aliase": [
    "Modellstraßenbahnclub der DVB AG e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "moritz-monument-terrassenufer-ecke-hasenberg": {
   "name": "Moritz-Monument Terrassenufer/ Ecke Hasenberg",
@@ -5168,8 +5058,7 @@
   "aliase": [
    "Nationalparkzentrum"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "naturbad-mockritz": {
   "name": "Naturbad Mockritz",
@@ -5178,18 +5067,11 @@
   ],
   "region": "dresden"
  },
- "naturbuehne": {
-  "name": "Naturbühne",
-  "aliase": [
-   "Naturbühne"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "naturbuehne-maxen": {
   "name": "Naturbühne Maxen",
   "aliase": [
-   "Naturbühne Maxen"
+   "Naturbühne Maxen",
+   "Naturbühne"
   ],
   "region": "weiter"
  },
@@ -5198,8 +5080,7 @@
   "aliase": [
    "Naturerlebniszentrum Hebelei"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "nazarethkirche": {
   "name": "Nazarethkirche (Dresden-Seidnitz)",
@@ -5242,8 +5123,7 @@
   "aliase": [
    "Neuer Israelitischer Friedhof"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "neuer-juedischer-friedhof": {
   "name": "Neuer Jüdischer Friedhof",
@@ -5342,8 +5222,7 @@
   "aliase": [
    "Neustadthalle - Neustadt in Sachsen"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "neustaedter-markthalle": {
   "name": "Neustädter Markthalle",
@@ -5616,13 +5495,6 @@
   "lon": 13.753936518090189,
   "geo_quelle": "kk_page"
  },
- "pawlow": {
-  "name": "Pawlow",
-  "aliase": [
-   "Pawlow"
-  ],
-  "region": "dresden"
- },
  "peckerl": {
   "name": "Peckerl",
   "aliase": [
@@ -5682,8 +5554,7 @@
   "aliase": [
    "Porsche Zentrum Dresden"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "programmkino-ost": {
   "name": "Programmkino Ost (PKO)",
@@ -5928,8 +5799,7 @@
   "aliase": [
    "Rinne Dresden (Ostragehege-Festwiese)"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "rittergut-limbach-wilsdruff": {
   "name": "Rittergut Limbach / Wilsdruff",
@@ -5942,18 +5812,11 @@
   "lon": 13.4770273,
   "geo_quelle": "nominatim"
  },
- "robert-sterl-haus": {
-  "name": "Robert-Sterl-Haus",
-  "aliase": [
-   "Robert-Sterl-Haus"
-  ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
- },
  "robert-sterl-haus-struppen-ot-naundorf": {
   "name": "Robert-Sterl-Haus Struppen OT Naundorf",
   "aliase": [
-   "Robert-Sterl-Haus Struppen OT Naundorf"
+   "Robert-Sterl-Haus Struppen OT Naundorf",
+   "Robert-Sterl-Haus"
   ],
   "region": "weiter",
   "homepage": "http://www.robert-sterl-haus.de",
@@ -5999,8 +5862,7 @@
   "aliase": [
    "Roter Baum e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "rotes-haus-meissen": {
   "name": "\"Rotes Haus\" Meißen",
@@ -6312,8 +6174,7 @@
   "aliase": [
    "Schloss Bieberstein"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "schloss-burgk-freital": {
   "name": "Schloss Burgk Freital",
@@ -6349,8 +6210,7 @@
   "aliase": [
    "Schloss Kuckuckstein"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "schloss-maxen": {
   "name": "Schloss Maxen",
@@ -6472,7 +6332,8 @@
   "name": "Schlosskirche Dresden-Lockwitz",
   "aliase": [
    "Schlosskirche Dresden-Lockwitz",
-   "Schlosskirche Lockwitz"
+   "Schlosskirche Lockwitz",
+   "Kirchencafè Lockwitz (Schlosskirche Lockwitz)"
   ],
   "region": "dresden",
   "adresse": "Altlockwitz, 01257 Dresden-Lockwitz",
@@ -6509,8 +6370,7 @@
   "aliase": [
    "Schuberts e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "schulmuseum": {
   "name": "Schulmuseum Dresden",
@@ -6589,8 +6449,7 @@
   "aliase": [
    "SETZKASTEN  (Weißer Hirsch Dresden)"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "showboxx": {
   "name": "Showboxx (Citybeach)",
@@ -6611,8 +6470,7 @@
   "aliase": [
    "SLUB Makerspace  - Bereichsbibliothek DrePunct"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "slub-textlab-zweigbibliothek-erziehungswissenschaften": {
   "name": "SLUB - TextLab Zweigbibliothek Erziehungswissenschaften",
@@ -6669,8 +6527,7 @@
   "aliase": [
    "Sorbisches National-Ensemble"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "sowieso": {
   "name": "sowieso",
@@ -6748,8 +6605,7 @@
   "aliase": [
    "St.-Nikolai-Kirche Constappel"
   ],
-  "region": "umland",
-  "erstmals": "2026-09-25"
+  "region": "umland"
  },
  "st-pauli-friedhof": {
   "name": "St.-Pauli-Friedhof",
@@ -6893,8 +6749,7 @@
   "aliase": [
    "Stadthalle Stern Riesa"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "stadtkirche-st-marien-pirna": {
   "name": "Stadtkirche St. Marien Pirna",
@@ -7002,7 +6857,8 @@
  "stasi-unterlagen-archiv": {
   "name": "Stasi-Unterlagen-Archiv",
   "aliase": [
-   "Stasi-Unterlagen-Archiv"
+   "Stasi-Unterlagen-Archiv",
+   "Bundesarchiv - Stasi-Unterlagen-Archiv - Außenstelle Dresden"
   ],
   "region": "dresden"
  },
@@ -7294,8 +7150,7 @@
   "aliase": [
    "Theater im Bürgerhaus"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "theater-meissen": {
   "name": "Theater Meißen",
@@ -7485,8 +7340,7 @@
   "aliase": [
    "Toskana Therme"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "touristinformation": {
   "name": "Touristinformation",
@@ -7565,8 +7419,7 @@
   "aliase": [
    "Trinitatiskirche"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "tu": {
   "name": "TU Dresden",
@@ -7634,18 +7487,11 @@
   ],
   "region": "dresden"
  },
- "uniwerk": {
-  "name": "Uniwerk",
-  "aliase": [
-   "Uniwerk"
-  ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
- },
  "uniwerk-alte-feuerwache-pirna": {
   "name": "UNIWERK - alte Feuerwache Pirna",
   "aliase": [
-   "UNIWERK - alte Feuerwache Pirna"
+   "UNIWERK - alte Feuerwache Pirna",
+   "Uniwerk"
   ],
   "region": "umland",
   "adresse": "Obere Burgstraße 6b, 01796 Pirna",
@@ -7690,8 +7536,7 @@
   "aliase": [
    "Vereinshaus Aktives Leben"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "verkehrsmuseum": {
   "name": "Verkehrsmuseum Dresden",
@@ -7815,16 +7660,14 @@
   "aliase": [
    "Volkshaus Schützenplatz"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "volkshochschule": {
   "name": "Volkshochschule Dresden e.V.",
   "aliase": [
    "Volkshochschule Dresden e.V."
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "volkshochschule-annenstrasse": {
   "name": "Volkshochschule, Annenstraße",
@@ -7838,16 +7681,14 @@
   "aliase": [
    "Volkshochschule Dreiländereck im Salzhaus"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "volkshochschule-gasanstaltstrasse": {
   "name": "Volkshochschule, Gasanstaltstraße",
   "aliase": [
    "Volkshochschule, Gasanstaltstraße"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "volkshochschule-saechsische-schweiz": {
   "name": "Volkshochschule Sächsische Schweiz",
@@ -7971,7 +7812,8 @@
  "watzke-ball-brauhaus": {
   "name": "Watzke Ball & Brauhaus",
   "aliase": [
-   "Watzke Ball & Brauhaus"
+   "Watzke Ball & Brauhaus",
+   "Ballhaus Watzke"
   ],
   "region": "dresden",
   "adresse": "Kötzschenbroder Straße 1, 01139 Dresden",
@@ -8100,8 +7942,7 @@
   "aliase": [
    "WT Energiesysteme Arena Riesa"
   ],
-  "region": "weiter",
-  "erstmals": "2026-09-25"
+  "region": "weiter"
  },
  "wu-5": {
   "name": "Wu 5",
@@ -8275,8 +8116,7 @@
   "aliase": [
    "Zum Gerücht"
   ],
-  "region": "dresden",
-  "erstmals": "2026-09-25"
+  "region": "dresden"
  },
  "zwickmuehle-c-o-gemeinsam-in-plauen": {
   "name": "Zwickmühle c/o Gemeinsam in Plauen e.V.",
