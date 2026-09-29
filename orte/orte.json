@@ -111,6 +111,9 @@
    "Alte Feuerwache Loschwitz Puppentheater"
   ],
   "region": "dresden",
+  "homepage": "https://www.puppentheater-vollmann.de/spielplan.html",
+  "cover": "https://www.kulturkalender-dresden.de/storage/12001/responsive-images/Alte-Feuerwache-%28c%29-KuKa___thumb_800_450.jpg",
+  "beschreibung": "Der Spielplan für das Puppentheater in der Alten Feuerwache in Dresden Loschwitz (Hier können Sie auch reservieren!).",
   "adresse": "Fidelio-F.-Finke-Straße 4, 01326 Dresden",
   "lat": 51.0530905,
   "lon": 13.8144786,
@@ -151,7 +154,10 @@
    "Alte Schule Gohlis"
   ],
   "region": "dresden",
-  "adresse": "Cossebauder Straße 4 Dresden"
+  "adresse": "Cossebauder Straße 4 Dresden",
+  "lat": 51.0926596,
+  "lon": 13.6414202,
+  "geo_quelle": "nominatim"
  },
  "alte-weinpresse-pillnitz": {
   "name": "Alte Weinpresse Pillnitz",
@@ -180,7 +186,11 @@
   "aliase": [
    "Alter Jüdischer Friedhof"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Pulsnitzer Straße 10, 01099 Dresden",
+  "lat": 51.0641928,
+  "lon": 13.7580854,
+  "geo_quelle": "nominatim"
  },
  "alter-schlachthof": {
   "name": "Alter Schlachthof Dresden",
@@ -202,7 +212,11 @@
   "aliase": [
    "Altes Pumpenhaus (Marienbrücke)"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Devrientstraße 18b, 01067 Dresden",
+  "lat": 51.0592304,
+  "lon": 13.7294063,
+  "geo_quelle": "nominatim"
  },
  "altes-wettbuero": {
   "name": "Altes Wettbüro",
@@ -211,6 +225,9 @@
    "Altes Wettbüro Dresden"
   ],
   "region": "dresden",
+  "homepage": "http://www.altes-wettbuero.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/10566/responsive-images/Altes-Wettb%C3%BCro-Wikipedia___thumb_769_429.jpg",
+  "beschreibung": "Vintage – Charme, grüner Garten, kreative Kombüse und Konzert oder Partynacht. Im ehemaligen Künstlercasino ist fast alles möglich. #WettiStyle",
   "adresse": "Antonstraße 8, 01097 Dresden",
   "lat": 51.0645056,
   "lon": 13.7445496,
@@ -248,7 +265,11 @@
   "aliase": [
    "Ankerplatz"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Trachenberger Straße 20, 01129 Dresden",
+  "lat": 51.0841589215381,
+  "lon": 13.727680759644802,
+  "geo_quelle": "kk_seite"
  },
  "annenkirche": {
   "name": "Annenkirche Dresden",
@@ -256,6 +277,7 @@
    "Annenkirche Dresden"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/1717/responsive-images/c-joerg-blobelt-cc-by-sa-4-0-https-creativecommons-org-licenses-by-sa-4-0___thumb_800_532.jpg",
   "adresse": "Annenstraße, 01067 Dresden",
   "lat": 51.0495219,
   "lon": 13.7292723,
@@ -307,6 +329,7 @@
    "ASB-Beratungs- und Begegnungszentrum \"Luise\""
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/59099/responsive-images/kuka___thumb_1200_675.jpg",
   "adresse": "Warthaer Straße 25, 01157 Dresden",
   "lat": 51.0605912,
   "lon": 13.6762552,
@@ -357,7 +380,11 @@
   "aliase": [
    "Atze e.V. Soziokulturelles Zentrum Pirna-Sonnstein"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Varkausring 1b, 01796 Pirna",
+  "lat": 50.9541844,
+  "lon": 13.9572209,
+  "geo_quelle": "nominatim"
  },
  "auferstehungskirche-plauen": {
   "name": "Auferstehungskirche Dresden-Plauen",
@@ -426,7 +453,10 @@
    "Bahnbetriebswerk Dresden-Altstadt"
   ],
   "region": "dresden",
-  "adresse": "Zwickauer Straße 86 Dresden"
+  "adresse": "Zwickauer Straße 86 Dresden",
+  "lat": 51.0368668,
+  "lon": 13.7098856,
+  "geo_quelle": "nominatim"
  },
  "bahnhof": {
   "name": "Bahnhof",
@@ -487,7 +517,11 @@
   "aliase": [
    "Ballsäle Cossmannsdorf"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "An der Kleinbahn 2, 01705 Freital",
+  "lat": 50.9777495,
+  "lon": 13.6251647,
+  "geo_quelle": "nominatim"
  },
  "ballsportarena": {
   "name": "BallsportARENA Dresden",
@@ -562,7 +596,10 @@
   "homepage": "http://www.publishandprint.de",
   "beschreibung": "Raum+Verlag für Fotografie, Grafik und Editionen, Dresden",
   "adresse": "Bautzner Straße 69 01099 Dresden",
-  "telefon": "0351 - 8 03 45 19"
+  "telefon": "0351 - 8 03 45 19",
+  "lat": 51.0636004,
+  "lon": 13.7584279,
+  "geo_quelle": "nominatim"
  },
  "beatpol": {
   "name": "Beatpol Dresden",
@@ -583,7 +620,11 @@
   "aliase": [
    "Begegnungsstätte Pentacon e. V."
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Glashütter Straße 101A, 01277 Dresden",
+  "lat": 51.0389198,
+  "lon": 13.804572,
+  "geo_quelle": "nominatim"
  },
  "belantis-das-abenteuerreich": {
   "name": "BELANTIS - Das AbenteuerReich",
@@ -666,6 +707,8 @@
    "Bibliothek Gorbitz"
   ],
   "region": "dresden",
+  "homepage": "https://www.bibo-dresden.de/de/standorte/bibliothek-gorbitz.php",
+  "cover": "https://www.kulturkalender-dresden.de/storage/55035/responsive-images/Bibo-Gorbitz___thumb_1024_680.jpg",
   "adresse": "Merianplatz 3, 01169 Dresden",
   "lat": 51.0448342,
   "lon": 13.6696816,
@@ -693,6 +736,8 @@
    "Bibliothek Johannstadt"
   ],
   "region": "dresden",
+  "homepage": "https://www.bibo-dresden.de/de/standorte/bibliothek-johannstadt.php",
+  "cover": "https://www.kulturkalender-dresden.de/storage/55037/responsive-images/Bibo-Johannstadt___thumb_1024_680.jpg",
   "adresse": "Fetscherstraße 67, 01307 Dresden",
   "lat": 51.0512261,
   "lon": 13.7757224,
@@ -747,6 +792,8 @@
    "Bibliothek Neustadt"
   ],
   "region": "dresden",
+  "homepage": "https://www.bibo-dresden.de/de/standorte/bibliothek-neustadt.php",
+  "cover": "https://www.kulturkalender-dresden.de/storage/9397/responsive-images/c-kuka___thumb_800_450.jpg",
   "adresse": "Königsbrücker Straße 26, 01099 Dresden",
   "lat": 51.067116,
   "lon": 13.7475569,
@@ -856,7 +903,10 @@
    "Bio-Bahnhofswirtschaft"
   ],
   "region": "dresden",
-  "adresse": "Zur Neuen Brücke 4a 01109 Dresden"
+  "adresse": "Zur Neuen Brücke 4a 01109 Dresden",
+  "lat": 51.1144381,
+  "lon": 13.788889,
+  "geo_quelle": "nominatim"
  },
  "bioschaeferei-spinnstube-drutschmann": {
   "name": "Bioschäferei & Spinnstube Drutschmann",
@@ -864,6 +914,8 @@
    "Bioschäferei & Spinnstube Drutschmann"
   ],
   "region": "dresden",
+  "homepage": "https://schaeferei-drutschmann.de/home",
+  "cover": "https://www.kulturkalender-dresden.de/storage/58788/responsive-images/Sch%C3%A4fereie-Drutschmann___thumb_1200_675.jpg",
   "adresse": "Am Dorfbach 10, 01744 Dippoldiswalde / OT Reichstädt"
  },
  "blaue-fabrik": {
@@ -872,6 +924,9 @@
    "Blaue Fabrik Dresden (parablau)"
   ],
   "region": "dresden",
+  "homepage": "http://www.blauefabrik.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/13393/responsive-images/Blaue-Fabrik-sb-1___thumb_1000_563.jpg",
+  "beschreibung": "Blaue Fabrik e.V. - der unabhängiger Kulturort in Dresden für improvisierten Jazz, Konzerte, Kunstateliers, Begegnungen und Ausstellungen. Jetzt in der Grünen Villa, Eisenbahnstrasse.",
   "adresse": "Eisenbahnstraße 1, 01097 Dresden",
   "lat": 51.0656512,
   "lon": 13.7378115,
@@ -988,7 +1043,12 @@
    "Bronold, Jacquemin & Werner TEERAUSCH GbR"
   ],
   "region": "dresden",
-  "adresse": "Görlitzer Straße 25, 01099 Dresden"
+  "homepage": "https://teerausch.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/60536/responsive-images/Bild-Ausstellung-Astrid-Bergstr%C3%B6m___thumb_2080_630.jpg",
+  "adresse": "Görlitzer Straße 25, 01099 Dresden",
+  "lat": 51.0678686,
+  "lon": 13.7545853,
+  "geo_quelle": "nominatim"
  },
  "buddhistisches-studien-und-meditationszentrum-jetsuen-milarepa": {
   "name": "Buddhistisches Studien- und Meditationszentrum Jetsün Milarepa",
@@ -1057,7 +1117,11 @@
   "aliase": [
    "Burg Dohna"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Pfarrstr.6, 01809 Dohna",
+  "lat": 50.9533533,
+  "lon": 13.8546356,
+  "geo_quelle": "nominatim"
  },
  "burg-hohnstein": {
   "name": "Burg Hohnstein",
@@ -1090,6 +1154,9 @@
    "C. Bechstein Centrum Dresden GmbH"
   ],
   "region": "dresden",
+  "homepage": "https://www.bechstein.com/centren/dresden/veranstaltungen/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/27935/responsive-images/CBCDD_Robert-Schumann-Saal_01-%28002%29___thumb_1200_675.jpg",
+  "beschreibung": "Erleben Sie unsere hochkarärtigen Veranstaltungen rund um das Klavier: Workshops, Schülervorspiele und Konzerte.",
   "adresse": "An der Frauenkirche 12 - Coselpalais, 01067 Dresden",
   "lat": 51.05226687698759,
   "lon": 13.742580495905,
@@ -1257,6 +1324,8 @@
    "Bärenzwinger"
   ],
   "region": "dresden",
+  "homepage": "https://www.baerenzwinger.de/Veranstaltungen/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3518/responsive-images/club-baerenzwinger-eingang-c-kuka___thumb_800_450.jpg",
   "adresse": "Brühlscher Garten 1, 01067 Dresden",
   "lat": 51.0524493,
   "lon": 13.7451854,
@@ -1271,7 +1340,10 @@
   "art": "club",
   "homepage": "http://www.countdown-dresden.de/",
   "beschreibung": "Zum Feiern in den Keller gehen",
-  "adresse": "Güntzstraße 22 Dresden"
+  "adresse": "Güntzstraße 22 Dresden",
+  "lat": 51.0489445,
+  "lon": 13.7571443,
+  "geo_quelle": "nominatim"
  },
  "club-passage": {
   "name": "Club Passage Dresden (JugendKunstschule Dresden)",
@@ -1291,7 +1363,14 @@
   "aliase": [
    "Club Puschkin"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "http://www.clubpuschkin.de/veranstaltungen/",
+  "cover": "https://i.ytimg.com/vi/BMrDjkKUjqY/maxresdefault.jpg",
+  "beschreibung": "Das aktuelle Programm vom Club Puschkin, Dresden. Konzerte, Partys, Open Air uvm. Clubprogramm auf 2 Floors (Mainfloor + Redfloor) + Open Air im Sommer",
+  "adresse": "Leipziger Straße 12, 01097 Dresden",
+  "lat": 51.0698242,
+  "lon": 13.7319367,
+  "geo_quelle": "nominatim"
  },
  "club-traumtaenzer": {
   "name": "Club Traumtänzer",
@@ -1517,7 +1596,10 @@
   "art": "kirche",
   "homepage": "https://www.hdk-dkk.de/",
   "adresse": "Hauptstraße 23 01097 Dresden",
-  "telefon": "8 12 41 01"
+  "telefon": "8 12 41 01",
+  "lat": 51.060883,
+  "lon": 13.7433605,
+  "geo_quelle": "nominatim"
  },
  "dreikoenigskirche-haus-der-kirche": {
   "name": "Dreikönigskirche Dresden - Haus der Kirche",
@@ -1563,7 +1645,10 @@
   "beschreibung": "…die Live-Musik-Bar im östlichen Umland von Dresden. Seit 1994 existent konnten auf der Bühne des Clubs schon viele namhafte Bands, angefangen bei PLACEBO, CRADLE OF FILTH oder CULCHA CANDELA bis hin zu FANFARE CIOCARLIA oder BUZZCOCKS für unvergessene Momente sorgen. Der Eastclub hält ohne Klischee die Fahne des Rock’n Roll hoch und ist immer einen Ausflug wert!",
   "adresse": "Neustädter Str. 6 01877 Bischofswerda",
   "telefon": "03594 700657",
-  "oeffnungszeiten": "je nach Veranstaltung"
+  "oeffnungszeiten": "je nach Veranstaltung",
+  "lat": 51.1241462,
+  "lon": 14.1843357,
+  "geo_quelle": "nominatim"
  },
  "eisenbahnmuseum": {
   "name": "Eisenbahnmuseum (IG Bw Dresden Altstadt e.V.)",
@@ -1582,7 +1667,10 @@
    "Elbe-Schleppkahn \"Waltraut\""
   ],
   "region": "dresden",
-  "adresse": "Magdeburger Straße 58 Dresden"
+  "adresse": "Magdeburger Straße 58 Dresden",
+  "lat": 51.0652369,
+  "lon": 13.7066524,
+  "geo_quelle": "nominatim"
  },
  "elbwiese": {
   "name": "Elbwiese",
@@ -1612,7 +1700,10 @@
   ],
   "region": "dresden",
   "art": "kirche",
-  "adresse": "Altkaditz 23 01139 Dresden"
+  "adresse": "Altkaditz 23 01139 Dresden",
+  "lat": 51.0827723,
+  "lon": 13.6714173,
+  "geo_quelle": "nominatim"
  },
  "energiefabrik-knappenrode": {
   "name": "Energiefabrik Knappenrode",
@@ -1628,6 +1719,8 @@
    "Das Erich Kästner Haus für Literatur"
   ],
   "region": "dresden",
+  "homepage": "https://www.kaestnerhaus-literatur.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3087/responsive-images/c-erich-kaestner-haus-fuer-literatur___thumb_800_450.png",
   "adresse": "Antonstr. 1 am Albertplatz, 01097 Dresden"
  },
  "erle-6": {
@@ -1689,14 +1782,23 @@
   "region": "dresden",
   "homepage": "http://www.ehs-dresden.de/",
   "adresse": "Dürerstraße 25 01069 Dresden",
-  "telefon": "0351 46902-0"
+  "telefon": "0351 46902-0",
+  "lat": 51.0523231,
+  "lon": 13.7602802,
+  "geo_quelle": "nominatim"
  },
  "ev-kirche-moritzburg": {
   "name": "Ev. Kirche Moritzburg",
   "aliase": [
    "Ev. Kirche Moritzburg"
   ],
-  "region": "umland"
+  "region": "umland",
+  "homepage": "http://www.kirche-moritzburg.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/33099/responsive-images/20131002010DR_Moritzburg_Kirche_Eisenberg___thumb_1000_573.jpg",
+  "adresse": "Schlossallee 38, 01468 Moritzburg",
+  "lat": 51.1569291,
+  "lon": 13.6799151,
+  "geo_quelle": "nominatim"
  },
  "ev-luth-gemeindezentrum": {
   "name": "Ev.-luth. Gemeindezentrum",
@@ -1951,7 +2053,11 @@
   "aliase": [
    "Festsaal Piano-Salon Dürrröhrsdorf-Dittersbach"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Hauptstraße 96, 01833 Dürrröhrsdorf-Dittersbach",
+  "lat": 51.035447,
+  "lon": 13.9932504,
+  "geo_quelle": "nominatim"
  },
  "festung-koenigstein": {
   "name": "Festung Königstein",
@@ -1982,6 +2088,8 @@
    "Filmgalerie Dresden e.V."
   ],
   "region": "dresden",
+  "homepage": "https://filmgalerie-dresden.org/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/33764/responsive-images/Altenberger_Stra%C3%9Fe_26_Dresden_2020-04-14_4___thumb_1000_573.jpg",
   "adresse": "Altenberger Str. 26, 01277 Dresden",
   "lat": 51.0403427,
   "lon": 13.8055463,
@@ -2056,14 +2164,23 @@
   ],
   "region": "dresden",
   "homepage": "http://www.fas-dresden.de/",
-  "adresse": "Else-Ulich-Beil-Straße 3 01099 Dresden"
+  "adresse": "Else-Ulich-Beil-Straße 3 01099 Dresden",
+  "lat": 51.0730612,
+  "lon": 13.7701507,
+  "geo_quelle": "nominatim"
  },
  "freie-evangelische-gemeinde-goldenes-lamm": {
   "name": "Freie evangelische Gemeinde Dresden \"Goldenes Lamm\"",
   "aliase": [
    "Freie evangelische Gemeinde Dresden \"Goldenes Lamm\""
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "http://dresden.feg.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/22657/responsive-images/Goldenes_Lamm_%28Dresden%29_03___thumb_1000_571.jpg",
+  "adresse": "Leipziger Straße 220, 01139 Dresden",
+  "lat": 51.0845805,
+  "lon": 13.7091225,
+  "geo_quelle": "nominatim"
  },
  "freie-waldorfschule": {
   "name": "Freie Waldorfschule Dresden",
@@ -2152,7 +2269,10 @@
    "Friedhof Dölzschen"
   ],
   "region": "dresden",
-  "adresse": "Friedhofsweg 1 Dresden"
+  "adresse": "Friedhofsweg 1 Dresden",
+  "lat": 51.0799344,
+  "lon": 13.6209389,
+  "geo_quelle": "nominatim"
  },
  "friedhof-kaditz": {
   "name": "Friedhof Dresden-Kaditz",
@@ -2178,6 +2298,7 @@
    "Galerie Adlergasse / Galerie des riesa efau"
   ],
   "region": "dresden",
+  "homepage": "http://www.riesa-efau.de",
   "adresse": "Wachsbleichstraße 4a, 01067 Dresden",
   "lat": 51.0560141,
   "lon": 13.7207176,
@@ -2188,7 +2309,11 @@
   "aliase": [
    "Galerie Brüderstraße"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Brüderstraße 9, 02826 Görlitz",
+  "lat": 51.1559188,
+  "lon": 14.9903807,
+  "geo_quelle": "nominatim"
  },
  "galerie-der-kustodie": {
   "name": "Galerie der Kustodie",
@@ -2229,7 +2354,10 @@
   "homepage": "http://www.kunstgehaeuse.de/",
   "adresse": "Prießnitzstraße 48 01099 Dresden",
   "telefon": "0172/1896705",
-  "oeffnungszeiten": "Mittwoch und Freitag 15.00 – 19.00 Uhr Samstag 11.00 – 15.00 Uhr"
+  "oeffnungszeiten": "Mittwoch und Freitag 15.00 – 19.00 Uhr Samstag 11.00 – 15.00 Uhr",
+  "lat": 51.0668463,
+  "lon": 13.7604714,
+  "geo_quelle": "nominatim"
  },
  "galerie-neuropa": {
   "name": "Galerie nEUROPA",
@@ -2238,6 +2366,7 @@
    "Galerie nEuropa"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/54907/responsive-images/Zwischenablage01___thumb_1000_571.jpg",
   "adresse": "Bautzner Straße 49, 01099 Dresden",
   "lat": 51.0632604,
   "lon": 13.7558539,
@@ -2263,7 +2392,11 @@
   "aliase": [
    "GalerieWerkstatt"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Adlergasse 14, 01067 Dresden",
+  "lat": 51.0557335,
+  "lon": 13.7206546,
+  "geo_quelle": "nominatim"
  },
  "gare-de-la-lune": {
   "name": "Gare de la lune Dresden",
@@ -2441,7 +2574,11 @@
   "aliase": [
    "Georg-Arnhold-Bad"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Helmut-Schön-Allee 2, 01069 Dresden",
+  "lat": 51.042644,
+  "lon": 13.7492754,
+  "geo_quelle": "nominatim"
  },
  "gerhart-hauptmann-theater-goerlitz": {
   "name": "Gerhart Hauptmann-Theater Görlitz",
@@ -2451,7 +2588,10 @@
   "region": "weiter",
   "art": "theater",
   "adresse": "Demianiplatz 2 Görlitz",
-  "telefon": "0358147470"
+  "telefon": "0358147470",
+  "lat": 51.1537262,
+  "lon": 14.9853293,
+  "geo_quelle": "nominatim"
  },
  "gewandhaus": {
   "name": "Gewandhaus Dresden",
@@ -2533,7 +2673,10 @@
    "Greenpeace-Büro, Martin-Luther-Straße 11"
   ],
   "region": "dresden",
-  "adresse": "Martin-Luther-Straße 11 01099 Dresden"
+  "adresse": "Martin-Luther-Straße 11 01099 Dresden",
+  "lat": 51.0638239,
+  "lon": 13.7553006,
+  "geo_quelle": "nominatim"
  },
  "groovestation": {
   "name": "GrooveStation",
@@ -2543,6 +2686,9 @@
   "region": "dresden",
   "art": "club",
   "herz": true,
+  "homepage": "http://groovestation.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3088/responsive-images/groove-station-c-kuka___thumb_800_450.jpg",
+  "beschreibung": "Die GrooveStation Dresden ist Club, Konzertlocation und Eventlocation in der Neustadt für Konzerte, Partys, Live-Musik, Billard und besondere Events.",
   "adresse": "Katharinenstraße 11-13, 01099 Dresden",
   "lat": 51.0666705,
   "lon": 13.7492972,
@@ -2664,6 +2810,7 @@
    "Haus an der Kreuzkirche"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/16157/responsive-images/20221024_103914___thumb_1200_677.jpg",
   "adresse": "An der Kreuzkirche 6, 01067 Dresden",
   "lat": 51.0482551,
   "lon": 13.739007,
@@ -2676,7 +2823,10 @@
   ],
   "region": "dresden",
   "adresse": "Goetheallee 37 01309 Dresden",
-  "telefon": "+49 (0) 351/3 17 46-0"
+  "telefon": "+49 (0) 351/3 17 46-0",
+  "lat": 51.0579444,
+  "lon": 13.7959843,
+  "geo_quelle": "nominatim"
  },
  "haus-der-begegnung": {
   "name": "Haus Der Begegnung Dresden",
@@ -2722,7 +2872,10 @@
    "Haus der Presse"
   ],
   "region": "dresden",
-  "adresse": "Ostra-Allee 20 01067 Dresden"
+  "adresse": "Ostra-Allee 20 01067 Dresden",
+  "lat": 51.0568138,
+  "lon": 13.7293964,
+  "geo_quelle": "nominatim"
  },
  "haus-des-friedens": {
   "name": "Haus des Friedens",
@@ -2901,7 +3054,10 @@
    "Herderhalle"
   ],
   "region": "dresden",
-  "adresse": "Rudolf-Renner-Straße 41B 01796 Pirna"
+  "adresse": "Rudolf-Renner-Straße 41B 01796 Pirna",
+  "lat": 50.972922,
+  "lon": 13.9286742,
+  "geo_quelle": "nominatim"
  },
  "herderhalle-pirna": {
   "name": "Herderhalle Pirna",
@@ -3001,14 +3157,22 @@
   "aliase": [
    "Hochschule für Musik Carl Maria von Weber (Musikhochschule), Kleiner Saal"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/11102/responsive-images/Kliener-Saal___thumb_1000_329.jpg"
  },
  "hochschule-fuer-musik-carl-maria-von-weber-konzertsaal": {
   "name": "Hochschule für Musik Carl Maria von Weber (Musikhochschule), Konzertsaal",
   "aliase": [
    "Hochschule für Musik Carl Maria von Weber (Musikhochschule), Konzertsaal"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://www.hfmdd.de/veranstaltungen",
+  "cover": "https://www.kulturkalender-dresden.de/storage/262/responsive-images/grosser-konzertsaal-c-luc-saalfeld___thumb_811_575.jpg",
+  "beschreibung": "Kalender mit allen Veranstaltungen, Konzerten, in der HfM und externen Spielstätten. Übersicht aller öffentlichen Symposien, Workshops, Meisterkurse.",
+  "adresse": "Wettiner Platz 13, 01067 Dresden",
+  "lat": 51.0538176,
+  "lon": 13.7249243,
+  "geo_quelle": "nominatim"
  },
  "hochschule-fuer-musik-carl-maria-von-weber-probebuehne": {
   "name": "Hochschule für Musik Carl Maria von Weber (Musikhochschule), Probebühne",
@@ -3025,7 +3189,10 @@
   "region": "dresden",
   "homepage": "http://www.htw-dresden.de",
   "beschreibung": "Die HTWD hat ein vielfältiges Studienangebot von Ingenieurwesen, Informatik und Wirtschaftswissenschaften über Energie & Umwelt, Agrarwirtschaft und Gartenbau, Bauwesen, Geoinformation bis hin zu Produkt- und Kommunikationsdesign.",
-  "adresse": "Friedrich-List-Platz 1 01069 Dresden"
+  "adresse": "Friedrich-List-Platz 1 01069 Dresden",
+  "lat": 51.0374994,
+  "lon": 13.7351679,
+  "geo_quelle": "nominatim"
  },
  "hochschule-fuer-technik-und-wirtschaft-zentralgebaeude": {
   "name": "Hochschule für Technik und Wirtschaft (HTW), Zentralgebäude",
@@ -3162,6 +3329,9 @@
    "Immergrün - Tanz- und Familiengaststätte"
   ],
   "region": "dresden",
+  "homepage": "https://immergruen-dresden.de/veranstaltungen",
+  "cover": "https://www.kulturkalender-dresden.de/storage/38582/responsive-images/Orstbild___thumb_1000_750.jpg",
+  "beschreibung": "Tanz- und Familiengaststätte in Dresden",
   "adresse": "Ockerwitzer Str. 60, 01157 Dresden",
   "lat": 51.0590952,
   "lon": 13.6717326,
@@ -3196,6 +3366,8 @@
    "Institut francais"
   ],
   "region": "dresden",
+  "homepage": "https://www.institutfrancais.de/dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/46057/responsive-images/Atrium_II_%28Robotronkomplex_Dresden%29_01___thumb_758_432.jpg",
   "adresse": "Lingnerallee 3, 01069 Dresden",
   "lat": 51.0469868,
   "lon": 13.7465869,
@@ -3286,7 +3458,8 @@
   "aliase": [
    "Internet"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/11037/responsive-images/keyboard-5017973_1920___thumb_1920_1248.jpg"
  },
  "jahnhallen-areal": {
   "name": "Jahnhallen-Areal",
@@ -3349,7 +3522,10 @@
   "region": "dresden",
   "homepage": "http://www.johannisfriedhof-dresden.de",
   "cover": "https://johannisfriedhof-dresden.de/wp-content/uploads/2017/12/johannisfriedhof-titelbild-beitrag-elias-trinitatis.jpg",
-  "adresse": "Wehlener Straße 13 01279 Dresden"
+  "adresse": "Wehlener Straße 13 01279 Dresden",
+  "lat": 51.0369645,
+  "lon": 13.8134155,
+  "geo_quelle": "nominatim"
  },
  "johannisfriedhof-feierhalle": {
   "name": "Johannisfriedhof, Feierhalle",
@@ -3451,6 +3627,7 @@
    "Jugendkirche Dresden (ehemalige Trinitatiskirchruine)"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/37264/responsive-images/Trinitatiskirche_Dresden-Paulae%2C-CC-BY-SA-3.0___thumb_506_675.jpg",
   "adresse": "Trinitatisplatz 1, 01307 Dresden",
   "lat": 51.0528,
   "lon": 13.7715,
@@ -3472,7 +3649,14 @@
   "aliase": [
    "Kadampa Meditationszentrum Dresden e.V."
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://meditation-dresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/60860/responsive-images/di18___thumb_1280_1280.jpg",
+  "beschreibung": "Jeder ist willkommen und kann die Kurse im Kadampa Meditationszentrum Dresden genießen und von ihnen profitieren, um meditieren zu lernen.",
+  "adresse": "Hoyerswerdaer Str. 23, 01099 Dresden",
+  "lat": 51.0610411,
+  "lon": 13.7521339,
+  "geo_quelle": "nominatim"
  },
  "kaethe-kollwitz-haus-moritzburg": {
   "name": "Käthe Kollwitz Haus Moritzburg",
@@ -3539,6 +3723,9 @@
    "Karrasburg Museum Coswig"
   ],
   "region": "umland",
+  "homepage": "https://www.karrasburg-coswig.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/60334/responsive-images/2___thumb_1080_804.jpg",
+  "beschreibung": "Das Museum Karrasburg präsentiert die Geschichte Coswigs (bei Dresden) sowie Wechselausstellungen im Jahr.",
   "adresse": "Karrasstraße 4, 01640 Coswig",
   "lat": 51.126918,
   "lon": 13.5782133,
@@ -3573,6 +3760,8 @@
   ],
   "region": "dresden",
   "art": "kirche",
+  "homepage": "http://www.kathedrale-dresden.de",
+  "cover": "https://www.kulturkalender-dresden.de/storage/245/responsive-images/katholischehofkirchedresdenkathedralefotoemodd___thumb_613_460.jpg",
   "adresse": "Schlossstraße 24, 01067 Dresden",
   "lat": 51.0534998,
   "lon": 13.7373501,
@@ -3588,7 +3777,10 @@
   "homepage": "http://www.katysgarage.de",
   "beschreibung": "Der Club mit Biergarten, Grill und Außentresen besticht durch Livekonzerte und Neustadtflair.",
   "adresse": "Alaunstraße 48 01099 Dresden",
-  "telefon": "0351 65 67 701"
+  "telefon": "0351 65 67 701",
+  "lat": 51.0667534,
+  "lon": 13.7518056,
+  "geo_quelle": "nominatim"
  },
  "katys-garage": {
   "name": "Katys Garage",
@@ -3607,6 +3799,8 @@
    "Kaufpark Dresden-Nickern"
   ],
   "region": "dresden",
+  "homepage": "http://www.kaufpark-dresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/44781/responsive-images/KPD_Kaufpark-Arena-%28002%29___thumb_1200_900.jpg",
   "adresse": "Dohnaer Straße 246, 01239 Dresden",
   "lat": 50.99750153527738,
   "lon": 13.799695558251493,
@@ -3630,7 +3824,10 @@
   ],
   "region": "dresden",
   "homepage": "https://kolibri-dresden.de/",
-  "adresse": "Ritzenbergstraße 3 01067 Dresden"
+  "adresse": "Ritzenbergstraße 3 01067 Dresden",
+  "lat": 51.0563072,
+  "lon": 13.7260901,
+  "geo_quelle": "nominatim"
  },
  "kinder-und-jugendbauernhof-nickern": {
   "name": "Kinder- und Jugendbauernhof Nickern e.V.",
@@ -3690,7 +3887,11 @@
   "aliase": [
    "Kirche Dresden Briesnitz"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Am Kirchberg 17, 01157 Dresden",
+  "lat": 51.0698329,
+  "lon": 13.6701576,
+  "geo_quelle": "nominatim"
  },
  "kirche-langebrueck": {
   "name": "Kirche Langebrück",
@@ -3727,7 +3928,10 @@
   "art": "kirche",
   "homepage": "http://www.loschwitzer-kirche.de",
   "adresse": "Pillnitzer Landstraße 7 a 01326 Dresden (Loschwitz)",
-  "telefon": "0351 2150050"
+  "telefon": "0351 2150050",
+  "lat": 51.0530762,
+  "lon": 13.8172697,
+  "geo_quelle": "nominatim"
  },
  "kirche-mohorn": {
   "name": "Kirche Mohorn",
@@ -3776,7 +3980,10 @@
   ],
   "region": "dresden",
   "art": "kirche",
-  "adresse": "Kirchplatz 13 01796 Pirna"
+  "adresse": "Kirchplatz 13 01796 Pirna",
+  "lat": 50.9626557,
+  "lon": 13.9431006,
+  "geo_quelle": "nominatim"
  },
  "kirche-wachau": {
   "name": "Kirche Wachau",
@@ -3858,6 +4065,7 @@
    "Klotzscher Treff"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/58974/responsive-images/kuka___thumb_1200_675.jpg",
   "adresse": "Göhrener Weg 5, 01109 Dresden",
   "lat": 51.1218088,
   "lon": 13.7838935,
@@ -3981,7 +4189,11 @@
   "aliase": [
    "Kreativraum Malspiel Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Brucknerstraße 9, 01309 Dresden",
+  "lat": 51.050865366839446,
+  "lon": 13.806376238029065,
+  "geo_quelle": "kk_seite"
  },
  "kreativzentrum-omnibus": {
   "name": "Kreativzentrum Omnibus",
@@ -4001,7 +4213,10 @@
   ],
   "region": "dresden",
   "adresse": "Wehlener Straße 17 01279 Dresden",
-  "telefon": "0351 2502775"
+  "telefon": "0351 2502775",
+  "lat": 51.0354687,
+  "lon": 13.8184492,
+  "geo_quelle": "nominatim"
  },
  "kreuzkirche": {
   "name": "Kreuzkirche Dresden",
@@ -4042,6 +4257,9 @@
    "Kügelgenhaus - Museum der Dresdner Romantik (Museum Dresden)"
   ],
   "region": "dresden",
+  "homepage": "https://kuegelgen-dresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/4216/responsive-images/kuegelgenhaus-c-kuka___thumb_800_490.jpg",
+  "beschreibung": "Erleben Sie die Dresdner Romantik im Kügelgenhaus: Tauchen Sie ein in die Kunst und Kultur des 19. Jahrhunderts. Das Museum wartet auf Sie!",
   "adresse": "Hauptstr. 13, 01097 Dresden",
   "lat": 51.0600169,
   "lon": 13.7428709,
@@ -4084,7 +4302,10 @@
    "Kulturbahnhof"
   ],
   "region": "dresden",
-  "adresse": "Sidonienstraße 1c 01445 Radebeul"
+  "adresse": "Sidonienstraße 1c 01445 Radebeul",
+  "lat": 51.0991497,
+  "lon": 13.679257,
+  "geo_quelle": "nominatim"
  },
  "kulturbastion-torgau": {
   "name": "Kulturbastion Torgau",
@@ -4176,7 +4397,10 @@
   "region": "weiter",
   "homepage": "https://www.kulturhaus-torgau.de",
   "adresse": "Rosa-Luxemburg-Platz 16 04860 Torgau",
-  "telefon": "+49 3421 903523"
+  "telefon": "+49 3421 903523",
+  "lat": 51.561161,
+  "lon": 13.0040708,
+  "geo_quelle": "nominatim"
  },
  "kulturinsel-die-geheime-welt-von-turisede": {
   "name": "Kulturinsel - Die Geheime Welt von Turisede",
@@ -4198,7 +4422,10 @@
   "homepage": "http://www.kulturinsel.com",
   "cover": "https://www.turisede.com//fileadmin/media/ogimage.png",
   "beschreibung": "Die Kulturinsel Einsiedel ist mehr als ein Freizeitpark. Hier ist auch die Künstlerische Holzgestaltung Jürgen Bergmann zu Hause und viele Veranstaltungen finden statt.",
-  "adresse": "Einsiedel 1 02829 Neisseaue"
+  "adresse": "Einsiedel 1 02829 Neisseaue",
+  "lat": 51.2952312,
+  "lon": 15.01912,
+  "geo_quelle": "nominatim"
  },
  "kulturkirche-weinberg-trachenberge": {
   "name": "KulturKirche Weinberg Trachenberge",
@@ -4311,6 +4538,9 @@
    "Kunstgewerbemuseum im Schloss Pillnitz - Staatliche Kunstsammlungen Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://kunstgewerbemuseum.skd.museum/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/23881/responsive-images/SKD-Foto-Oliver-Killig___thumb_1200_423.jpg",
+  "beschreibung": "Die Staatlichen Kunstsammlungen Dresden zählen zu den bedeutendsten Museen der Welt - 15 Museen bieten eine thematische Vielfalt, die in ihrer Art einzigartig ist.",
   "adresse": "Schloss Pillnitz, 01326 Dresden",
   "lat": 51.0087638,
   "lon": 13.8688717,
@@ -4391,7 +4621,11 @@
   "aliase": [
    "Kuppelhalle Tharandt"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Pienner Straße 13, 01737 Tharandt",
+  "lat": 50.9810027,
+  "lon": 13.5816626,
+  "geo_quelle": "nominatim"
  },
  "kurlaender-palais": {
   "name": "Kurländer Palais",
@@ -4418,6 +4652,7 @@
    "LaborTheater der Hochschule für Bildende Künste Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://www.hfbk-dresden.de/hochschule/einrichtungen/labortheater",
   "adresse": "Güntzstraße 34, 01307 Dresden",
   "lat": 51.0528914,
   "lon": 13.7592803,
@@ -4508,7 +4743,11 @@
   "aliase": [
    "Leonhardi-Museum"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Grundstraße 26, 01326 Dresden",
+  "lat": 51.0550793,
+  "lon": 13.8169401,
+  "geo_quelle": "nominatim"
  },
  "leutewitzer-windmuehle": {
   "name": "Leutewitzer Windmühle",
@@ -4523,6 +4762,8 @@
    "Lingnerschloss"
   ],
   "region": "dresden",
+  "homepage": "http://www.lingnerschloss.de/veranstaltungen/alle/list.events/-",
+  "cover": "https://www.kulturkalender-dresden.de/storage/12620/responsive-images/Lingnerschloss-aussen-%28c%29-KuKa___thumb_1200_675.jpg",
   "adresse": "Bautzner Strasse 132, 01099 Dresden",
   "lat": 51.0657304,
   "lon": 13.8007004,
@@ -4568,7 +4809,10 @@
   "region": "dresden",
   "homepage": "https://loewensaal-dresden.de",
   "cover": "https://loewensaal-dresden.de/wp-content/uploads/2021/04/15-1.jpg",
-  "adresse": "Dr.-Külz-Ring 10 Dresden"
+  "adresse": "Dr.-Külz-Ring 10 Dresden",
+  "lat": 51.0469274,
+  "lon": 13.7353529,
+  "geo_quelle": "nominatim"
  },
  "loschwitzer-kirche": {
   "name": "Loschwitzer Kirche",
@@ -4610,6 +4854,8 @@
    "Lukaskirche Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://www.johannes-kreuz-lukas.de/ueber-uns/standorte/lukaskirche",
+  "cover": "https://www.kulturkalender-dresden.de/storage/12044/responsive-images/Lukaskirche___thumb_1000_571.jpg",
   "adresse": "Lukasplatz 1, 01069 Dresden",
   "lat": 51.0316747,
   "lon": 13.7341311,
@@ -4621,6 +4867,8 @@
    "Lutherkirche Radebeul"
   ],
   "region": "umland",
+  "homepage": "http://test-kirchspiel.lenienda.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/22374/responsive-images/13095-Radebeul-1911-Kirchstra%C3%9Fe-Br%C3%BCck_%26_Sohn_Kunstverlag___thumb_773_511.jpg",
   "adresse": "Kirchplatz 2, 01445 Radebeul",
   "lat": 51.1028488,
   "lon": 13.6722602,
@@ -4728,7 +4976,11 @@
   "aliase": [
    "Matthäuskirche Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Friedrichstraße 43, 01067 Dresden",
+  "lat": 51.0605901,
+  "lon": 13.7156074,
+  "geo_quelle": "nominatim"
  },
  "max-jacob-theater-hohnstein": {
   "name": "Max Jacob Theater Hohnstein",
@@ -4771,6 +5023,9 @@
    "Messe Dresden"
   ],
   "region": "dresden",
+  "homepage": "http://www.messe-dresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3230/responsive-images/c-messe-dresden-luftbild-jpg___thumb_800_450.jpg",
+  "beschreibung": "Die MESSE DRESDEN ist Veranstaltungsort für Messen, Kongresse, Tagungen, Konzerte, Open-Air-Veranstaltungen und Events. Entdecken Sie aktuelle Veranstaltungen sowie vielseitige Locations für Ihr Event.",
   "adresse": "Messering 6, 01067 Dresden",
   "lat": 51.0683339,
   "lon": 13.7173513,
@@ -4877,6 +5132,8 @@
    "Motorenhalle Kultur Forum - Projektzentrum für zeitgenössische Kunst (riesa efau)"
   ],
   "region": "dresden",
+  "homepage": "https://riesa-efau.de/kunst-erleben/motorenhalle/aktuell-vorschau/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3622/responsive-images/c-riesa-efau___thumb_800_489.jpg",
   "adresse": "Wachsbleichstraße 4a, 01067 Dresden",
   "lat": 51.0560141,
   "lon": 13.7207176,
@@ -4888,6 +5145,9 @@
    "Münzkabinett im Residenzschloß Dresden - Staatliche Kunstsammlungen Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://muenzkabinett.skd.museum/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/280/responsive-images/residenzschloss-dresden-c-emodd___thumb_613_460.jpg",
+  "beschreibung": "Die Staatlichen Kunstsammlungen Dresden zählen zu den bedeutendsten Museen der Welt - 15 Museen bieten eine thematische Vielfalt, die in ihrer Art einzigartig ist.",
   "adresse": "Residenzschloss/Georgenbau, Schlossstraße 25, 01067 Dresden",
   "lat": 51.0530006,
   "lon": 13.7382396,
@@ -4915,7 +5175,10 @@
   "region": "weiter",
   "art": "museum",
   "homepage": "http://www.museum-westlausitz.de",
-  "adresse": "Macherstraße 140 01917 Kamenz"
+  "adresse": "Macherstraße 140 01917 Kamenz",
+  "lat": 51.289441,
+  "lon": 14.1131735,
+  "geo_quelle": "nominatim"
  },
  "museum-fuer-saechs-volkskunst": {
   "name": "Museum für Sächs. Volkskunst",
@@ -4945,6 +5208,9 @@
    "Museum für Völkerkunde Dresden im Japanischen Palais - Staatliche Kunstsammlungen Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://voelkerkunde-dresden.skd.museum/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3543/responsive-images/Japanisches-Palais-emodd___thumb_768_460.jpg",
+  "beschreibung": "Die Staatlichen Kunstsammlungen Dresden zählen zu den bedeutendsten Museen der Welt - 15 Museen bieten eine thematische Vielfalt, die in ihrer Art einzigartig ist.",
   "adresse": "Japanisches Palais, Palaisplatz 11, 01097 Dresden",
   "lat": 51.0598716,
   "lon": 13.737341,
@@ -5034,7 +5300,12 @@
   "aliase": [
    "Neuer Jüdischer Friedhof"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/439/responsive-images/neuer-juedischer-friedhof2-foto-heike-richter___thumb_613_460.jpg",
+  "adresse": "Fiedlerstraße 3, 01307 Dresden",
+  "lat": 51.0541039,
+  "lon": 13.776761,
+  "geo_quelle": "nominatim"
  },
  "neues-gemeindezentrum-klotzsche": {
   "name": "Neues Gemeindezentrum (Alte Post) Dresden-Klotzsche",
@@ -5090,6 +5361,9 @@
    "Neues Volkshaus Cotta"
   ],
   "region": "dresden",
+  "homepage": "https://neuesvolkshaus.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/38233/responsive-images/Hebbelstra%C3%9Fe_35b_DD___thumb_1000_571.jpg",
+  "beschreibung": "Das Neue Volkshaus Cotta ist ein Kultur- und Nachbarschaftszentrum in Dresden. Kreative finden hier Räume und Ateliers.",
   "adresse": "Hebbelstraße 35b, 01157 Dresden",
   "lat": 51.0525076,
   "lon": 13.6846318,
@@ -5145,7 +5419,11 @@
    "objekt klein a",
    "objekt klein a (club)"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Meschwitzstraße 9, 01099 Dresden",
+  "lat": 51.0847862,
+  "lon": 13.765186,
+  "geo_quelle": "nominatim"
  },
  "oekofranz-hof": {
   "name": "Ökofranz-Hof",
@@ -5199,7 +5477,10 @@
   ],
   "region": "dresden",
   "homepage": "https://quohrener-leben.de",
-  "adresse": "Talstraße 30 01731 Kreischa"
+  "adresse": "Talstraße 30 01731 Kreischa",
+  "lat": 50.9470891,
+  "lon": 13.7284959,
+  "geo_quelle": "nominatim"
  },
  "oskarshausen": {
   "name": "Oskarshausen",
@@ -5273,7 +5554,10 @@
    "Palais Zabeltitz"
   ],
   "region": "weiter",
-  "adresse": "Am Park 1 Großenhain"
+  "adresse": "Am Park 1 Großenhain",
+  "lat": 51.3534487,
+  "lon": 13.4959471,
+  "geo_quelle": "nominatim"
  },
  "palitzsch-museum-prohlis": {
   "name": "Palitzsch-Museum Prohlis",
@@ -5288,6 +5572,9 @@
    "Palitzschmuseum Prohlis (Museum Dresden)"
   ],
   "region": "dresden",
+  "homepage": "https://palitzsch-museum.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3405/responsive-images/pm-planetarium-c-david-brandt-museen-der-stadt-dresden___thumb_800_450.jpg",
+  "beschreibung": "Das Palitzsch-Museum Dresden vereint Astronomie, Wissenschaft und Heimatgeschichte. Entdecken Sie das Leben von Johann George Palitzsch und Ausstellungen!",
   "adresse": "Gamigstraße 24, 01239 Dresden",
   "lat": 51.0073418,
   "lon": 13.793454,
@@ -5342,6 +5629,8 @@
    "Parkhotel Dresden - Kakadu Bar"
   ],
   "region": "dresden",
+  "homepage": "http://www.parkhotel-dresden.de/kakadu-bar.html",
+  "cover": "https://www.kulturkalender-dresden.de/storage/15292/responsive-images/Kakadu-Bar-2072___thumb_1000_571.jpg",
   "adresse": "Bautzner Landstraße 7, 01324 Dresden",
   "lat": 51.0639384,
   "lon": 13.8213114,
@@ -5387,7 +5676,13 @@
    "Paula",
    "Club Paula"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "http://www.club-paula.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/54735/responsive-images/Af1kmW1u6AVq-thumbnail___thumb_900_900.jpg",
+  "adresse": "Meschwitzstr. 14, 01099 Dresden",
+  "lat": 51.0837184,
+  "lon": 13.7656911,
+  "geo_quelle": "nominatim"
  },
  "pavillon-an-der-albertbruecke": {
   "name": "Pavillon an der Albertbrücke",
@@ -5437,7 +5732,8 @@
   "aliase": [
    "Pirna Altstadt"
   ],
-  "region": "umland"
+  "region": "umland",
+  "cover": "https://www.kulturkalender-dresden.de/storage/43748/responsive-images/csm_WinterHofNacht-_C_-KTP-1920px_dd590c0c9d___thumb_1919_659.jpg"
  },
  "plattleite-eingang-parkhotel": {
   "name": "Plattleite, Eingang Parkhotel",
@@ -5458,14 +5754,22 @@
   "aliase": [
    "Porsche Zentrum Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Meinholdstraße 5, 01129 Dresden",
+  "lat": 51.0979943,
+  "lon": 13.7324599,
+  "geo_quelle": "nominatim"
  },
  "programmkino-ost": {
   "name": "Programmkino Ost (PKO)",
   "aliase": [
    "Programmkino Ost (PKO)"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Schandauer Straße 73, 01277 Dresden",
+  "lat": 51.0394236,
+  "lon": 13.806608,
+  "geo_quelle": "nominatim"
  },
  "projekttheater": {
   "name": "projekttheater dresden",
@@ -5497,7 +5801,10 @@
   ],
   "region": "dresden",
   "art": "museum",
-  "adresse": "Kraftwerk Mitte Dresden"
+  "adresse": "Kraftwerk Mitte Dresden",
+  "lat": 51.0518545,
+  "lon": 13.7221218,
+  "geo_quelle": "nominatim"
  },
  "puppentheatersammlung-im-kraftwerk-mitte-staatliche-kunstsammlungen": {
   "name": "Puppentheatersammlung im Kraftwerk Mitte - Staatliche Kunstsammlungen Dresden",
@@ -5505,6 +5812,9 @@
    "Puppentheatersammlung im Kraftwerk Mitte - Staatliche Kunstsammlungen Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://puppentheatersammlung.skd.museum/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/37449/responsive-images/2024-08-30-15.51.25___thumb_1000_571.jpg",
+  "beschreibung": "Die Staatlichen Kunstsammlungen Dresden zählen zu den bedeutendsten Museen der Welt - 15 Museen bieten eine thematische Vielfalt, die in ihrer Art einzigartig ist.",
   "adresse": "Kraftwerk Mitte 1-32, 01067 Dresden",
   "lat": 51.0518545,
   "lon": 13.7221218,
@@ -5563,7 +5873,10 @@
    "Rathaus"
   ],
   "region": "dresden",
-  "adresse": "Dr.-Külz-Ring 19 01067 Dresden"
+  "adresse": "Dr.-Külz-Ring 19 01067 Dresden",
+  "lat": 51.0475822,
+  "lon": 13.7402584,
+  "geo_quelle": "nominatim"
  },
  "read-the-room": {
   "name": "Read The Room",
@@ -5633,7 +5946,10 @@
    "Restaurant \"Ali Baba\""
   ],
   "region": "dresden",
-  "adresse": "Weimarische Straße 6 Dresden"
+  "adresse": "Weimarische Straße 6 Dresden",
+  "lat": 51.0710885,
+  "lon": 13.7296566,
+  "geo_quelle": "nominatim"
  },
  "restaurant-heidemuehle": {
   "name": "Restaurant \"Heidemühle\"",
@@ -5651,7 +5967,10 @@
   "homepage": "http://www.wagnerstaetten.de",
   "beschreibung": "Richard-Wagner-Stätten Graupa | Ausstellungen und Veranstaltungen zu Richard Wagner, Vermietung Festsaal für Feiern und Hochzeiten | Kultur- und Tourismusgesellschaft Pirna mbH",
   "adresse": "Richard-Wagner-Straße 6 01796 Graupa",
-  "telefon": "03501/4619650"
+  "telefon": "03501/4619650",
+  "lat": 51.000137,
+  "lon": 13.9204216,
+  "geo_quelle": "nominatim"
  },
  "richard-wagner-staetten-graupa-jagdschloss": {
   "name": "Richard-Wagner-Stätten Graupa - Jagdschloss",
@@ -5659,6 +5978,9 @@
    "Richard-Wagner-Stätten Graupa - Jagdschloss"
   ],
   "region": "umland",
+  "homepage": "https://www.wagnerstaetten.de/Veranstaltungen/Aktuell/468/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/307/responsive-images/jagdschloss-graupa-rwsg-foto-dauterstedt-2___thumb_865_575.jpg",
+  "beschreibung": "Hier gelangen Sie zur Veranstaltungsübersicht der Richard-Wagner-Stätten Pirna-Graupa. Informieren Sie sich hier über Sonderausstellungen und mehr!",
   "adresse": "Tschaikowskiplatz 7, 01796 Pirna, OT Graupa"
  },
  "riesa-efau": {
@@ -5676,6 +5998,8 @@
    "riesa efau. Kultur Forum Dresden"
   ],
   "region": "dresden",
+  "homepage": "http://www.riesa-efau.de",
+  "cover": "https://www.kulturkalender-dresden.de/storage/14719/responsive-images/Motorenhalle-Riesa-efau-2___thumb_1000_563.jpg",
   "adresse": "Adlergasse 14, 01067 Dresden",
   "lat": 51.0557335,
   "lon": 13.7206546,
@@ -5688,7 +6012,10 @@
   ],
   "region": "dresden",
   "adresse": "Wachsbleichstraße 4 01067 Dresden",
-  "telefon": "0351 8660211"
+  "telefon": "0351 8660211",
+  "lat": 51.0560141,
+  "lon": 13.7207176,
+  "geo_quelle": "nominatim"
  },
  "rinne": {
   "name": "Rinne Dresden (Ostragehege-Festwiese)",
@@ -5802,6 +6129,8 @@
    "Rundkino Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://www.cineplex.de/dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3375/responsive-images/rundkino-dresden-c-kuka___thumb_800_450.jpg",
   "adresse": "Prager Straße 6, 01069 Dresden",
   "lat": 51.0449566,
   "lon": 13.7369635,
@@ -5839,7 +6168,10 @@
   "homepage": "http://www.sadk.de",
   "beschreibung": "Die Sächsische Akademie der Künste ist ein Forum des lebendigen Diskurses über die Perspektiven von Kunst und Kultur und ein Ort des kulturellen Brückenschlags zu den mittel- und osteuropäischen Ländern.",
   "adresse": "Palaisplatz 3 01097 Dresden",
-  "telefon": "+ 49 351 810763 00"
+  "telefon": "+ 49 351 810763 00",
+  "lat": 51.0608754,
+  "lon": 13.7396161,
+  "geo_quelle": "nominatim"
  },
  "saechsische-akademie-der-kuenste": {
   "name": "Sächsische Akademie der Künste",
@@ -5993,7 +6325,9 @@
   ],
   "region": "dresden",
   "herz": true,
+  "homepage": "https://www.scheune.org",
   "cover": "https://www.kulturkalender-dresden.de/storage/455/responsive-images/scheune-dresden-c-emod___thumb_768_460.jpg",
+  "beschreibung": "Der Club ist seit 1951 DAS Kulturzentrum in der Dresdner Neustadt. Neben Musik und Literatur, gibt es hier auch zahlreiche Sonderveranstaltungen und Aktionen.",
   "adresse": "Alaunstraße 36-40, 01099 Dresden",
   "lat": 51.0662864,
   "lon": 13.7516707,
@@ -6016,7 +6350,10 @@
   "homepage": "http://www.maria-am-wasser.de",
   "beschreibung": "Die über sechshundertjährige Schifferkirche unserer Gemeinde liegt am Ufer der Elbe und am Fuß des Dresdner Elbhangs in unmittelbarer Nachbarschaft zum Schloss Pillnitz.",
   "adresse": "Kirchgasse 6 01326 Dresden (Hosterwitz)",
-  "telefon": "0351 2618330"
+  "telefon": "0351 2618330",
+  "lat": 51.0150094,
+  "lon": 13.8568923,
+  "geo_quelle": "nominatim"
  },
  "schillerhaeuschen": {
   "name": "Schillerhäuschen",
@@ -6096,6 +6433,9 @@
    "Schloss Klippenstein Radeberg"
   ],
   "region": "umland",
+  "homepage": "https://www.schloesserland-sachsen.de/de/veranstaltungen-ausstellungen/?tx_sbgevents_events%5BselectedLocation%5D=39&tx_sbgevents_events%5BlocationForwardProperty%5D=1&cHash=34f428376e5fafb0bbad51f83e2042d1",
+  "cover": "https://www.kulturkalender-dresden.de/storage/14656/responsive-images/Radeberg-Schloss-1___thumb_1000_570.jpg",
+  "beschreibung": "Besuchen Sie das Schlösserland Sachsen und erleben Sie die Sächsische Geschichte in ihrer schönsten Form: in Schlössern, Burgen und Gärten.",
   "adresse": "Schlossstraße 6, 01454 Radeberg",
   "lat": 51.1193711,
   "lon": 13.9250269,
@@ -6165,6 +6505,8 @@
    "Schloss Schönfeld - Das Zauberschloss bei Weißig"
   ],
   "region": "dresden",
+  "homepage": "https://www.daszauberschloss.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/323/responsive-images/schloss-schoenfeld-foto-emodd2___thumb_768_460.jpg",
   "adresse": "Am Schloss 2, 01328 Dresden (Schönfeld-Weissig)",
   "lat": 51.032664,
   "lon": 13.8953054,
@@ -6494,7 +6836,10 @@
   "art": "kirche",
   "homepage": "https://michaelsengel.de/",
   "adresse": "Quohrener Str. 18 01324 Dresden",
-  "telefon": "+49 351 2683028"
+  "telefon": "+49 351 2683028",
+  "lat": 51.0590764,
+  "lon": 13.8567641,
+  "geo_quelle": "nominatim"
  },
  "st-nikolai-kirche-constappel": {
   "name": "St.-Nikolai-Kirche Constappel",
@@ -6509,7 +6854,10 @@
    "St.-Pauli-Friedhof"
   ],
   "region": "dresden",
-  "adresse": "Hechtstraße 78 Dresden"
+  "adresse": "Hechtstraße 78 Dresden",
+  "lat": 51.0877291,
+  "lon": 13.7379925,
+  "geo_quelle": "nominatim"
  },
  "st-pauli-ruine": {
   "name": "St. Pauli Ruine (Theaterruine)",
@@ -6679,6 +7027,9 @@
    "Stadtmuseum Pirna"
   ],
   "region": "umland",
+  "homepage": "https://www.pirna.de/pirna-erleben/kultur/museen/stadtmuseum-pirna/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/30463/responsive-images/Stadtmuseum-Pirna___thumb_1200_675.jpg",
+  "beschreibung": "Das im Areal des vormaligen Dominikanerklosters gelegene StadtMuseum Pirna versteht sich als Stätte der historischen Forschung und Bildung.",
   "adresse": "Klosterhof 2, 01796 Pirna",
   "lat": 50.9636114,
   "lon": 13.9391753,
@@ -6756,7 +7107,14 @@
    "Stasi-Unterlagen-Archiv",
    "Bundesarchiv - Stasi-Unterlagen-Archiv - Außenstelle Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://www.stasi-unterlagen-archiv.de/archiv/standorte/dresden/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/12621/responsive-images/Henriette-Braun-Foyer-StUA-Dresden1-%28002%29___thumb_1200_675.jpg",
+  "beschreibung": "Im Archiv der Außenstelle Dresden lagern 8.239 Regal-Meter Unterlagen und 3 Millionen Karteikarten. Die Unterlagen stammen von der Bezirks­verwaltung",
+  "adresse": "Riesaer Straße 7 D, 01129 Dresden",
+  "lat": 51.0834366,
+  "lon": 13.7235794,
+  "geo_quelle": "nominatim"
  },
  "steinhaus": {
   "name": "Steinhaus",
@@ -6805,6 +7163,9 @@
   ],
   "region": "dresden",
   "herz": true,
+  "homepage": "http://www.strasse-e.de/termine.php",
+  "cover": "https://www.kulturkalender-dresden.de/storage/12087/responsive-images/Reithalle-Platzhalter___thumb_1200_675.jpg",
+  "beschreibung": "Die Website des Kulturzentrums STRASSE E® Dresden. Terminübersicht über die kommenden Veranstaltungen.",
   "adresse": "Werner-Hartmann-Straße 2, 01099 Dresden",
   "lat": 51.085593,
   "lon": 13.764458,
@@ -6953,6 +7314,9 @@
    "Tanzschule Herrmann-Nebl"
   ],
   "region": "dresden",
+  "homepage": "http://www.bei-uns-tanzen.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/30465/responsive-images/Tanzschule-HerrmannNebl___thumb_1125_750.jpg",
+  "beschreibung": "Home | ADTV Tanzschule Herrmann-Nebl",
   "adresse": "Zwinglistraße 32, 01277 Dresden",
   "lat": 51.033924,
   "lon": 13.7836272,
@@ -7141,7 +7505,10 @@
   "region": "dresden",
   "art": "theater",
   "homepage": "http://www.theaterscheune-neugersdorf.de",
-  "adresse": "Karl-Liebknecht-Straße 23 02727 Ebersbach-Neugersdorf"
+  "adresse": "Karl-Liebknecht-Straße 23 02727 Ebersbach-Neugersdorf",
+  "lat": 50.9752105,
+  "lon": 14.6099451,
+  "geo_quelle": "nominatim"
  },
  "thomas-muntzer-platz": {
   "name": "Thomas-Müntzer-Platz",
@@ -7221,7 +7588,10 @@
   ],
   "region": "dresden",
   "homepage": "https://tonkunstraum.de",
-  "adresse": "Frankenstraße 12a 01309 Dresden"
+  "adresse": "Frankenstraße 12a 01309 Dresden",
+  "lat": 51.0510117,
+  "lon": 13.7933894,
+  "geo_quelle": "nominatim"
  },
  "toskana-therme": {
   "name": "Toskana Therme",
@@ -7300,7 +7670,10 @@
    "Trinitatishaus"
   ],
   "region": "dresden",
-  "adresse": "Fiedlerstraße 2 Dresden"
+  "adresse": "Fiedlerstraße 2 Dresden",
+  "lat": 51.0528446,
+  "lon": 13.7718594,
+  "geo_quelle": "nominatim"
  },
  "trinitatiskirche": {
   "name": "Trinitatiskirche",
@@ -7333,7 +7706,10 @@
    "TU, Haus der Sprachen"
   ],
   "region": "dresden",
-  "adresse": "Zellescher Weg 22 01217 Dresden"
+  "adresse": "Zellescher Weg 22 01217 Dresden",
+  "lat": 51.0285947,
+  "lon": 13.7398486,
+  "geo_quelle": "nominatim"
  },
  "uci-kinowelt-elbe-park": {
   "name": "UCI KINOWELT Elbe Park",
@@ -7355,7 +7731,10 @@
    "Ukrainisches Haus"
   ],
   "region": "dresden",
-  "adresse": "Neumarkt 2 Dresden"
+  "adresse": "Neumarkt 2 Dresden",
+  "lat": 51.0521402,
+  "lon": 13.7405676,
+  "geo_quelle": "nominatim"
  },
  "ukrainisches-haus-qf-passage": {
   "name": "Ukrainisches Haus, QF Passage",
@@ -7432,6 +7811,9 @@
    "Verkehrsmuseum Dresden"
   ],
   "region": "dresden",
+  "homepage": "http://www.verkehrsmuseum-dresden.de",
+  "cover": "https://www.kulturkalender-dresden.de/storage/5769/responsive-images/verkehrsmuseum-dresden-c-igor-semechin___thumb_800_532.jpg",
+  "beschreibung": "Das Verkehrsmuseum Dresden bietet Sonder- und ständige Ausstellungen im Bereich Verkehrswesen und ermöglicht eine Zeitreise durch die mobile Welt.",
   "adresse": "Augustusstraße 1, 01067 Dresden",
   "lat": 51.0520952,
   "lon": 13.7394323,
@@ -7461,7 +7843,10 @@
    "VG Biomarkt Friedensstraße 2f"
   ],
   "region": "dresden",
-  "adresse": "Friedensstraße 2f Dresden"
+  "adresse": "Friedensstraße 2f Dresden",
+  "lat": 51.0694072,
+  "lon": 13.741762,
+  "geo_quelle": "nominatim"
  },
  "vg-biomarkt-neustsdt": {
   "name": "VG Biomarkt Dresden Neustsdt",
@@ -7480,6 +7865,7 @@
    "Villa der Kulturen"
   ],
   "region": "dresden",
+  "cover": "https://www.kulturkalender-dresden.de/storage/58971/responsive-images/kuka___thumb_1200_675.jpg",
   "adresse": "Kraftwerk Mitte 2, 01067 Dresden",
   "lat": 51.0531856,
   "lon": 13.7230929,
@@ -7498,6 +7884,9 @@
    "Villa Teresa in Coswig"
   ],
   "region": "umland",
+  "homepage": "https://www.villa-teresa.de/veranstaltungen/in-der-villa-teresa/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/5328/responsive-images/c-villa-teresa___thumb_800_466.jpg",
+  "beschreibung": "Die 2002 restaurierte Villa \"Teresa\" ist das Zentrum für Kammermusik & Literatur und bietet hochwertige Kulturveranstaltungen und ist auch für private Anlässe buchbar.",
   "adresse": "Kötitzer Straße 30, 01640 Coswig",
   "lat": 51.1202516,
   "lon": 13.5735236,
@@ -7509,6 +7898,9 @@
    "Villa Wigman für TANZ e.V."
   ],
   "region": "dresden",
+  "homepage": "http://www.villa-wigman.de/cms/veranstaltungen/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/33403/responsive-images/Dresden%2C_Bautzner_Stra%C3%9Fe_107%2C_17.6.2.40-080348___thumb_1000_571.jpg",
+  "beschreibung": "villa\\wigman – Raum für Darstellende Künste",
   "adresse": "Bautzner Straße 51, 01099 Dresden",
   "lat": 51.0632488,
   "lon": 13.7560886,
@@ -7555,7 +7947,11 @@
   "aliase": [
    "Volkshochschule Dresden e.V."
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Annenstraße 10, 01067 Dresden",
+  "lat": 51.0495466,
+  "lon": 13.7298459,
+  "geo_quelle": "nominatim"
  },
  "volkshochschule-annenstrasse": {
   "name": "Volkshochschule, Annenstraße",
@@ -7637,7 +8033,10 @@
    "Wahlkreisbüro Kassem Taher Saleh MdB"
   ],
   "region": "dresden",
-  "adresse": "Bönischplatz 11 Dresden"
+  "adresse": "Bönischplatz 11 Dresden",
+  "lat": 51.0558864,
+  "lon": 13.7626156,
+  "geo_quelle": "nominatim"
  },
  "waldbad-raetzteich": {
   "name": "Waldbad Rätzteich",
@@ -7655,7 +8054,10 @@
   "region": "dresden",
   "homepage": "https://www.feiermanufaktur.de/waldbadhaus",
   "beschreibung": "Eventlocation in Dresden: das denkmalgeschützte Waldbadhaus in Weixdorf mit zwei Räumen für bis zu 150 Gäste, Garten am Badesee, Straßenbahnanschluss und Parkplätzen.",
-  "adresse": "Großteichdamm 1 01108 Dresden"
+  "adresse": "Großteichdamm 1 01108 Dresden",
+  "lat": 51.1429081,
+  "lon": 13.8090216,
+  "geo_quelle": "nominatim"
  },
  "waldbuehne-bischofswerda": {
   "name": "Waldbühne Bischofswerda",
@@ -7871,6 +8273,9 @@
    "Zaubertheater Chateau"
   ],
   "region": "dresden",
+  "homepage": "https://ignisetflamma.de",
+  "cover": "https://www.kulturkalender-dresden.de/storage/26241/responsive-images/1685882374655-scaled___thumb_1000_570.jpg",
+  "beschreibung": "Dshini Ignis: Illusionist, Magier, Zauberkünstler und Feuerkünstler aus Dresden - Magie, Zaubershows, Feuerkunst, Feuershows für Hochzeiten, Feiern, Firmenfeiern und Events aller Art in Dresden, Chemnitz, Leipzig, Sachsen, Deutschland",
   "adresse": "Leipziger Straße 181, 01137 Dresden",
   "lat": 51.084361935563535,
   "lon": 13.707122520237252,
@@ -7883,6 +8288,8 @@
   ],
   "region": "dresden",
   "art": "buehne",
+  "homepage": "https://www.bibo-dresden.de/de/veranstaltungen/veranstaltungskalender.php",
+  "cover": "https://www.kulturkalender-dresden.de/storage/34825/responsive-images/Sonic_-chairs_ZB_c_SBD___thumb_1000_571.jpg",
   "adresse": "Schloßstraße 2, Besuchereingang Wilsdruffer Straße, 01067 Dresden",
   "lat": 51.0282174,
   "lon": 13.7365989,
@@ -7901,6 +8308,9 @@
    "Zentralgasthof Weinböhla"
   ],
   "region": "umland",
+  "homepage": "https://www.zentralgasthof.com/?p=veranstaltungen",
+  "cover": "https://www.kulturkalender-dresden.de/storage/18550/responsive-images/Ortsbild-von-denen___thumb_1000_570.jpg",
+  "beschreibung": "Zentralgasthof Weinböhla",
   "adresse": "Kirchplatz 2, 01689 Weinböhla",
   "lat": 51.1614708,
   "lon": 13.5629433,
@@ -7911,7 +8321,11 @@
   "aliase": [
    "Zentralkino im Kraftwerk Mitte"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Kraftwerk Mitte 1 – 32, 01067 Dresden",
+  "lat": 51.0518545,
+  "lon": 13.7221218,
+  "geo_quelle": "nominatim"
  },
  "zentralwerk": {
   "name": "Zentralwerk",
@@ -7935,6 +8349,9 @@
    "Zentrum für Baukultur Sachsen"
   ],
   "region": "dresden",
+  "homepage": "https://www.zfbk.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/2092/responsive-images/Zentrum-f%C3%BCr-Buakultur-2___thumb_3026_2268.jpg",
+  "beschreibung": "Zentrum für Baukultur Sachsen, ZfBK im Kulturpalast Dresden, Architektur, Bauen, Sachsen",
   "adresse": "Schlossstraße 2, 01067 Dresden",
   "lat": 51.0509304,
   "lon": 13.7383838,
@@ -8024,7 +8441,10 @@
   ],
   "region": "dresden",
   "art": "treffpunkt",
-  "adresse": "Zwickauer Straße 162 01187 Dresden"
+  "adresse": "Zwickauer Straße 162 01187 Dresden",
+  "lat": 51.0302885,
+  "lon": 13.7045564,
+  "geo_quelle": "nominatim"
  },
  "zwinger": {
   "name": "Zwinger Dresden (Wallpavillon)",
