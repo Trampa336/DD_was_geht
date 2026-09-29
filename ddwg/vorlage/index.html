@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0a12">
+<meta name="theme-color" content="#17191a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -11,15 +11,16 @@
 <style>/*__SCHRIFT__*/</style>
 <style>
 :root {
-  --bg:#0b0a12; --surface:#15141f; --surface2:#1f1d2e; --ink:#f3f0ff; --soft:#b4afcc; --faint:#77718f;
-  --line:#2a2840; --accent:#ff2e88; --on-accent:#fff; --accent2:#27e0ff; --heart:#ff4d6d;
+  /* Standardfarben wie v2 „Industriegelände“: Graphit, Elbe-Orange; Wochenende in Sand */
+  --bg:#17191a; --surface:#1e2123; --surface2:#242829; --ink:#e4e6e3; --soft:#9aa09c; --faint:#7a817c;
+  --line:#2a2e2c; --accent:#d4652a; --on-accent:#17191a; --accent2:#e3b56a; --heart:#e5484d;
   --f:'TeX Gyre Heros', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --r:14px; --r-s:10px; --rail:58px; --schritt:74px; --mitte:40vh;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
 body { font: 15px/1.4 var(--f); -webkit-font-smoothing: antialiased; min-height: 100vh; }
-body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(70% 40% at 10% -5%, rgba(255,46,136,.18), transparent 70%), radial-gradient(60% 35% at 105% 10%, rgba(39,224,255,.12), transparent 70%); }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(85% 45% at 35% 22%, rgba(212,101,42,.22), transparent 72%); }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
 a { color: var(--accent); }
 svg { flex: none; }
@@ -73,7 +74,7 @@ main { flex: 1; }
 .medium { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface2); }
 .poster { display: flex; align-items: flex-end; padding: 10px; overflow: hidden; font-weight: 700; font-size: 20px; line-height: 1.02; word-break: break-word; hyphens: auto; letter-spacing: -.01em; }
 .p0 { background: var(--accent); color: var(--on-accent); }
-.p1 { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+.p1 { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--on-accent); }
 .p2 { background: var(--surface2); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
 .p3 { background: var(--surface2); color: var(--accent2); box-shadow: inset 0 0 0 2px var(--accent2); }
 .herz-b { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--heart); color: #fff; font-size: 10.5px; font-weight: 700; }
