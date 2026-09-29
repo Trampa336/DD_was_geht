@@ -1628,7 +1628,7 @@
   "aliase": [
    "Eastclub"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "art": "club",
   "homepage": "http://www.east-club.de/",
   "cover": "https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=crop,format=auto,width=574,height=301.35/image/238806866/7002d4d3-ab15-4c57-890a-2c300c031992.jpg",
@@ -2299,7 +2299,7 @@
   "aliase": [
    "Galerie Brüderstraße"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "adresse": "Brüderstraße 9, 02826 Görlitz",
   "lat": 51.1559188,
   "lon": 14.9903807,
@@ -3043,7 +3043,7 @@
   "aliase": [
    "Herderhalle"
   ],
-  "region": "dresden",
+  "region": "umland",
   "adresse": "Rudolf-Renner-Straße 41B 01796 Pirna",
   "lat": 50.972922,
   "lon": 13.9286742,
@@ -3968,7 +3968,7 @@
   "aliase": [
    "Kirche St. Marien"
   ],
-  "region": "dresden",
+  "region": "umland",
   "art": "kirche",
   "adresse": "Kirchplatz 13 01796 Pirna",
   "lat": 50.9626557,
@@ -7480,7 +7480,7 @@
   "aliase": [
    "TheaterScheune"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "art": "theater",
   "homepage": "http://www.theaterscheune-neugersdorf.de",
   "adresse": "Karl-Liebknecht-Straße 23 02727 Ebersbach-Neugersdorf",
