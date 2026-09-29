@@ -15,7 +15,7 @@
   --bg:#17191a; --surface:#1e2123; --surface2:#242829; --ink:#e4e6e3; --soft:#9aa09c; --faint:#7a817c;
   --line:#2a2e2c; --accent:#d4652a; --on-accent:#17191a; --accent2:#e3b56a; --heart:#e5484d;
   --f:'TeX Gyre Heros', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --r:14px; --r-s:10px; --rail:58px; --schritt:74px; --mitte:40vh;
+  --r:14px; --r-s:10px; --rail:58px; --mitte:40vh;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
@@ -40,27 +40,34 @@ main { flex: 1; }
 .reiter button[aria-selected=true] { background: var(--accent); color: var(--on-accent); }
 
 /* ---------- Zeitstrahl links (nur im Reiter "Was geht") ---------- */
-.rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none; }
+.rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none;
+  /* Skala blendet oben und hinter der Reiter-Leiste unten weich aus */
+  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 150px - env(safe-area-inset-bottom)), transparent calc(100% - 86px - env(safe-area-inset-bottom)));
+  -webkit-mask-image: var(--maske); mask-image: var(--maske); }
 #app[data-tab="karte"] .rail { display: none; }
 .rail.greift .tl-datum.aktiv span { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(0,0,0,.45); }
-.rand { position: absolute; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 2; }
-.rand.oben { top: 14px; }
-.rand.unten { bottom: calc(96px + env(safe-area-inset-bottom)); }
-.rd { display: flex; flex-direction: column; align-items: center; min-width: 40px; padding: 3px 0; border-radius: 8px; background: var(--bg); line-height: 1.05; opacity: .7; }
-.rd small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-.rd b { font-size: 15px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
-.rd.we small, .rd.we b { color: var(--accent2); }
-.rd:active { opacity: 1; }
-.rail::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background-image: radial-gradient(circle, var(--faint) 0 1px, transparent 1.3px); background-size: 2px 7px; opacity: .7; }
-.rail.we::before { background-image: radial-gradient(circle, var(--accent2) 0 1px, transparent 1.3px); opacity: .55; }
+/* Jeder Tag steht klein und blass auf der Leiste, der aktuelle groß in der Mitte */
 .tl-datum { position: absolute; left: 0; right: 0; top: var(--mitte); height: 52px; margin-top: -26px; display: flex; flex-direction: column; align-items: center; justify-content: center; will-change: transform, opacity; }
-.tl-datum span { display: flex; flex-direction: column; align-items: center; padding: 4px 0; min-width: 42px; border-radius: 10px; background: var(--bg); line-height: 1.05; }
-.tl-datum small { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); }
-.tl-datum b { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.tl-datum i { font-style: normal; font-size: 9.5px; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
+.tl-datum span { display: flex; flex-direction: column; align-items: center; padding: 3px 0; min-width: 40px; border-radius: 8px; line-height: 1.05; }
+.tl-datum:not(.aktiv) span > * { opacity: .5; }
+.tl-datum.we:not(.aktiv) span > * { opacity: .9; }  /* Wochenende etwas kräftiger */
+/* feiner Punkt zwischen zwei Tagen, so bleibt die Leiste als Achse sichtbar */
+.tl-datum::after { content: ""; position: absolute; top: 5px; left: 50%; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: var(--faint); opacity: .6; }
+.tl-datum.aktiv::after, .tl-datum.mw::after, .tl-datum:first-child::after { display: none; }
+.tl-datum small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.tl-datum b { font-size: 14px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
+.tl-datum i { display: none; font-style: normal; font-size: 9.5px; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
 .tl-datum.we small, .tl-datum.we b { color: var(--accent2); }
-.tl-datum.aktiv span { box-shadow: 0 0 0 1px var(--line), 0 6px 20px rgba(0,0,0,.45); background: var(--surface); }
+.tl-datum.aktiv span { padding: 4px 0; min-width: 42px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 6px 20px rgba(0,0,0,.45); }
+.tl-datum.aktiv small { font-size: 10px; color: var(--soft); }
+.tl-datum.aktiv b { font-size: 21px; color: var(--ink); }
+.tl-datum.aktiv i { display: block; }
+.tl-datum.aktiv.we small, .tl-datum.aktiv.we b { color: var(--accent2); }
 .tl-datum.aktiv.we span { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent), 0 6px 20px rgba(0,0,0,.45); }
+/* Monatswechsel: feine Linie mit Monatskürzel über dem ersten Tag des neuen Monats */
+.tl-datum.mw::before { content: attr(data-mon); position: absolute; top: 1px; left: 5px; right: 5px; height: 9px; font-size: 7.5px; line-height: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; text-align: center; color: var(--soft);
+  background: linear-gradient(to right, var(--soft) 0 22%, transparent 22% 78%, var(--soft) 78%) center / 100% 1px no-repeat; }
+.tl-datum.mw.aktiv::before { display: none; }
 
 /* ---------- Galerie: Liste über alle Tage ---------- */
 #tab-was { padding: 0 12px 40vh calc(var(--rail) + 8px); }
@@ -469,24 +476,22 @@ function renderTage() {
   railBauen(); messen();
 }
 
-/* ---------- Zeitstrahl-Leiste: Datum gleitet mit, je 2 Tage an den Rändern ---------- */
+/* ---------- Zeitstrahl-Leiste: alle Tage als Skala, der aktuelle groß in der Mitte ---------- */
 const rail = $("#rail");
 const kurzName = k => TAGE[k] === HEUTE ? "Heute" : WT[parse(TAGE[k]).getDay()];
-const kurz = k => { const d = parse(TAGE[k]); return `<button class="rd ${istWE(TAGE[k]) ? "we" : ""}" data-k="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}"><small>${kurzName(k)}</small><b>${d.getDate()}</b></button>`; };
-let labels = [];
+const NAH = 52, FERN = 40;  // Abstand großes Datum → Nachbar, dann je Tag auf der Skala (px)
+let labels = [], ys = [];
 function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden Terminen
-  rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso);
-    return `<div class="tl-datum ${istWE(iso) ? "we" : ""}" data-k="${k}"><span><small>${kurzName(k)}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("")
-    + `<div class="rand oben" id="rand-oben"></div><div class="rand unten" id="rand-unten"></div>`;
+  rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso), mw = k > 0 && parse(TAGE[k - 1]).getMonth() !== d.getMonth();
+    return `<div class="tl-datum${istWE(iso) ? " we" : ""}${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${kurzName(k)}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("");
   labels = [...rail.querySelectorAll(".tl-datum")];
   labels.forEach(el => el.style.transition = "transform .12s linear, opacity .2s");
   aktiv = -1;
 }
-let tops = [], schritt = 74, mitte = 0;
+let tops = [], mitte = 0;
 function messen() {
   tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
   tops.push(document.querySelector("#tage").getBoundingClientRect().bottom + scrollY);
-  schritt = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--schritt")) || 74;
   mitte = innerHeight * 0.40;
   zeichnen();
 }
@@ -501,24 +506,23 @@ function zeichnen() {
   if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
   const rest = f - k0, schub = rest > 0.82 ? (rest - 0.82) / 0.18 : 0, lage = k0 + schub;
+  const unten = innerHeight - mitte;
   labels.forEach((el, k) => {
-    const d = k - lage, a = Math.abs(d);
-    el.style.transform = `translateY(${(d * schritt).toFixed(1)}px) scale(${a < 0.5 ? 1 : 0.84})`;
-    el.style.opacity = (a < 0.5 ? 1 : a < 1 ? (1 - a) * 1.6 : 0).toFixed(2);
+    const d = k - lage, a = Math.abs(d), y = Math.sign(d) * (Math.min(a, 1) * NAH + Math.max(0, a - 1) * FERN);
+    ys[k] = y;
+    el.style.transform = `translateY(${y.toFixed(1)}px)`;
+    el.style.opacity = y < -mitte - 30 || y > unten + 30 ? 0 : 1;
   });
   if (k0 !== aktiv) {
     aktiv = k0;
     labels.forEach((el, k) => el.classList.toggle("aktiv", k === k0));
-    rail.classList.toggle("we", istWE(TAGE[k0]));
-    $("#rand-oben").innerHTML = [k0 - 2, k0 - 1].filter(k => k >= 0).map(k => kurz(k)).join("");
-    $("#rand-unten").innerHTML = [k0 + 1, k0 + 2].filter(k => k < TAGE.length).map(k => kurz(k)).join("");
   }
 }
 let geplant = false;
 addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); } }, { passive: true });
 addEventListener("resize", messen);
 
-/* ---------- Leiste als Schieber: Wischen springt Tag für Tag ---------- */
+/* ---------- Leiste als Schieber: Wischen springt Tag für Tag, die Skala folgt dem Finger ---------- */
 let ziel = 0, zielZeit = 0;
 const klemm = k => Math.max(0, Math.min(TAGE.length - 1, k));
 function springe(k, weich) {
@@ -530,7 +534,6 @@ function springe(k, weich) {
 }
 let griff = null;
 rail.addEventListener("pointerdown", e => {
-  if (e.target.closest(".rd")) return;
   griff = { y: e.clientY, k: aktiv, id: e.pointerId };
   ziel = aktiv; zielZeit = Date.now();
   rail.setPointerCapture(e.pointerId); rail.classList.add("greift");
@@ -538,13 +541,18 @@ rail.addEventListener("pointerdown", e => {
 rail.addEventListener("pointermove", e => {
   if (!griff || e.pointerId !== griff.id) return;
   if (Math.abs(griff.y - e.clientY) > 8) griff.bewegt = true;
-  springe(griff.k + Math.round((griff.y - e.clientY) / 34), false);
+  springe(griff.k + Math.round((griff.y - e.clientY) / FERN), false);
 });
 const loslassen = () => { griff = null; rail.classList.remove("greift"); };
-// Kurzer Tipp ohne Bewegung auf das große Datum (Mitte der Leiste) öffnet den Kalender
+// Kurzer Tipp ohne Bewegung: aufs große Datum öffnet den Kalender, auf ein kleines springt zu dem Tag
 rail.addEventListener("pointerup", e => {
-  const tipp = griff && e.pointerId === griff.id && !griff.bewegt && Math.abs(griff.y - mitte) < 32;
-  loslassen(); if (tipp) zeigeKalender();
+  const g = griff && e.pointerId === griff.id && !griff.bewegt ? griff : null;
+  loslassen(); if (!g) return;
+  const rel = g.y - mitte;
+  if (Math.abs(rel) < 32) return zeigeKalender();
+  let k = -1, abst = FERN / 2;
+  ys.forEach((y, i) => { if (i !== aktiv && Math.abs(y - rel) < abst) { abst = Math.abs(y - rel); k = i; } });
+  if (k >= 0) springe(k, true);
 });
 rail.addEventListener("pointercancel", loslassen);
 let rad = 0;
@@ -747,7 +755,6 @@ function setTab(t) {
 document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-zu]"); if (!el) return;
   const ds = el.dataset;
-  if (el.classList.contains("rd")) return springe(+ds.k, true);
   if (ds.kal !== undefined) { sheetZu(); return springe(+ds.kal, false); }
   if ("zu" in ds) return sheetZu();
   if ("filter" in ds) return filterBlatt();

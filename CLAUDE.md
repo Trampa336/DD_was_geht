@@ -162,6 +162,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Liste falscher Freunde) oder die Kategorie. Ort und Stichwort zählen nur, wenn die
   Kategorie passt oder `sonstiges` ist. Sport = Mitmachen, ohne Senioren-, Familien-
   und Zuschauersport (auch am Ortsnamen erkannt). Neue Stichworte immer mit Test.
+- **Zeitstrahl-Leiste** links (seit 2026-09-29 fertig): Alle Tage mit Terminen stehen als kleine,
+  blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben und
+  hinter der Reiter-Leiste blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
+  Monatswechsel als feine Linie mit Monatskürzel. Tipp auf ein kleines Datum springt hin, Tipp
+  aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
 - **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
   (Alle / Meine / Neue), Deine Richtungen (Tippen merkt und holt nach vorne) und
   „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
