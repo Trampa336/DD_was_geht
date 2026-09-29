@@ -66,6 +66,19 @@ def test_weiter_wird_verworfen():
     assert dropped == 1 and [r["ort"] for r in rows] == ["strasse-e"]
 
 
+def test_fuehrungen_werden_verworfen(tmp_path):
+    from ddwg import db
+    orte = _orte()
+    rows, _ = pipeline.listing_rows(
+        [_ev("a", "rauze", "Konzert", "Reithalle Straße E"),
+         _ev("b", "kulturkalender", "Stadtführung", "Reithalle Straße E", time="14:00", category="fuehrungen")],
+        orte, HEUTE)
+    with db.connect(str(tmp_path / "t.db")) as conn:
+        db.replace_listings(conn, "test", rows)
+        assert pipeline.build(conn, orte, HEUTE) == 1
+        assert [e["title"] for e in db.events(conn, HEUTE.isoformat())] == ["Konzert"]
+
+
 def test_merge_feldweise_nach_rang():
     group = dedup.cluster([
         _ev("1", "kulturkalender", "TOWER TRANSMISSIONS XII", "Straße E", image_url="kk.jpg"),

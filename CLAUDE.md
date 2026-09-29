@@ -45,6 +45,7 @@ python -m pytest tests           # Kerntests ohne Netz
 4. `merge.merge()` verschmilzt Feld für Feld nach Quellen-Rang: Datum, Zeit und Titel
    kommen von der ranghöchsten Quelle, Beschreibung, Preis und Bild von der
    ranghöchsten Quelle, die sie hat.
+   Danach verwirft `build()` alle Führungen (Kategorie `fuehrungen`).
 5. Für Events an Herz-Orten lädt die Pipeline fehlende Beschreibungen von
    Kulturkalender-Detailseiten nach, höchstens 120 pro Lauf, zwischengespeichert in `details`.
 6. `ausgabe.py` füllt `ddwg/vorlage/index.html` mit JSON → `ausgabe/index.html`.
@@ -121,9 +122,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   mit Leaflet + markercluster von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre
   Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen und Flavours
   siehe Abschnitt „Herzen“. Entwürfe liegen unter `docs/ui-entwuerfe/`.
-- Führungen sind standardmäßig ausgeblendet (`AUSGEBLENDET` in der Vorlage): nicht im
-  Zeitstrahl, in Entdecken nicht unter „Alle“, nur über den eigenen Chip. Die Seite eines
-  Ortes zeigt weiter alle Termine.
+- Führungen kommen seit 2026-09-29 gar nicht mehr auf die Seite (Davids Entscheidung):
+  `build()` verwirft die Kategorie `fuehrungen` (`VERWORFENE_KATEGORIEN` in
+  `pipeline.py`), also Stadt-, Museums-, Schiffs- und Familienführungen. Erkannt werden
+  sie weiter in `normalize.py`. `AUSGEBLENDET` in der Vorlage ist damit ohne Wirkung.
+  Orte, die nur Startpunkt einer Führung sind (Haltestellen usw.), haben `"treffpunkt": true`.
 - Werkzeuge für orte.json (füllen nur leere Felder): `werkzeuge/enrich_venues.py`
   (Homepage, Cover, Kurzbeschreibung über die Kulturkalender-Ortsseite) und
   `werkzeuge/fetch_venue_locations.py` (Adresse, Koordinaten über KK und nominatim).

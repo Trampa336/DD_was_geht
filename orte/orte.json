@@ -613,24 +613,17 @@
   ],
   "region": "dresden"
  },
- "bibliothek-blasewitz": {
-  "name": "Bibliothek Blasewitz",
+ "bibliothek-blasewitz-staedtische-bibliotheken": {
+  "name": "Bibliothek Blasewitz – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Blasewitz – Städtische Bibliotheken Dresden",
    "Bibliothek Blasewitz"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Tolkewitzer Str. 8 01277 Dresden",
-  "telefon": "0351 - 8 40 08 54",
-  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr"
- },
- "bibliothek-blasewitz-staedtische-bibliotheken": {
-  "name": "Bibliothek Blasewitz – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Blasewitz – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Tolkewitzer Straße 8, 01277 Dresden",
+  "telefon": "0351 - 8 40 08 54",
+  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr",
   "lat": 51.05110626841314,
   "lon": 13.807820817957696,
   "geo_quelle": "kk_page"
@@ -647,17 +640,11 @@
   "lon": 13.8488935,
   "geo_quelle": "nominatim"
  },
- "bibliothek-cotta": {
-  "name": "Bibliothek Cotta",
-  "aliase": [
-   "Bibliothek Cotta"
-  ],
-  "region": "dresden"
- },
  "bibliothek-cotta-staedtische-bibliotheken": {
   "name": "Bibliothek Cotta – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Cotta – Städtische Bibliotheken Dresden"
+   "Bibliothek Cotta – Städtische Bibliotheken Dresden",
+   "Bibliothek Cotta"
   ],
   "region": "dresden",
   "adresse": "Cossebauder Straße 42, 01157 Dresden",
@@ -672,17 +659,11 @@
   ],
   "region": "dresden"
  },
- "bibliothek-gorbitz": {
-  "name": "Bibliothek Gorbitz",
-  "aliase": [
-   "Bibliothek Gorbitz"
-  ],
-  "region": "dresden"
- },
  "bibliothek-gorbitz-staedtische-bibliotheken": {
   "name": "Bibliothek Gorbitz – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Gorbitz – Städtische Bibliotheken Dresden"
+   "Bibliothek Gorbitz – Städtische Bibliotheken Dresden",
+   "Bibliothek Gorbitz"
   ],
   "region": "dresden",
   "adresse": "Merianplatz 3, 01169 Dresden",
@@ -690,39 +671,26 @@
   "lon": 13.6696816,
   "geo_quelle": "nominatim"
  },
- "bibliothek-gruna": {
-  "name": "Bibliothek Gruna",
+ "bibliothek-gruna-staedtische-bibliotheken": {
+  "name": "Bibliothek Gruna – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Gruna – Städtische Bibliotheken Dresden",
    "Bibliothek Gruna"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Papstdorfer Str. 13 Dresden",
-  "telefon": "0351 - 2 56 10 37",
-  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr Sa: 9-13 Uhr"
- },
- "bibliothek-gruna-staedtische-bibliotheken": {
-  "name": "Bibliothek Gruna – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Gruna – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Papstdorfer Straße 13, 01277 Dresden",
+  "telefon": "0351 - 2 56 10 37",
+  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr Sa: 9-13 Uhr",
   "lat": 51.0336477,
   "lon": 13.7840318,
   "geo_quelle": "nominatim"
  },
- "bibliothek-johannstadt": {
-  "name": "Bibliothek Johannstadt",
-  "aliase": [
-   "Bibliothek Johannstadt"
-  ],
-  "region": "dresden"
- },
  "bibliothek-johannstadt-staedtische-bibliotheken": {
   "name": "Bibliothek Johannstadt – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Johannstadt – Städtische Bibliotheken Dresden"
+   "Bibliothek Johannstadt – Städtische Bibliotheken Dresden",
+   "Bibliothek Johannstadt"
   ],
   "region": "dresden",
   "adresse": "Fetscherstraße 67, 01307 Dresden",
@@ -730,39 +698,26 @@
   "lon": 13.7757224,
   "geo_quelle": "nominatim"
  },
- "bibliothek-langebrueck": {
-  "name": "Bibliothek Langebrück",
+ "bibliothek-langebrueck-staedtische-bibliotheken": {
+  "name": "Bibliothek Langebrück  – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Langebrück  – Städtische Bibliotheken Dresden",
    "Bibliothek Langebrück"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Hauptstraße 4 01465 Dresden",
-  "telefon": "(035201) 70263",
-  "oeffnungszeiten": "Mo, Fr: 15-18 Uhr Mi: 9-12, 15-18 Uhr"
- },
- "bibliothek-langebrueck-staedtische-bibliotheken": {
-  "name": "Bibliothek Langebrück  – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Langebrück  – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Hauptstraße 4, 01465 Langebrück",
+  "telefon": "(035201) 70263",
+  "oeffnungszeiten": "Mo, Fr: 15-18 Uhr Mi: 9-12, 15-18 Uhr",
   "lat": 51.1267331,
   "lon": 13.844298,
   "geo_quelle": "nominatim"
  },
- "bibliothek-laubegast": {
-  "name": "Bibliothek Laubegast",
-  "aliase": [
-   "Bibliothek Laubegast"
-  ],
-  "region": "dresden"
- },
  "bibliothek-laubegast-staedtische-bibliotheken": {
   "name": "Bibliothek Laubegast – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Laubegast – Städtische Bibliotheken Dresden"
+   "Bibliothek Laubegast – Städtische Bibliotheken Dresden",
+   "Bibliothek Laubegast"
   ],
   "region": "dresden",
   "adresse": "Österreicher Straße 61, 01279 Dresden",
@@ -770,24 +725,17 @@
   "lon": 13.8390896,
   "geo_quelle": "nominatim"
  },
- "bibliothek-leubnitz-neuostra": {
-  "name": "Bibliothek Leubnitz-Neuostra",
+ "bibliothek-leubnitz-neuostra-staedtische-bibliotheken": {
+  "name": "Bibliothek Leubnitz-Neuostra – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Leubnitz-Neuostra – Städtische Bibliotheken Dresden",
    "Bibliothek Leubnitz-Neuostra"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Corinthstraße 8 01219 Dresden",
-  "telefon": "0351 - 4 70 77 11",
-  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr"
- },
- "bibliothek-leubnitz-neuostra-staedtische-bibliotheken": {
-  "name": "Bibliothek Leubnitz-Neuostra – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Leubnitz-Neuostra – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Corinthstraße 8, 01219 Dresden",
+  "telefon": "0351 - 4 70 77 11",
+  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr",
   "lat": 51.0206589,
   "lon": 13.7624702,
   "geo_quelle": "nominatim"
@@ -811,46 +759,32 @@
   ],
   "region": "dresden"
  },
- "bibliothek-pieschen": {
-  "name": "Bibliothek Pieschen",
+ "bibliothek-pieschen-staedtische-bibliotheken": {
+  "name": "Bibliothek Pieschen – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Pieschen – Städtische Bibliotheken Dresden",
    "Bibliothek Pieschen"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Bürgerstr. 63 01127 Dresden",
-  "telefon": "0351 - 479 85 38",
-  "oeffnungszeiten": "Mo, Di, Mi, Fr: 10-18 Uhr"
- },
- "bibliothek-pieschen-staedtische-bibliotheken": {
-  "name": "Bibliothek Pieschen – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Pieschen – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Bürgerstraße 63, 01127 Dresden",
+  "telefon": "0351 - 479 85 38",
+  "oeffnungszeiten": "Mo, Di, Mi, Fr: 10-18 Uhr",
   "lat": 51.0771909,
   "lon": 13.7214164,
   "geo_quelle": "nominatim"
  },
- "bibliothek-plauen": {
-  "name": "Bibliothek Plauen",
+ "bibliothek-plauen-staedtische-bibliotheken": {
+  "name": "Bibliothek Plauen  – Städtische Bibliotheken Dresden",
   "aliase": [
+   "Bibliothek Plauen  – Städtische Bibliotheken Dresden",
    "Bibliothek Plauen"
   ],
   "region": "dresden",
   "homepage": "http://www.bibo-dresden.de",
-  "adresse": "Altplauen 1 01187 Dresden",
-  "telefon": "0351 - 412 14 82",
-  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr"
- },
- "bibliothek-plauen-staedtische-bibliotheken": {
-  "name": "Bibliothek Plauen  – Städtische Bibliotheken Dresden",
-  "aliase": [
-   "Bibliothek Plauen  – Städtische Bibliotheken Dresden"
-  ],
-  "region": "dresden",
   "adresse": "Altplauen 1, 01187 Dresden",
+  "telefon": "0351 - 412 14 82",
+  "oeffnungszeiten": "Mo-Mi, Fr: 10-18 Uhr",
   "lat": 51.0294911,
   "lon": 13.706115,
   "geo_quelle": "nominatim"
@@ -867,17 +801,11 @@
   "lon": 13.7979293,
   "geo_quelle": "nominatim"
  },
- "bibliothek-suedvorstadt": {
-  "name": "Bibliothek Südvorstadt",
-  "aliase": [
-   "Bibliothek Südvorstadt"
-  ],
-  "region": "dresden"
- },
  "bibliothek-suedvorstadt-staedtische-bibliotheken": {
   "name": "Bibliothek Südvorstadt  – Städtische Bibliotheken Dresden",
   "aliase": [
-   "Bibliothek Südvorstadt  – Städtische Bibliotheken Dresden"
+   "Bibliothek Südvorstadt  – Städtische Bibliotheken Dresden",
+   "Bibliothek Südvorstadt"
   ],
   "region": "dresden",
   "adresse": "Münchner Platz 2, 01187 Dresden",
@@ -2696,7 +2624,7 @@
    "Haltestelle Leonardo-da-Vinci-Straße (Line 63)"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "treffpunkt": true
  },
  "haltestelle-linie-68-altleubnitz": {
   "name": "Haltestelle Linie 68 Altleubnitz",
@@ -2704,7 +2632,7 @@
    "Haltestelle Linie 68 Altleubnitz"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "treffpunkt": true
  },
  "haltestelle-merianplatz-gorbitz": {
   "name": "Haltestelle Merianplatz - Dresden Gorbitz",
@@ -3579,7 +3507,7 @@
    "Käthe-Kollwitz-Platz (Hst. Linie 7)"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "treffpunkt": true
  },
  "kakadu-bar-im-parkhotel": {
   "name": "Kakadu Bar im Parkhotel",
@@ -5633,7 +5561,7 @@
    "Querallee (Hst. Linie 9, 13, 75)"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "treffpunkt": true
  },
  "radeberger-biertheater": {
   "name": "Radeberger Biertheater",
@@ -7310,7 +7238,7 @@
    "Toeplerstraße 12"
   ],
   "region": "dresden",
-  "erstmals": "2026-09-25"
+  "treffpunkt": true
  },
  "tom-pauls-theater": {
   "name": "Tom Pauls Theater",

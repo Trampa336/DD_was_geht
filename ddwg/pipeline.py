@@ -4,7 +4,8 @@
                 Ort aus orte/orte.json zu, verwirft Region "weiter" und
                 ersetzt die listings der Quelle. Danach build() und - fuer die
                 Herz-Orte - das Nachladen fehlender Beschreibungen.
-    build()     baut die Tabelle events komplett neu aus den listings.
+    build()     baut die Tabelle events komplett neu aus den listings und
+                verwirft dabei Fuehrungen (VERWORFENE_KATEGORIEN).
 
 Beides laeuft ohne Server, einmal aufgerufen und fertig (python -m ddwg).
 """
@@ -18,6 +19,13 @@ from .orte import Orte
 from .quellen import base, detail_fetch
 
 logger = logging.getLogger("ddwg")
+
+# Kategorien, die gar nicht erst auf die Seite kommen (Davids Entscheidung vom
+# 29.09.2026): Fuehrungen aller Art - Stadt-, Museums-, Schiffs- und
+# Familienfuehrungen. Erkannt werden sie weiter (normalize), damit sie sauber
+# herausfallen. Verworfen wird erst nach der Kategorie-Vergabe ueber den Ort
+# (Stufe 3), sonst rutschte eine dort vererbte Fuehrung durch.
+VERWORFENE_KATEGORIEN = {"fuehrungen"}
 
 # So viele Tage voraus wird gescrapt.
 TAGE_VORAUS = 31
@@ -160,9 +168,12 @@ def build(conn, orte, heute=None):
         out.append((ev, [int(m["uid"]) for m in members]))
 
     _kategorie_vom_ort(out, orte)
+    vorher = len(out)
+    out = [(ev, ids) for ev, ids in out if ev["category"] not in VERWORFENE_KATEGORIEN]
     _laufend(out)
     db.replace_events(conn, out)
-    logger.info("%d Einträge -> %d Events.", len(items), len(out))
+    logger.info("%d Einträge -> %d Events (%d Führungen verworfen).",
+                len(items), len(out), vorher - len(out))
     return len(out)
 
 
