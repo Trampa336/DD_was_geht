@@ -361,6 +361,8 @@ _DEMO_TITLE_RE = re.compile(
 # "Demonstration des Faerbevorgangs" ist eine Vorfuehrung, keine Demo.
 _DEMO_FALSE_FRIENDS_RE = re.compile(
     r"demonstration-(?:des|der|eines|einer|von|vom|am|zum|zur|mit|an)(?=-|$)"
+    # "Probe des feministischen Demo-Chor" (terminal.digital) ist ein Treffen.
+    r"|(?:^|-)demo-?chor"
 )
 # Ganze Woerter, die auf "fuehrung(en)" enden (Familienfuehrung,
 # Kuratorenfuehrung, Sonderfuehrung ...), dazu Rundgaenge und "gefuehrt".

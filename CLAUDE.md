@@ -76,9 +76,13 @@ Kartenkacheln weiterhin Internet, auch offline-installiert.
 
 ## Quellen und Rang (ddwg/quellen/__init__.py, kleiner = besser)
 Seiten der Orte selbst (derlude 10, strassee 20, groovestation 30, zentralwerk 40,
-sektor 50, azconni 60, ostpol 65, scheune 66, chemiefabrik 67, holeoffame 68) < rauze 70 < kulturkalender 90 < cybersax 100.
-Davids Regel: **Venue-Seite > Rauze > KK/cybersax.** Die Sammelkalender dienen der
-Vollständigkeit und dem Entdecken.
+sektor 50, azconni 60, ostpol 65, scheune 66, chemiefabrik 67, holeoffame 68) < rauze 70
+< terminaldigital 85 < kulturkalender 90 < cybersax 100.
+Davids Regel: **Venue-Seite > Rauze > Sammelkalender (terminal.digital, KK, cybersax).**
+Die Sammelkalender dienen der Vollständigkeit und dem Entdecken.
+terminal.digital (seit 2026-09-29, ICS-Feed, linker Kalender) liefert nur Demos,
+Konzerte, Küfa/Kneipe und Film/Theater (Davids Auswahl); offene Treffen, Beratung,
+Vorträge usw. bleiben draußen. Der Feed hat immer die nächsten 50 Termine (~3 Wochen).
 
 Gemessen am 15.09.2026, v2-DB, Anteil der Zeilen mit Feld:
 
@@ -103,8 +107,8 @@ Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
 (z. B. Flavours verfeinern).
-**Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de
-und nominatim (Stand 2026-09-27). Seiten dann im Browser (Claude in Chrome)
+**Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de,
+terminal.digital und nominatim (Stand 2026-09-29). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 
 ## Regeln (gelernt, bitte einhalten)

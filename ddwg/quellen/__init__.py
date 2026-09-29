@@ -34,6 +34,10 @@ QUELLEN = {
     "kulturkalender": {"name": "Kulturkalender", "rang": 90},
     "rauze": {"name": "Rauze", "rang": 70},
     "cybersax": {"name": "SAX Terminal", "rang": 100},
+    # Linker Sammelkalender (seit 2026-09-29), behandelt wie der Kulturkalender:
+    # hinter den Seiten der Orte und rauze. Nur Demos, Konzerte, Kuefa/Kneipe,
+    # Film/Theater, siehe terminaldigital.py.
+    "terminaldigital": {"name": "terminal.digital", "rang": 85},
     "azconni": {
         "name": "AZ Conni", "rang": 60, "ort": "az-conni",
         # Das Haus schreibt sich selbst "AZ Conni", rauze.de listet es genauso,
