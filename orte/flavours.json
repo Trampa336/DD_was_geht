@@ -8,7 +8,7 @@
   {"key": "jazz", "name": "Jazz, Blues & Swing"},
   {"key": "klassik", "name": "Klassik, Chor & Kirche"},
   {"key": "buehne", "name": "Theater, Kabarett & Bühne"},
-  {"key": "museum", "name": "Museen & Führungen"},
+  {"key": "museum", "name": "Ausstellungen & Museen"},
   {"key": "familie", "name": "Familie & Kinder"}
  ],
  "orte": {

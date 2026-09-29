@@ -68,7 +68,7 @@ main { flex: 1; }
 .tag-kopf { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--soft); }
 .tag-kopf em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--faint); }
 .tag.we .tag-kopf { color: var(--accent2); }
-.raster { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .gk { position: relative; display: block; border-radius: var(--r); overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 .gk.herz { border-color: color-mix(in srgb, var(--heart) 70%, transparent); }
 .medium { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface2); }
@@ -190,11 +190,54 @@ button.kt { background: var(--surface2); }
 .optionen { position: absolute; left: 8px; bottom: 8px; z-index: 550; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 110px); }
 .optionen:empty { display: none; }
 .optionen button { font-size: 11px; color: var(--soft); padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 78%, transparent); border: 1px solid var(--line); }
+
+/* ---------- Filter: Knopf unten, Zeile oben, Blatt ---------- */
+.reiter .filterknopf { flex: 0 0 50px; padding: 11px 0; position: relative; }
+.filterknopf[data-an="1"] { color: var(--accent); }
+.filterknopf i { position: absolute; top: 5px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 10px/16px var(--f); font-style: normal; text-align: center; }
+.filterknopf i[hidden] { display: none; }
+.aktiv-filter { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 4px 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); font-size: 12.5px; }
+.aktiv-filter[hidden] { display: none; }
+.af-text { flex: 1; min-width: 0; padding: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
+.af-text b { color: var(--accent); }
+.af-zu { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--surface2); }
+.fi-suche { width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 16px var(--f); }
+.fi-teil { margin-top: 18px; }
+.fi-teil h3 { margin: 0 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); }
+.seg button { padding: 8px 4px; border-radius: 8px; text-align: center; font-weight: 650; font-size: 13.5px; color: var(--soft); }
+.seg button em { display: block; font-style: normal; font-weight: 400; font-size: 11px; opacity: .75; }
+.seg button[aria-pressed=true] { background: var(--accent); color: var(--on-accent); }
+.fi-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fi-richtung { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 12px; border-radius: var(--r-s); background: var(--surface2); font-size: 13px; color: var(--soft); }
+.fi-richtung .knopf { padding: 7px 12px; font-size: 13px; }
+.fi-info { margin: 16px 0 0; font-size: 12px; line-height: 1.45; color: var(--faint); }
+.fi-fuss { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 16px -18px 0; padding: 12px 18px 4px; background: var(--surface); border-top: 1px solid var(--line); }
+.fi-fuss .knopf:disabled { opacity: .45; }
+.rt-gruppe { display: grid; gap: 6px; margin-bottom: 12px; }
+.rt-kopf { font-size: 13px; font-weight: 700; color: var(--ink); }
+.schalter { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: var(--r-s); background: var(--surface2); font-weight: 650; font-size: 14px; }
+.schalter small { display: block; font-weight: 400; font-size: 11.5px; color: var(--faint); }
+.schalter i { flex: none; position: relative; width: 40px; height: 24px; border-radius: 999px; background: var(--line); transition: background .15s; }
+.schalter i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--soft); transition: transform .15s, background .15s; }
+.schalter[aria-pressed=true] i { background: var(--accent); }
+.schalter[aria-pressed=true] i::after { transform: translateX(16px); background: var(--on-accent); }
+.schalter:disabled { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .schalter i, .schalter i::after { transition: none; } }
+/* Weniger Passendes: kompakte Zeilen unter den Kacheln */
+.rest-liste { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+.rz { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; width: 100%; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.rz .gk-zeit { padding-top: 1px; }
+.rz > span { min-width: 0; }
+.rz b { display: block; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rz i { display: block; font-style: normal; font-size: 11.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mehr-zeile { display: block; width: 100%; padding: 10px 2px; color: var(--accent); font-weight: 650; font-size: 13px; }
+.nichts { padding: 48px 10px; text-align: center; color: var(--soft); }
 </style>
 </head>
 <body>
 <div id="app" data-tab="was">
-  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p></header>
+  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p><div class="aktiv-filter" id="aktiv-filter" hidden></div></header>
   <div class="rail" id="rail" aria-hidden="true"></div>
   <main>
     <section id="tab-was"><div id="tage"></div></section>
@@ -213,6 +256,8 @@ button.kt { background: var(--surface2); }
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Was geht</span></button>
     <button role="tab" data-tab="karte" aria-selected="false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg><span>Entdecken</span></button>
+    <button class="filterknopf" data-filter aria-label="Filter und Suche">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><i hidden></i></button>
   </nav>
 </div>
 
@@ -249,16 +294,27 @@ const nachZeit = (a, b) => (a.d + (a.t || "99:99")).localeCompare(b.d + (b.t || 
 const kurzDatum = iso => { const d = parse(iso); return `${WT[d.getDay()]} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`; };
 const langDatum = iso => { const d = parse(iso); return `${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
 
-/* ---------- Herzen: gehören diesem Browser. Flavours beim ersten Start + eigene Änderungen ----------
-   M.fl = gewählte Flavours, M.an = selbst gesetzte Herzen, M.weg = selbst entfernte Flavour-Herzen.
-   Das Herz aus orte.json (o.oj) zählt hier nicht mehr, es steuert nur den Detailabruf beim Scrapen
-   und wird für "Übernehmen" gebraucht. */
+/* ---------- Herzen und Richtungen: gehören diesem Browser ----------
+   M.fl = gewählte Richtungen ("club", "musik", "sport" …), M.an = selbst gesetzte Herzen,
+   M.weg = selbst entfernte Herzen von Richtungs-Orten. Richtungen mit Flavour (Club, Rock,
+   Bühne …) bringen die Orte dieses Flavours als Herzen mit. Das Herz aus orte.json (o.oj)
+   zählt hier nicht, es wird nur für "Übernehmen" gebraucht. */
 const MEIN_KEY = "ddwg-meine";
-const FL = (D.flavours?.liste || []).filter(f => f.orte.length);
-const FL_STANDARD = FL.some(f => f.k === D.flavours?.standard) ? D.flavours.standard : FL[0]?.k;
+const RB = D.richtungen || [];                      // Bereiche (Musik, Kultur …) mit Richtungen
+const RT_NAME = {}, RT_TEILE = {}, FL_ORTE = {};
+(D.flavours?.liste || []).forEach(f => FL_ORTE[f.k] = f.orte);
+RB.forEach(b => {
+  RT_NAME[b.k] = b.n; RT_TEILE[b.k] = [b].concat(b.sub || []);
+  (b.sub || []).forEach(t => { RT_NAME[t.k] = t.n; RT_TEILE[t.k] = [t]; });
+});
+const RT_STANDARD = RT_NAME[D.flavours?.standard] ? D.flavours.standard : (RB[0]?.sub?.[0]?.k || null);
+const ALT_FLAVOUR = { museum: "kunst" };           // Flavour-Schlüssel, die anders heißen als ihre Richtung
 Object.values(D.orte).forEach(o => o.oj = !!o.h);
 function meineLaden() {
-  try { const x = JSON.parse(localStorage.getItem(MEIN_KEY)); if (x && typeof x === "object") return { start: !!x.start, fl: x.fl || [], an: x.an || [], weg: x.weg || [] }; } catch (e) {}
+  try {
+    const x = JSON.parse(localStorage.getItem(MEIN_KEY));
+    if (x && typeof x === "object") return { start: !!x.start, fl: (x.fl || []).map(k => ALT_FLAVOUR[k] || k).filter(k => RT_NAME[k]), an: x.an || [], weg: x.weg || [] };
+  } catch (e) {}
   const m = { start: false, fl: [], an: [], weg: [] };
   try {  // Übergang: Herzen der alten Seite (ddwg-herzen, relativ zu orte.json) werden eigene Herzen
     const alt = JSON.parse(localStorage.getItem("ddwg-herzen"));
@@ -266,87 +322,127 @@ function meineLaden() {
   } catch (e) {}
   return m;
 }
-let M = meineLaden();
 function meineSpeichern() { try { localStorage.setItem(MEIN_KEY, JSON.stringify(M)); } catch (e) {} }
-function flavourOrte(keys) { const s = new Set(); FL.filter(f => keys.includes(f.k)).forEach(f => f.orte.forEach(o => s.add(o))); return s; }
+let M = meineLaden();
+// Erster Start ohne Auswahlbildschirm: "Club & Party" gilt still. Ändern geht im Filter-Blatt.
+if (!M.start && RT_STANDARD) { M.fl = [RT_STANDARD]; M.start = true; meineSpeichern(); }
+function richtungsOrte(keys) {
+  const s = new Set();
+  keys.forEach(k => (RT_TEILE[k] || []).forEach(t => (FL_ORTE[t.fl] || []).forEach(o => s.add(o))));
+  return s;
+}
 function herzenAnwenden() {
-  const vonFl = flavourOrte(M.fl);
-  Object.entries(D.orte).forEach(([s, o]) => o.h = (vonFl.has(s) || M.an.includes(s)) && !M.weg.includes(s) ? 1 : 0);
+  const vonRt = richtungsOrte(M.fl);
+  Object.entries(D.orte).forEach(([s, o]) => o.h = (vonRt.has(s) || M.an.includes(s)) && !M.weg.includes(s) ? 1 : 0);
   const alle = Object.keys(D.orte);
   return { an: alle.filter(s => D.orte[s].h && !D.orte[s].oj), weg: alle.filter(s => !D.orte[s].h && D.orte[s].oj) };  // Abweichung zu orte.json
 }
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("an"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("an"), 2200); }
-function allesNeu() { herzenAnwenden(); renderTage(); if (S.tab === "karte") renderEntdecken(); }
+function allesNeu() { herzenAnwenden(); relevanzVorbereiten(); tageBauen(); renderTage(); filterZeile(); if (S.tab === "karte") renderEntdecken(); }
 function herzUmschalten(slug) {
   const o = D.orte[slug]; if (!o) return;
-  const neu = !o.h, vonFl = flavourOrte(M.fl).has(slug);
+  const neu = !o.h, vonRt = richtungsOrte(M.fl).has(slug);
   M.an = M.an.filter(s => s !== slug); M.weg = M.weg.filter(s => s !== slug);
-  if (neu && !vonFl) M.an.push(slug);
-  if (!neu && vonFl) M.weg.push(slug);
+  if (neu && !vonRt) M.an.push(slug);
+  if (!neu && vonRt) M.weg.push(slug);
   meineSpeichern();
   toast(neu ? `♥ ${o.n} ist jetzt dein Ort` : `Herz entfernt: ${o.n}`);
   allesNeu();
 }
-
-/* ---------- Flavours: beim ersten Start einmal zeigen, später nur klein im Reiter "Entdecken" ---------- */
-let flWahl = null, startBlatt = false;
-function flavourBlatt() {
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">${startBlatt ? "Willkommen" : "Flavours"}</div>
-    <h2>Was magst du?</h2>
-    <p class="sh-text">${startBlatt ? "Wähl eine oder mehrere Richtungen. Ihre Orte bekommen ein Herz und stehen dann vorne. Danach passt du deine Orte selbst an: Herz setzen oder entfernen." : "Neu gewählte Flavours bringen ihre Orte als Herzen mit. Abgewählte nehmen ihre Herzen wieder mit, selbst gesetzte Herzen bleiben."}</p>
-    <div class="flw-liste">${FL.map(f => `<button class="flw" data-flw="${esc(f.k)}" aria-pressed="${flWahl.has(f.k)}">
-      <span class="flw-kopf"><b>${esc(f.n)}</b><em>${f.orte.length} Orte</em></span>
-      <span class="flw-bsp">${esc(f.orte.slice(0, 3).map(s => D.orte[s]?.n).filter(Boolean).join(" · "))}</span></button>`).join("")}</div>
-    <div class="sh-links"><button class="knopf primaer" data-flok>${startBlatt ? "Los geht’s" : "Übernehmen"}</button>${startBlatt ? `<button class="knopf" data-flskip>Überspringen</button>` : ""}</div>
-    ${startBlatt ? `<p class="sh-q">Ohne Auswahl startest du mit „${esc(FL.find(f => f.k === FL_STANDARD)?.n || "")}“.</p>` : ""}</div>`);
-}
-function zeigeFlavours(erster) { flWahl = new Set(erster ? [] : M.fl); startBlatt = erster; flavourBlatt(); }
-function flavoursUebernehmen(keys) {
-  if (startBlatt && !keys.length && FL_STANDARD) keys = [FL_STANDARD];
-  const weg = FL.filter(f => M.fl.includes(f.k) && !keys.includes(f.k)).flatMap(f => f.orte);
+// Richtung an/aus: gemerkt, holt passende Termine nach vorne, Flavour-Orte bekommen Herzen
+function richtungUmschalten(k) {
+  const neu = M.fl.includes(k) ? M.fl.filter(x => x !== k) : M.fl.concat(k);
+  const bleibt = richtungsOrte(neu), weg = [...richtungsOrte(M.fl)].filter(s => !bleibt.has(s));
   M.weg = M.weg.filter(s => !weg.includes(s));
-  M.fl = keys; M.start = true;
-  meineSpeichern();
-  startBlatt = false; sheetZu();
-  const n = flavourOrte(keys).size;
-  toast(keys.length ? `♥ ${n} Orte aus ${keys.length === 1 ? FL.find(f => f.k === keys[0]).n : keys.length + " Flavours"}` : "Keine Flavours gewählt");
-  allesNeu();
+  M.fl = neu; meineSpeichern(); allesNeu();
 }
+// Name der Richtung(en) eines Termins, die feinste zuerst
+const rtName = e => {
+  const r = e.rt || [], fein = r.filter(k => !RB.some(b => b.k === k && b.sub));
+  return (fein.length ? fein : r).map(k => RT_NAME[k]).join(", ") || katName(e.k);
+};
 
 function zeigeUebernehmen() {
   const { an, weg } = herzenAnwenden();
   const befehl = [an.length ? `python -m ddwg herz ${an.join(" ")}` : "", weg.length ? `python -m ddwg herz --weg ${weg.join(" ")}` : "", "python -m ddwg build"].filter(Boolean).join(" && ");
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Herzen übernehmen</div>
     <h2>${an.length + weg.length} ${an.length + weg.length === 1 ? "Änderung" : "Änderungen"}</h2>
-    <p class="sh-text">Deine Herzen gelten nur in diesem Browser. Mit dem Befehl stehen sie auch in orte.json, dort steuern sie, für welche Orte der Scraper Beschreibungen nachlädt. Andere Nutzer sehen sie nicht.</p>
+    <p class="sh-text">Deine Herzen gelten nur in diesem Browser. Mit dem Befehl stehen sie auch in orte.json (Davids Liste im Repo). Auf der Seite ändert das nichts, andere Nutzer sehen deine Herzen nicht.</p>
     <ul class="aend">${an.map(s => `<li class="plus">♥ ${esc(D.orte[s].n)}</li>`).join("")}${weg.map(s => `<li class="minus">${esc(D.orte[s].n)}</li>`).join("")}</ul>
     <pre class="befehl" id="befehl">${esc(befehl)}</pre>
     <div class="sh-links"><button class="knopf primaer" data-kopieren>Befehl kopieren</button><button class="knopf" data-verwerfen>Alle Herzen zurücksetzen</button></div></div>`);
 }
 
-/* ---------- Tage: Zeitstrahl-Galerie (nur Tage mit Terminen, "laufend" ausgenommen) ---------- */
-/* Standardmäßig ausgeblendet: Führungen passen kaum zu Club, Konzert, Subkultur. Im Zeitstrahl
-   fehlen sie ganz, in Entdecken zählt "Alle" ohne sie, der eigene Chip zeigt sie. Die Seite
-   eines Ortes zeigt weiter alle Termine. */
-const AUSGEBLENDET = new Set(["fuehrungen"]);
-const sichtbar = e => !AUSGEBLENDET.has(e.k);
-const perTag = {}, perTagAlle = {};
-D.events.forEach((e, i) => { e.i = i; if (!e.l && sichtbar(e)) (perTag[e.d] ||= []).push(e); (perTagAlle[e.d] ||= []).push(e); });
-const TAGE = Object.keys(perTag).sort();
+/* ---------- Filter: gilt in beiden Reitern und wird in diesem Browser gemerkt ---------- */
+const FILTER_KEY = "ddwg-filter";
+const FILTER_LEER = () => ({ q: "", orte: "alle", nur: false });
+function filterLaden() {
+  try {
+    const x = JSON.parse(localStorage.getItem(FILTER_KEY));
+    if (x && typeof x === "object") return { q: String(x.q || ""), orte: ["alle", "meine", "neu"].includes(x.orte) ? x.orte : "alle", nur: !!x.nur };
+  } catch (e) {}
+  return FILTER_LEER();
+}
+let F = filterLaden(), SUCHE = [];
+function filterSpeichern() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(F)); } catch (e) {} }
+const klein = s => String(s || "").toLocaleLowerCase("de");
+D.events.forEach((e, i) => { e.i = i; e.s = klein([e.ti, ort(e).n, e.or, e.b].join(" ")); });
+function sucheLesen() { SUCHE = klein(F.q).split(/\s+/).filter(Boolean); }
+sucheLesen();
+const nurAn = () => F.nur && MEINE_RT.size > 0;
+const filterTeile = () => (SUCHE.length ? 1 : 0) + (F.orte !== "alle" ? 1 : 0) + (nurAn() ? 1 : 0);
+// ohne = Teil des Filters, der beim Zählen für die Knöpfe im Blatt nicht mitzählt
+function passt(e, ohne) {
+  if (ohne !== "q" && SUCHE.length && !SUCHE.every(w => e.s.includes(w))) return false;
+  if (ohne !== "orte" && F.orte !== "alle" && !!ort(e).h !== (F.orte === "meine")) return false;
+  if (ohne !== "rt" && nurAn() && !(e.rt || []).some(k => MEINE_RT.has(k))) return false;
+  return true;
+}
+
+/* ---------- Relevanz: Wichtiges steht oben, weniger Passendes rutscht nach unten ----------
+   Deine Orte zuerst, dann deine Richtungen. Danach zählt, ob es Bild und Beschreibung gibt,
+   ob mehrere Kalender den Termin nennen und ob er abends ist. Was in keine Richtung passt
+   und Umland rutschen etwas nach unten. */
+let MEINE_RT = new Set();
+function relevanz(e) {
+  let p = 0;
+  if (ort(e).h) p += 100;
+  if ((e.rt || []).some(k => MEINE_RT.has(k))) p += 40;
+  if (e.img) p += 10;
+  if (e.b) p += 5;
+  if ((e.q || []).length > 1) p += 8;
+  if ((e.t || "") >= "18") p += 5;
+  if (!(e.rt || []).length) p -= 10;
+  if (e.r === "umland") p -= 10;
+  return p;
+}
+function relevanzVorbereiten() {
+  MEINE_RT = new Set(M.fl);
+  D.events.forEach(e => e.rel = relevanz(e));
+}
+
+/* ---------- Tage: Zeitstrahl-Galerie (nur Tage mit passenden Terminen, "laufend" ausgenommen) ---------- */
+let perTag = {}, TAGE = [];
+const perTagAlle = {};
+D.events.forEach(e => (perTagAlle[e.d] ||= []).push(e));
+function tageBauen() {
+  perTag = {};
+  D.events.forEach(e => { if (!e.l && passt(e)) (perTag[e.d] ||= []).push(e); });
+  TAGE = Object.keys(perTag).sort();
+}
 const HEUTE = D.heute;
 const LETZTER_ALLE = Object.keys(perTagAlle).sort().at(-1) || HEUTE;
 const TAGE_ALLE = []; for (let t = HEUTE; t <= LETZTER_ALLE; t = plus(t, 1)) TAGE_ALLE.push(t);
 const relTag = iso => iso === HEUTE ? "Heute" : iso === plus(HEUTE, 1) ? "Morgen" : WTL[parse(iso).getDay()];
+herzenAnwenden(); relevanzVorbereiten(); tageBauen();
 const offen = new Set();
-const ZEIGE = 9;
+const KACHELN = 8, ZEILEN = 3;
+const nachUhr = (a, b) => (a.t || "99").localeCompare(b.t || "99");
+// Die passendsten Termine eines Tages werden Kacheln, der Rest kompakte Zeilen darunter
 function auswahl(iso) {
-  const alle = perTag[iso].slice().sort((a, b) => (a.t || "99").localeCompare(b.t || "99"));
-  if (offen.has(iso)) return { liste: alle, rest: 0 };
-  const wichtig = alle.filter(e => ort(e).h || e.img);
-  const liste = wichtig.filter(e => ort(e).h).concat(wichtig.filter(e => !ort(e).h)).slice(0, ZEIGE)
-    .sort((a, b) => (a.t || "99").localeCompare(b.t || "99"));
-  return { liste, rest: alle.length - liste.length };
+  const alle = perTag[iso].slice().sort((a, b) => b.rel - a.rel || nachUhr(a, b));
+  return { kacheln: alle.slice(0, KACHELN), rest: alle.slice(KACHELN).sort(nachUhr) };
 }
 function medium(e) {
   const text = ort(e).n || e.or || e.ti, p = hash(e.o || e.ti) % 4;
@@ -354,27 +450,38 @@ function medium(e) {
   return `<div class="medium poster p${p}">${esc(text)}</div>`;
 }
 window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };
+const kachel = e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b">${HERZ}Dein Ort</span>` : ""}
+  <span class="gk-txt"><span class="gk-zeit">${esc(e.t || "")}</span><span class="gk-titel">${esc(e.ti)}</span><span class="gk-ort ${ort(e).h ? "h" : ""}">${esc(ort(e).n || e.or || "")}</span></span></button>`;
+const zeile = e => `<button class="rz" data-ev="${e.i}"><span class="gk-zeit">${esc(e.t || "–")}</span><span><b>${esc(e.ti)}</b><i>${esc(ortName(e))} · ${esc(rtName(e))}</i></span></button>`;
 
 function renderTage() {
+  if (!TAGE.length) {
+    $("#tage").innerHTML = `<div class="nichts">Keine Termine für diesen Filter.<br><br><button class="knopf" data-freset>Filter zurücksetzen</button></div>`;
+    railBauen(); messen(); return;
+  }
   $("#tage").innerHTML = TAGE.map((iso, k) => {
-    const d = parse(iso), { liste, rest } = auswahl(iso), n = perTag[iso].length;
-    const name = k === 0 ? "Heute" : k === 1 ? "Morgen" : WTL[d.getDay()];
+    const d = parse(iso), { kacheln, rest } = auswahl(iso), n = perTag[iso].length;
+    const zeilen = offen.has(iso) ? rest : rest.slice(0, ZEILEN);
     return `<section class="tag ${istWE(iso) ? "we" : ""}" data-k="${k}">
-      <h2 class="tag-kopf">${name}, ${d.getDate()}. ${MON[d.getMonth()]}<em>${n} Termine${istWE(iso) ? " · Wochenende" : ""}</em></h2>
-      <div class="raster">${liste.map(e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b">${HERZ}Dein Ort</span>` : ""}
-        <span class="gk-txt"><span class="gk-zeit">${esc(e.t || "")}</span><span class="gk-titel">${esc(e.ti)}</span><span class="gk-ort ${ort(e).h ? "h" : ""}">${esc(ort(e).n || e.or || "")}</span></span></button>`).join("")}
-        ${rest ? `<button class="mehr" data-mehr="${iso}"><b>+${rest}</b>weitere an diesem Tag</button>` : ""}</div></section>`;
+      <h2 class="tag-kopf">${relTag(iso)}, ${d.getDate()}. ${MON[d.getMonth()]}<em>${n} ${n === 1 ? "Termin" : "Termine"}${istWE(iso) ? " · Wochenende" : ""}</em></h2>
+      <div class="raster">${kacheln.map(kachel).join("")}${rest.length ? `<div class="rest-liste">${zeilen.map(zeile).join("")}${rest.length > zeilen.length ? `<button class="mehr-zeile" data-mehr="${iso}">+${rest.length - zeilen.length} weitere an diesem Tag</button>` : ""}</div>` : ""}</div></section>`;
   }).join("");
-  messen();
+  railBauen(); messen();
 }
 
 /* ---------- Zeitstrahl-Leiste: Datum gleitet mit, je 2 Tage an den Rändern ---------- */
 const rail = $("#rail");
-const kurz = k => { const d = parse(TAGE[k]); return `<button class="rd ${istWE(TAGE[k]) ? "we" : ""}" data-k="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}"><small>${k === 0 ? "Heute" : WT[d.getDay()]}</small><b>${d.getDate()}</b></button>`; };
-rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso);
-  return `<div class="tl-datum ${istWE(iso) ? "we" : ""}" data-k="${k}"><span><small>${k === 0 ? "Heute" : WT[d.getDay()]}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("")
-  + `<div class="rand oben" id="rand-oben"></div><div class="rand unten" id="rand-unten"></div>`;
-const labels = [...rail.querySelectorAll(".tl-datum")];
+const kurzName = k => TAGE[k] === HEUTE ? "Heute" : WT[parse(TAGE[k]).getDay()];
+const kurz = k => { const d = parse(TAGE[k]); return `<button class="rd ${istWE(TAGE[k]) ? "we" : ""}" data-k="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}"><small>${kurzName(k)}</small><b>${d.getDate()}</b></button>`; };
+let labels = [];
+function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden Terminen
+  rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso);
+    return `<div class="tl-datum ${istWE(iso) ? "we" : ""}" data-k="${k}"><span><small>${kurzName(k)}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("")
+    + `<div class="rand oben" id="rand-oben"></div><div class="rand unten" id="rand-unten"></div>`;
+  labels = [...rail.querySelectorAll(".tl-datum")];
+  labels.forEach(el => el.style.transition = "transform .12s linear, opacity .2s");
+  aktiv = -1;
+}
 let tops = [], schritt = 74, mitte = 0;
 function messen() {
   tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
@@ -391,6 +498,7 @@ function position() {
 }
 let aktiv = -1;
 function zeichnen() {
+  if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
   const rest = f - k0, schub = rest > 0.82 ? (rest - 0.82) / 0.18 : 0, lage = k0 + schub;
   labels.forEach((el, k) => {
@@ -409,12 +517,12 @@ function zeichnen() {
 let geplant = false;
 addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); } }, { passive: true });
 addEventListener("resize", messen);
-labels.forEach(el => el.style.transition = "transform .12s linear, opacity .2s");
 
 /* ---------- Leiste als Schieber: Wischen springt Tag für Tag ---------- */
 let ziel = 0, zielZeit = 0;
 const klemm = k => Math.max(0, Math.min(TAGE.length - 1, k));
 function springe(k, weich) {
+  if (!TAGE.length) return;
   k = klemm(k); if (k === ziel && Date.now() - zielZeit < 600) return;
   ziel = k; zielZeit = Date.now();
   scrollTo({ top: Math.max(0, tops[k] - mitte + 4), behavior: weich ? "smooth" : "instant" });
@@ -449,6 +557,7 @@ rail.addEventListener("wheel", e => {
 /* ---------- Kalender: je Monat ein Raster Mo–So, Tage ohne Termine grau ---------- */
 const MONL = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 function zeigeKalender() {
+  if (!TAGE.length) return;
   const index = Object.fromEntries(TAGE.map((iso, k) => [iso, k])), bloecke = [];
   for (let t = TAGE[0]; t <= TAGE.at(-1); t = plus(t, 1)) {
     const d = parse(t), k = index[t];
@@ -471,7 +580,7 @@ function zeigeEvent(i) {
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
     <h2>${esc(e.ti)}</h2>
     <button class="sh-ort" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
-    <div class="chips"><span class="chip">${esc(katName(e.k))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
+    <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
     ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
     <div class="sh-links">${e.url ? `<a class="knopf primaer" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle</a>` : ""}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}</div>
     <div class="sh-q">Quellen: ${esc(q)}</div></div>`);
@@ -487,7 +596,7 @@ function zeigeOrt(slug) {
     <h2>${esc(o.n)}</h2>${o.a ? `<div class="sh-text">${esc(o.a)}</div>` : ""}
     <div class="sh-links">${herzKnopf(slug)}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}${o.lat ? `<button class="knopf" data-aufkarte="${esc(slug)}">Auf der Karte</button>` : ""}</div>
     <h3 class="abschnitt">Nächste Termine<em>${evs.length} in ${TAGE_ALLE.length} Tagen</em></h3>
-    <div class="sh-liste">${evs.slice(0, 40).map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${esc(katName(e.k))}${e.p ? " · " + esc(e.p) : ""}</span></span></button>`).join("")}</div></div>`);
+    <div class="sh-liste">${evs.slice(0, 40).map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${esc(rtName(e))}${e.p ? " · " + esc(e.p) : ""}</span></span></button>`).join("")}</div></div>`);
 }
 
 /* ---------- Entdecken: Karte, Filter, Cluster ---------- */
@@ -498,26 +607,21 @@ function entBereich() {
   if (S.ez === "we") { const sa = naechsterSamstag(), fr = plus(sa, -1) >= HEUTE ? plus(sa, -1) : HEUTE; return [fr, plus(sa, 1)]; }
   return [TAGE_ALLE[0] || HEUTE, TAGE_ALLE.at(-1) || HEUTE];
 }
-const S = { tab: "was", ez: "we", eneu: false, ekat: "alle" };
+const S = { tab: "was", ez: "we" };
 let karte = null, markerLayer = null, herzLayer = null, gewaehlt = null, ENT = { orteL: [], proOrt: {} };
 function renderEntdecken() {
   const [von, bis] = entBereich();
-  const evs = D.events.filter(e => e.d >= von && e.d <= bis && !e.l && e.o && D.orte[e.o]);
-  const katEvs = evs.filter(e => S.ekat === "alle" ? sichtbar(e) : e.k === S.ekat), proOrt = {};
-  katEvs.forEach(e => (proOrt[e.o] ||= []).push(e));
+  const evs = D.events.filter(e => e.d >= von && e.d <= bis && !e.l && e.o && D.orte[e.o] && passt(e)), proOrt = {};
+  evs.forEach(e => (proOrt[e.o] ||= []).push(e));
   Object.values(proOrt).forEach(l => l.sort(nachZeit));
-  const orteL = Object.keys(proOrt).filter(s => !(S.eneu && D.orte[s].h)).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
+  const orteL = Object.keys(proOrt).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
   ENT = { orteL, proOrt };
   const mitGeo = orteL.filter(x => x.o.lat);
   const { an, weg } = herzenAnwenden(), offen2 = an.length + weg.length;
   const Z = [["heute", "Heute"], ["morgen", "Morgen"], ["we", "Wochenende"], ["alle", `${TAGE_ALLE.length} Tage`]];
-  const zahl = {}; evs.forEach(e => zahl[e.k] = (zahl[e.k] || 0) + 1);
-  $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}
-      <span class="trenner"></span><button class="fc herzfc" data-eneu aria-pressed="${S.eneu}">${HERZ} ausblenden</button></div>
-    <div class="zeile"><button class="fc" data-ekat="alle" aria-pressed="${S.ekat === "alle"}">Alle<em>${evs.filter(sichtbar).length}</em></button>${Object.keys(D.kategorien).filter(k => zahl[k]).map(k => `<button class="fc" data-ekat="${k}" aria-pressed="${S.ekat === k}">${esc(katName(k))}<em>${zahl[k]}</em></button>`).join("")}</div>`;
-  $("#legende").textContent = `${orteL.length} Orte mit Terminen, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
-  $("#ent-optionen").innerHTML = (FL.length ? `<button data-flavours>Flavours ändern</button>` : "")
-    + (offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "");
+  $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}</div>`;
+  $("#legende").textContent = `${evs.length} Termine an ${orteL.length} Orten, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
+  $("#ent-optionen").innerHTML = offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "";
   karteZeichnen(mitGeo);
   if (gewaehlt) zeigeOrtKarte(gewaehlt, false);
 }
@@ -579,6 +683,55 @@ function karteZeichnen(mitGeo) {
   setTimeout(() => karte.invalidateSize(), 50);
 }
 
+/* ---------- Filter-Blatt, Filter-Zeile oben, Zahl am Knopf ---------- */
+const X_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+let fiT;
+function filterBlatt() {
+  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Filter</div><h2>Was suchst du?</h2>
+    <input class="fi-suche" id="fi-suche" type="search" placeholder="Titel, Ort oder Stichwort" enterkeyhint="search" autocomplete="off" aria-label="Suche">
+    <div id="fi-rest"></div></div>`);
+  const inp = $("#fi-suche");
+  inp.value = F.q;
+  inp.addEventListener("input", () => { F.q = inp.value; clearTimeout(fiT); fiT = setTimeout(() => { sucheLesen(); filterGeaendert(); }, 200); });
+  inp.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); } });
+  fiRest();
+}
+function fiRest() {
+  const host = $("#fi-rest"); if (!host || $("#sheet").hidden) return;
+  const nOrte = { alle: 0, meine: 0, neu: 0 }, nRt = {}; let treffer = 0;
+  D.events.forEach(e => {
+    if (e.l) return;
+    if (passt(e, "orte")) { nOrte.alle++; nOrte[ort(e).h ? "meine" : "neu"]++; }
+    if (passt(e, "rt")) (e.rt || []).forEach(k => nRt[k] = (nRt[k] || 0) + 1);
+    if (passt(e)) treffer++;
+  });
+  const chip = t => `<button class="fc" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${esc(t.n)}<em>${nRt[t.k] || 0}</em></button>`;
+  const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="fi-chips">${liste.map(chip).join("")}</div></div>`;
+  host.innerHTML = `<div class="fi-teil"><h3>Orte</h3><div class="seg">${[["alle", "Alle"], ["meine", "♥ Meine"], ["neu", "Neue"]].map(([k, l]) => `<button data-forte="${k}" aria-pressed="${F.orte === k}">${l}<em>${nOrte[k]}</em></button>`).join("")}</div></div>
+    <div class="fi-teil"><h3>Deine Richtungen</h3>
+      ${RB.filter(b => b.sub).map(b => gruppe(b.n, [{ k: b.k, n: "Alles" }].concat(b.sub))).join("")}
+      ${gruppe("Weitere", RB.filter(b => !b.sub))}
+      <button class="schalter" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen zeigen<small>Sonst kommen sie nur nach vorne</small></span><i></i></button></div>
+    <p class="fi-info">Sortiert wird immer: deine Orte zuerst, dann deine Richtungen, dann Termine mit Bild und Beschreibung, in mehreren Kalendern genannt, abends. Was in keine Richtung passt und Umland rutschen nach unten. Richtungen mit festen Orten (Club, Rock, Bühne …) geben diesen Orten ein Herz. Alles bleibt in diesem Browser gespeichert.</p>
+    <div class="fi-fuss"><button class="knopf primaer" data-fzu>${treffer} ${treffer === 1 ? "Termin" : "Termine"} zeigen</button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`;
+}
+function filterZeile() {
+  const teile = [];
+  if (SUCHE.length) teile.push(`„${esc(F.q.trim())}“`);
+  if (F.orte !== "alle") teile.push(F.orte === "meine" ? "♥ Meine Orte" : "Neue Orte");
+  if (nurAn()) teile.push("Nur meine Richtungen");
+  const z = $("#aktiv-filter"), n = teile.length ? D.events.filter(e => !e.l && passt(e)).length : 0;
+  z.hidden = !teile.length;
+  z.innerHTML = teile.length ? `<button class="af-text" data-filter>${teile.join(" · ")} · <b>${n} ${n === 1 ? "Termin" : "Termine"}</b></button><button class="af-zu" data-freset aria-label="Filter zurücksetzen">${X_ICON}</button>` : "";
+  const k = $(".filterknopf"), i = k.querySelector("i");
+  k.dataset.an = teile.length ? "1" : "0"; i.hidden = !teile.length; i.textContent = teile.length;
+}
+function filterGeaendert() {
+  filterSpeichern(); tageBauen(); renderTage(); filterZeile();
+  if (S.tab === "karte") renderEntdecken(); else scrollTo({ top: 0 });
+  fiRest();
+}
+
 /* ---------- Reiter wechseln ---------- */
 function setTab(t) {
   S.tab = t;
@@ -596,11 +749,13 @@ document.addEventListener("click", e => {
   const ds = el.dataset;
   if (el.classList.contains("rd")) return springe(+ds.k, true);
   if (ds.kal !== undefined) { sheetZu(); return springe(+ds.kal, false); }
-  if ("zu" in ds) return startBlatt ? flavoursUebernehmen([]) : sheetZu();
-  if (ds.flw) { flWahl.has(ds.flw) ? flWahl.delete(ds.flw) : flWahl.add(ds.flw); el.setAttribute("aria-pressed", flWahl.has(ds.flw)); return; }
-  if ("flok" in ds) return flavoursUebernehmen(FL.filter(f => flWahl.has(f.k)).map(f => f.k));
-  if ("flskip" in ds) return flavoursUebernehmen([]);
-  if ("flavours" in ds) return zeigeFlavours(false);
+  if ("zu" in ds) return sheetZu();
+  if ("filter" in ds) return filterBlatt();
+  if (ds.forte) { F.orte = ds.forte; return filterGeaendert(); }
+  if (ds.rt) { richtungUmschalten(ds.rt); if (nurAn()) scrollTo({ top: 0 }); return fiRest(); }
+  if ("fnur" in ds) { F.nur = !F.nur; return filterGeaendert(); }
+  if ("fzu" in ds) return sheetZu();
+  if ("freset" in ds) { F = FILTER_LEER(); sucheLesen(); const inp = $("#fi-suche"); if (inp) inp.value = ""; return filterGeaendert(); }
   if (ds.tab) return setTab(ds.tab);
   if (ds.mehr) { offen.add(ds.mehr); renderTage(); return; }
   if (ds.ev) return zeigeEvent(+ds.ev);
@@ -609,19 +764,17 @@ document.addEventListener("click", e => {
   if ("okzu" in ds) return ortKarteZu();
   if ("uebernehmen" in ds) return zeigeUebernehmen();
   if ("kopieren" in ds) { const t = $("#befehl").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Befehl kopiert")).catch(() => prompt("Zum Kopieren:", t)); return; }
-  if ("verwerfen" in ds) { M = { start: false, fl: [], an: [], weg: [] }; meineSpeichern(); sheetZu(); allesNeu(); return zeigeFlavours(true); }
+  if ("verwerfen" in ds) { M = { start: true, fl: RT_STANDARD ? [RT_STANDARD] : [], an: [], weg: [] }; meineSpeichern(); sheetZu(); allesNeu(); return toast("Herzen zurückgesetzt"); }
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
-  if ("eneu" in ds) { S.eneu = !S.eneu; return renderEntdecken(); }
-  if (ds.ekat) { S.ekat = ds.ekat; return renderEntdecken(); }
   if (ds.aufkarte) { const o = D.orte[ds.aufkarte]; sheetZu(); setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(ds.aufkarte); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") startBlatt ? flavoursUebernehmen([]) : sheetZu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") sheetZu(); });
 
 /* ---------- Start ---------- */
 herzenAnwenden();
-if (!M.start && FL.length) zeigeFlavours(true);
 $("#stand").textContent = `Stand ${D.stand.replace(/\.\d{4},/, ".,")} · ${D.events.length} Termine`;
 renderTage();
+filterZeile();
 </script>
 <script>
 // Service Worker nur online (https/http) registrieren, nicht beim lokalen file://-Oeffnen.

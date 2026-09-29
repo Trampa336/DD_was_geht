@@ -32,7 +32,7 @@ python -m pytest tests           # Kerntests ohne Netz
 - `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 750 Orte
   mit Aliasen, Region, Art, Herz, Homepage, Cover, Adresse und Koordinaten.
   Unbekannte Schreibweisen legt der Scrape als neuen Ort mit `erstmals` an.
-- `orte/flavours.json`: 8 Flavours (voreingestellte Herz-Sets für den ersten Start) und die
+- `orte/flavours.json`: 8 Flavours (liefern die Orte der Richtungen, siehe „Oberfläche“) und die
   Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
   Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.
 - `cache/events.db` (SQLite, gitignored): `listings` (je Quelle roh, pro Lauf ersetzt) →
@@ -55,7 +55,8 @@ python -m pytest tests           # Kerntests ohne Netz
    einmal, höchstens 2.500 pro Lauf, Abbruch nach 20 Fehlschlägen in Folge. Ergebnisse
    liegen in der Tabelle `details`; Netzfehler werden nicht gemerkt, sondern beim
    nächsten Lauf erneut versucht.
-6. `ausgabe.py` füllt `ddwg/vorlage/index.html` mit JSON → `ausgabe/index.html`.
+6. `ausgabe.py` füllt `ddwg/vorlage/index.html` mit JSON → `ausgabe/index.html`. Dabei bekommt
+   jeder Termin seine Richtungen (`rt`, aus `ddwg/richtungen.py`).
 
 ## Website (GitHub Pages)
 Seit 2026-09-26 laeuft `.github/workflows/publish.yml` taeglich (und manuell ueber
@@ -112,7 +113,8 @@ Termine, KK 1. Resident Advisor ist raus, dort gab es nichts Eigenes.
 
 ## Herzen
 Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören dem Browser:**
-Flavours beim ersten Start (ohne Wahl: Club) plus eigene Änderungen am Herz-Knopf.
+Die gewählten Richtungen bringen die Orte ihres Flavours als Herzen mit (ohne Wahl: Club,
+seit 2026-09-29 ohne Auswahlbildschirm), dazu eigene Änderungen am Herz-Knopf.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr);
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
 Davids Herz-Orte sind zehn, seit 2026-09-27 alle mit eigener Quelle: Sektor,
@@ -120,7 +122,7 @@ Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS)
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
-(z. B. Flavours verfeinern).
+(z. B. Flavours verfeinern: Hole of Fame und C. Rockefeller Center stehen unter „museum“).
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de,
 terminal.digital, dresden.de, omasgegenrechts-dresden.de und nominatim (Stand 2026-09-29). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
@@ -133,6 +135,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Rohkategorie der Quelle → Titel-Stichwort (`normalize.py`) → Art des Ortes, nur wenn
   der Ort genau eine Kategorie hat → `sonstiges`. Nichts wird zwangsweise einsortiert.
   Demos sind ausdrücklich erwünscht und haben die Kategorie `demo` („Demos“).
+  Die Kategorie ist grob; genauer sind die Richtungen (siehe „Oberfläche“).
 - **Scraper höflich:** `base.REQUEST_DELAY_SECONDS` (1,2 s) zwischen Requests,
   Detailabrufe gedeckelt.
 - **Nach Änderungen an einem Scraper `status` prüfen.** Ein Lauf mit 0 Events, wo es
@@ -144,15 +147,32 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Signatur nicht ändern.
 - Code, Kommentare und UI sind auf Deutsch.
 
+## Oberfläche (seit 2026-09-29: Richtungen, Filter, Sortierung)
+- Zeitstrahl-Galerie (Reiter „Was geht“) und Entdecken-Karte mit Leaflet + markercluster
+  von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
+  wird beim Bauen eingebettet. Entwürfe liegen unter `docs/ui-entwuerfe/` (gitignored).
+- **Grundprinzip (Davids Entscheidung): sortieren statt verstecken.** Je Tag werden die
+  8 passendsten Termine Kacheln, der Rest kompakte Zeilen darunter. Relevanz
+  (`relevanz()` in der Vorlage): Herz-Ort +100, eigene Richtung +40, Bild +10,
+  Beschreibung +5, mehrere Quellen +8, ab 18 Uhr +5, keine Richtung −10, Umland −10.
+- **Richtungen** verschmelzen Flavours und Kategorien (`ddwg/richtungen.py`, Tests in
+  `tests/test_richtungen.py`): Musik (Club, Rock, Indie, Jazz, Klassik), Kultur (Bühne,
+  Film, Lesung, Ausstellungen), Demos, Familie, Feste & Märkte, Sport. Ein Termin trifft
+  über den Flavour seines Ortes, ein Titel-Stichwort (auf dem Slug, mit Wortgrenzen und
+  Liste falscher Freunde) oder die Kategorie. Ort und Stichwort zählen nur, wenn die
+  Kategorie passt oder `sonstiges` ist. Sport = Mitmachen, ohne Senioren-, Familien-
+  und Zuschauersport (auch am Ortsnamen erkannt). Neue Stichworte immer mit Test.
+- **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
+  (Alle / Meine / Neue), Deine Richtungen (Tippen merkt und holt nach vorne) und
+  „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
+  (`ddwg-filter`), Herzen und Richtungen unter `ddwg-meine`. Oben zeigt eine Zeile den
+  aktiven Filter mit ✕. Die Karte hat oben nur noch die Zeit-Knöpfe.
+
 ## Offene Ideen
-- Neue Oberfläche steht: Zeitstrahl-Galerie (Reiter „Was geht“) und Entdecken-Karte
-  mit Leaflet + markercluster von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre
-  Heros aus `ddwg/vorlage/schrift/` wird beim Bauen eingebettet. Herzen und Flavours
-  siehe Abschnitt „Herzen“. Entwürfe liegen unter `docs/ui-entwuerfe/`.
 - Führungen kommen seit 2026-09-29 gar nicht mehr auf die Seite (Davids Entscheidung):
   `build()` verwirft die Kategorie `fuehrungen` (`VERWORFENE_KATEGORIEN` in
   `pipeline.py`), also Stadt-, Museums-, Schiffs- und Familienführungen. Erkannt werden
-  sie weiter in `normalize.py`. `AUSGEBLENDET` in der Vorlage ist damit ohne Wirkung.
+  sie weiter in `normalize.py`.
   Seit sie schon beim Einlesen rausfallen, entstehen keine Treffpunkt-Orte mehr.
 - Werkzeuge für orte.json (füllen nur leere Felder): `werkzeuge/enrich_venues.py`
   (Homepage, Cover, Kurzbeschreibung über die Kulturkalender-Ortsseite) und

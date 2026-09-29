@@ -15,7 +15,7 @@ import os
 import shutil
 from datetime import date, datetime, timedelta
 
-from . import db, quellen
+from . import db, quellen, richtungen
 from .orte import Orte
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,6 +72,8 @@ def daten(conn, orte, heute=None, tage=None):
     heute = heute or date.today()
     ende = (heute + timedelta(days=tage)).isoformat() if tage else None
     events = db.events(conn, heute.isoformat(), ende)
+    flavours = flavours_laden(orte)
+    flavour_von_ort = {slug: f["k"] for f in (flavours or {}).get("liste", []) for slug in f["orte"]}
     used = set()
     out = []
     for ev in events:
@@ -81,6 +83,9 @@ def daten(conn, orte, heute=None, tage=None):
             "url": ev["url"], "img": ev["image_url"],
             "b": _kurz(ev["description"]), "p": ev["price_text"],
             "q": ev["sources"].split(","), "r": ev["region"],
+            "rt": richtungen.fuer(ev["title"], ev["category"], ev["ort"],
+                                  (orte.get(ev["ort"]) or {}).get("name") if ev["ort"] else ev["ort_roh"],
+                                  flavour_von_ort),
         }
         if ev["laufend"]:
             item["l"] = 1
@@ -88,7 +93,6 @@ def daten(conn, orte, heute=None, tage=None):
         if ev["ort"]:
             used.add(ev["ort"])
 
-    flavours = flavours_laden(orte)
     flavour_orte = {slug for f in (flavours or {}).get("liste", []) for slug in f["orte"]}
 
     orte_out = {}
@@ -111,6 +115,7 @@ def daten(conn, orte, heute=None, tage=None):
         "orte": orte_out,
         "kategorien": KATEGORIEN,
         "flavours": flavours,
+        "richtungen": richtungen.fuer_ausgabe(),
         "quellen": {slug: quellen.name(slug) for slug in quellen.slugs()},
     }
 
