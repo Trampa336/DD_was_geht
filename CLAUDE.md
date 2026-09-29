@@ -124,10 +124,15 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Führungen sind standardmäßig ausgeblendet (`AUSGEBLENDET` in der Vorlage): nicht im
   Zeitstrahl, in Entdecken nicht unter „Alle“, nur über den eigenen Chip. Die Seite eines
   Ortes zeigt weiter alle Termine.
-- Kartenansicht: 431 Orte haben schon `lat`/`lon`. `werkzeuge/fetch_venue_locations.py`
-  ergänzt weitere, hängt aber noch an der v2-DB und muss auf orte.json umgestellt werden.
-- `werkzeuge/enrich_venues.py` (Homepage und Cover über die Kulturkalender-Ortsseite)
-  muss ebenfalls auf orte.json umgestellt werden.
+- Werkzeuge für orte.json (füllen nur leere Felder): `werkzeuge/enrich_venues.py`
+  (Homepage, Cover, Kurzbeschreibung über die Kulturkalender-Ortsseite) und
+  `werkzeuge/fetch_venue_locations.py` (Adresse, Koordinaten über KK und nominatim).
+  Ohne `--apply` nur Bericht. Weil Cowork beide Seiten sperrt, laufen sie über den
+  Workflow „Orte ergänzen“ (`.github/workflows/orte-ergaenzen.yml`, nur von Hand):
+  ohne Häkchen nur Bericht im Log, mit Häkchen „anwenden“ ein Pull Request mit der
+  geänderten orte.json. Damit der Workflow Pull Requests anlegen darf, muss einmalig
+  in den Repo-Einstellungen unter Actions → General „Allow GitHub Actions to create
+  and approve pull requests“ an sein.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
   (bis 150 min Toleranz bei gleichem Ort und Titel). Festival-Sammeleinträge von
   cybersax können einzelne Programmpunkte an sich ziehen.

@@ -1,0 +1,69 @@
+name: Orte ergänzen
+
+# Startet die beiden Werkzeuge aus werkzeuge/ mit freiem Netz (in Cowork sind
+# kulturkalender-dresden.de und nominatim gesperrt). Nur von Hand ueber
+# "Run workflow".
+#   - ohne Haekchen "anwenden": nur Bericht im Log, nichts wird geschrieben
+#   - mit Haekchen: orte/orte.json wird ergaenzt und als Pull Request
+#     vorgeschlagen. Erst nach dem Zusammenfuehren (Merge) ist es in main.
+# Beide Werkzeuge fuellen nur leere Felder, Kuratiertes bleibt unangetastet.
+on:
+  workflow_dispatch:
+    inputs:
+      anwenden:
+        description: "orte.json ergänzen und als Pull Request vorschlagen"
+        type: boolean
+        default: false
+      limit:
+        description: "Höchstens so viele Orte je Werkzeug (0 = alle)"
+        type: string
+        default: "120"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  orte-ergaenzen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhaengigkeiten installieren
+        run: pip install -r requirements.txt
+
+      # Die Werkzeuge brauchen cache/events.db: welche Orte gerade Termine
+      # haben und an welchen Tagen. Neu entdeckte Orte, die der Scrape in
+      # orte.json anlegt, werden danach verworfen, damit der Pull Request nur
+      # die Ergaenzungen der Werkzeuge enthaelt.
+      - name: Scrapen (fuer die Event-Datenbank)
+        run: |
+          python -m ddwg scrape --ohne-details
+          git checkout -- orte/orte.json
+
+      - name: Homepage, Cover, Beschreibung (enrich_venues)
+        run: python werkzeuge/enrich_venues.py --limit=${{ inputs.limit }} ${{ inputs.anwenden && '--apply' || '' }}
+
+      - name: Adresse und Koordinaten (fetch_venue_locations)
+        run: python werkzeuge/fetch_venue_locations.py --limit=${{ inputs.limit }} ${{ inputs.anwenden && '--apply' || '' }}
+
+      - name: Aenderungen an orte.json
+        run: git diff --stat -- orte/orte.json
+
+      - name: Pull Request vorschlagen
+        if: ${{ inputs.anwenden }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: orte/orte.json
+          branch: orte-ergaenzen
+          delete-branch: true
+          commit-message: "Orte ergänzt: Homepage, Cover, Adresse, Koordinaten (Werkzeuge)"
+          title: "Orte ergänzt (Werkzeuge)"
+          body: |
+            Automatisch von „Orte ergänzen“ (Limit ${{ inputs.limit }}).
+            Nur leere Felder wurden gefüllt. Bericht der Werkzeuge im Log des Laufs:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
