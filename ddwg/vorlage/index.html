@@ -506,6 +506,7 @@ function ortKarteZu() { gewaehlt = null; $("#ort-karte").hidden = true; document
 function ladeSkript(src) { return new Promise((ok, fehler) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fehler; document.head.append(s); }); }
 function ladeCss(href) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = href; document.head.append(l); }
 const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+ladeCss(CDN + "leaflet/1.9.4/leaflet.min.css");  // Grund-CSS: ohne es liegen Kacheln und Marker wild verstreut
 const kartenLib = ladeSkript(CDN + "leaflet/1.9.4/leaflet.min.js")
   .then(() => { ladeCss(CDN + "leaflet.markercluster/1.5.3/MarkerCluster.css"); return ladeSkript(CDN + "leaflet.markercluster/1.5.3/leaflet.markercluster.js").catch(() => null); })
   .then(() => { if (S.tab === "karte") renderEntdecken(); })
