@@ -24,7 +24,7 @@ VORLAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vorlage
 PWA_DIR = os.path.join(os.path.dirname(VORLAGE_PATH), "pwa")
 # Manifest, Service Worker und Icons fuer die installierbare/offline-faehige
 # Variante (wirkt nur online ueber https, siehe ddwg/vorlage/index.html).
-PWA_DATEIEN = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-180.png"]
+PWA_DATEIEN = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-180.png", "favicon-64.png"]
 FLAVOURS_PATH = os.path.join(ROOT, "orte", "flavours.json")
 
 KATEGORIEN = {
