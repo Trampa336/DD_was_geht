@@ -12,6 +12,9 @@ Der Projektordner liegt auf dem Proxmox-Server und ist eingebunden. Symlinks fun
 dort nicht, deshalb liegt die Python-Umgebung mit `--copies` unter `venv/`. Keine `.venv`
 anlegen: Die alte ist an einem kaputten Symlink gescheitert und ließ sich nur direkt auf
 dem Server löschen.
+In Cowork das Löschen im Projektordner freigeben lassen, bevor gebaut oder committet
+wird: Sonst bleiben `cache/events.db-journal` und `.git/*.lock` liegen, und der nächste
+`build` scheitert mit „disk I/O error“.
 ```
 python3 -m venv --copies venv    # einmalig, danach venv/bin/python statt python
 venv/bin/pip install -r requirements.txt
@@ -63,6 +66,10 @@ noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
 Der Workflow behaelt `cache/events.db` per `actions/cache` von Lauf zu Lauf, damit
 die nachgeladenen Beschreibungen (`details`) erhalten bleiben. Fehlt der Cache
 (z. B. nach 7 Tagen ohne Lauf), laedt der erste Lauf alle Detailseiten neu (~45 min).
+Claude startet Läufe selbst (seit 2026-09-29): Der git-Token in
+`.git/dd-was-geht-credentials` hat „Actions: Read and write“. Starten per
+`git credential fill` + `POST /repos/Trampa336/DD_was_geht/actions/workflows/publish.yml/dispatches`
+(Body `{"ref":"main"}`), Status über `…/publish.yml/runs`. Token nie ausgeben.
 
 `ddwg/vorlage/pwa/` enthaelt Manifest, Service Worker (`sw.js`) und Icons.
 `ausgabe.py` kopiert sie beim Bauen neben `index.html`. Lokal per Doppelklick
