@@ -58,6 +58,12 @@ main { flex: 1; }
 .tl-datum b { font-size: 14px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
 .tl-datum i { display: none; font-style: normal; font-size: 9.5px; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
 .tl-datum.we small, .tl-datum.we b { color: var(--accent2); }
+/* Scrollen: Position folgt direkt (kein Nachlauf); Wischen auf der Leiste springt tageweise, dort kurz weich */
+.tl-datum { transition: opacity .2s; }
+.rail.greift .tl-datum { transition: transform .16s ease-out, opacity .2s; }
+/* Größenwechsel beim Einrasten weich statt sprunghaft */
+.tl-datum span { transition: padding .22s ease, background-color .22s ease, box-shadow .22s ease; }
+.tl-datum small, .tl-datum b { transition: font-size .22s ease, color .22s ease; }
 .tl-datum.aktiv span { padding: 4px 0; min-width: 42px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 6px 20px rgba(0,0,0,.45); }
 .tl-datum.aktiv small { font-size: 10px; color: var(--soft); }
 .tl-datum.aktiv b { font-size: 21px; color: var(--ink); }
@@ -485,7 +491,6 @@ function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden 
   rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso), mw = k > 0 && parse(TAGE[k - 1]).getMonth() !== d.getMonth();
     return `<div class="tl-datum${istWE(iso) ? " we" : ""}${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${kurzName(k)}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("");
   labels = [...rail.querySelectorAll(".tl-datum")];
-  labels.forEach(el => el.style.transition = "transform .12s linear, opacity .2s");
   aktiv = -1;
 }
 let tops = [], mitte = 0;
@@ -505,7 +510,7 @@ let aktiv = -1;
 function zeichnen() {
   if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
-  const rest = f - k0, schub = rest > 0.82 ? (rest - 0.82) / 0.18 : 0, lage = k0 + schub;
+  const rest = f - k0, t = Math.max(0, (rest - 0.6) / 0.4), schub = t * t * (3 - 2 * t), lage = k0 + schub;
   const unten = innerHeight - mitte;
   labels.forEach((el, k) => {
     const d = k - lage, a = Math.abs(d), y = Math.sign(d) * (Math.min(a, 1) * NAH + Math.max(0, a - 1) * FERN);
@@ -525,12 +530,13 @@ addEventListener("resize", messen);
 /* ---------- Leiste als Schieber: Wischen springt Tag für Tag, die Skala folgt dem Finger ---------- */
 let ziel = 0, zielZeit = 0;
 const klemm = k => Math.max(0, Math.min(TAGE.length - 1, k));
+let summZeit = 0;  // letzte Vibration: kurz und höchstens alle 90 ms
 function springe(k, weich) {
   if (!TAGE.length) return;
   k = klemm(k); if (k === ziel && Date.now() - zielZeit < 600) return;
   ziel = k; zielZeit = Date.now();
   scrollTo({ top: Math.max(0, tops[k] - mitte + 4), behavior: weich ? "smooth" : "instant" });
-  if (navigator.vibrate) try { navigator.vibrate(4); } catch (e) {}
+  if (navigator.vibrate && Date.now() - summZeit > 90) try { navigator.vibrate(2); summZeit = Date.now(); } catch (e) {}
 }
 let griff = null;
 rail.addEventListener("pointerdown", e => {

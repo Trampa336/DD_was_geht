@@ -167,6 +167,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   hinter der Reiter-Leiste blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
   Monatswechsel als feine Linie mit Monatskürzel. Tipp auf ein kleines Datum springt hin, Tipp
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
+  Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
+  40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.
 - **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
   (Alle / Meine / Neue), Deine Richtungen (Tippen merkt und holt nach vorne) und
   „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
