@@ -35,14 +35,30 @@ main { flex: 1; }
 .kopf p { margin: 4px 0 0; font-size: 12px; color: var(--faint); }
 
 /* ---------- Reiter unten ---------- */
-.reiter { order: 99; position: sticky; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 30; display: flex; gap: 4px; margin: 14px 12px 10px; padding: 5px; border-radius: calc(var(--r) + 4px); background: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-.reiter button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 8px; border-radius: var(--r-s); color: var(--soft); font-weight: 650; font-size: 14px; }
-.reiter button[aria-selected=true] { background: var(--accent); color: var(--on-accent); }
+.reiter { order: 99; position: sticky; bottom: 0; z-index: 30; display: flex; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); background: color-mix(in srgb, var(--bg) 96%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+.reiter button { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 8px 7px; color: var(--faint); font-weight: 650; font-size: 11px; letter-spacing: .02em; transition: color .2s; }
+.reiter button::before { content: ""; position: absolute; top: -1px; left: 50%; width: 28px; height: 2px; margin-left: -14px; border-radius: 0 0 2px 2px; background: var(--accent); opacity: 0; transition: opacity .2s; }
+.reiter button[aria-selected=true] { color: var(--ink); }
+.reiter button[aria-selected=true]::before { opacity: 1; }
+.reiter button[aria-selected=true] svg { color: var(--accent); }
+
+/* ---------- Leiste oben: Suchleiste + Filter, nur über der Terminspalte ----------
+   Beim Runterscrollen gleitet sie weg, beim Hochscrollen kommt sie zurück (obenPruefen). */
+.oben { position: sticky; top: 0; z-index: 20; margin-left: var(--rail); padding: 8px 12px 16px 8px; isolation: isolate; transition: transform .38s cubic-bezier(.22,.8,.26,1), opacity .3s ease, margin .15s; will-change: transform; }
+/* Hintergrund erst, wenn die Leiste oben klebt; ganz oben bleibt der Schimmer frei */
+.oben::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, var(--bg) 0, var(--bg) calc(100% - 16px), transparent); opacity: 0; transition: opacity .25s ease; pointer-events: none; }
+.oben.klebt::before { opacity: 1; }
+.oben.weg { transform: translateY(calc(-100% - 2px)); opacity: 0; pointer-events: none; }
+#app[data-tab="karte"] .oben { margin-left: 0; padding-left: 12px; }
+.oben-zeile { display: flex; gap: 8px; }
+.suchleiste { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--faint); font-size: 14.5px; }
+.suchleiste span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: reduce) { .oben { transition: opacity .2s; } .oben.weg { transform: none; } }
 
 /* ---------- Zeitstrahl links (nur im Reiter "Was geht") ---------- */
 .rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none;
-  /* Skala blendet oben und hinter der Reiter-Leiste unten weich aus */
-  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 150px - env(safe-area-inset-bottom)), transparent calc(100% - 86px - env(safe-area-inset-bottom)));
+  /* Skala blendet oben und über der Reiter-Leiste unten weich aus */
+  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 110px - env(safe-area-inset-bottom)), transparent calc(100% - 58px - env(safe-area-inset-bottom)));
   -webkit-mask-image: var(--maske); mask-image: var(--maske); }
 #app[data-tab="karte"] .rail { display: none; }
 .rail.greift .tl-datum.aktiv span { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(0,0,0,.45); }
@@ -215,13 +231,11 @@ button.kt { background: var(--surface2); }
 .optionen button { font-size: 11px; color: var(--soft); padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 78%, transparent); border: 1px solid var(--line); }
 
 /* ---------- Filter: Knopf unten, Zeile oben, Blatt ---------- */
-/* Sehr schmale Handys (320 px): Reiter ohne Symbol, sonst bricht „Was geht“ um */
-@media (max-width: 360px) { .reiter button[data-tab] svg { display: none; } .reiter button { white-space: nowrap; } }
-.reiter .suchknopf, .reiter .filterknopf { flex: 0 0 50px; padding: 11px 0; position: relative; }
+.oben .filterknopf { flex: 0 0 40px; height: 40px; display: grid; place-items: center; position: relative; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); color: var(--soft); }
 .filterknopf[data-an="1"] { color: var(--accent); }
-.filterknopf i { position: absolute; top: 5px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 10px/16px var(--f); font-style: normal; text-align: center; }
+.filterknopf i { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 10px/16px var(--f); font-style: normal; text-align: center; }
 .filterknopf i[hidden] { display: none; }
-.aktiv-filter { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 4px 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); font-size: 12.5px; }
+.aktiv-filter { display: flex; align-items: center; gap: 6px; margin-top: 7px; padding: 4px 4px 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); font-size: 12.5px; }
 .aktiv-filter[hidden] { display: none; }
 .af-text { flex: 1; min-width: 0; padding: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
 .af-text b { color: var(--accent); }
@@ -269,7 +283,15 @@ button.kt { background: var(--surface2); }
 </head>
 <body>
 <div id="app" data-tab="was">
-  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p><div class="aktiv-filter" id="aktiv-filter" hidden></div></header>
+  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p></header>
+  <div class="oben" id="oben">
+    <div class="oben-zeile">
+      <button class="suchleiste" data-suche aria-label="Suche"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span>Suchen …</span></button>
+      <button class="filterknopf" data-filter aria-label="Filter">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><i hidden></i></button>
+    </div>
+    <div class="aktiv-filter" id="aktiv-filter" hidden></div>
+  </div>
   <div class="rail" id="rail" aria-hidden="true"></div>
   <main>
     <section id="tab-was"><div id="tage"></div></section>
@@ -286,13 +308,9 @@ button.kt { background: var(--surface2); }
   </main>
   <nav class="reiter" role="tablist">
     <button role="tab" data-tab="was" aria-selected="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Was geht</span></button>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Feed</span></button>
     <button role="tab" data-tab="karte" aria-selected="false">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg><span>Entdecken</span></button>
-    <button class="suchknopf" data-suche aria-label="Suche">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg></button>
-    <button class="filterknopf" data-filter aria-label="Filter">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></svg><i hidden></i></button>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg><span>Karte</span></button>
   </nav>
 </div>
 
@@ -594,7 +612,7 @@ function messen() {
   zeichnen();
 }
 function position() {
-  const y = scrollY + LESE;
+  const y = scrollY + LESE + obenH();
   if (y <= tops[0]) return 0;
   for (let k = 0; k < TAGE.length; k++) if (y < tops[k + 1]) return k + (y - tops[k]) / (tops[k + 1] - tops[k]);
   return TAGE.length - 1;
@@ -617,7 +635,31 @@ function zeichnen() {
   }
 }
 let geplant = false;
-addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); } }, { passive: true });
+addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; obenPruefen(); zeichnen(); }); } }, { passive: true });
+
+/* ---------- Leiste oben: beim Runterscrollen weg, beim Hochscrollen zurück ----------
+   Erst nach OBEN_SCHWELLE px in eine Richtung, damit sie nicht zappelt. Ganz oben und im Reiter
+   Karte immer sichtbar. Sprünge über Zeitleiste und Kalender (obenRuhe) zählen nicht. */
+const oben = $("#oben"), kopf = $(".kopf"), OBEN_SCHWELLE = 28;  // kopf: die klebende Leiste kennt ihre Ruhelage nicht
+let obenWeg = false, obenLetzt = scrollY, obenSumme = 0, obenAuto = 0;
+const obenH = () => obenWeg || S.tab !== "was" ? 0 : oben.offsetHeight;
+function obenRuhe(ms) { obenAuto = Math.max(obenAuto, Date.now() + ms); }
+function obenSetzen(weg) {
+  if (weg === obenWeg) return;
+  obenWeg = weg; oben.classList.toggle("weg", weg); obenSumme = 0;
+}
+function obenPruefen() {
+  const y = scrollY, d = y - obenLetzt, max = document.documentElement.scrollHeight - innerHeight;
+  obenLetzt = y;
+  oben.classList.toggle("klebt", y > kopf.offsetHeight - 2);
+  if (S.tab !== "was" || y <= kopf.offsetHeight + 4) { obenSumme = 0; return obenSetzen(false); }
+  if (griff || Date.now() < obenAuto || y < 0 || y > max) { obenSumme = 0; return; }  // Zeitleiste, Sprung, Gummiband
+  if (!d) return;
+  if (Math.sign(d) !== Math.sign(obenSumme)) obenSumme = 0;
+  obenSumme += d;
+  if (obenSumme > OBEN_SCHWELLE) obenSetzen(true);
+  else if (obenSumme < -OBEN_SCHWELLE) obenSetzen(false);
+}
 addEventListener("resize", messen);
 
 /* ---------- Leiste als Schieber: Wischen springt Tag für Tag, die Skala folgt dem Finger ---------- */
@@ -628,7 +670,8 @@ function springe(k, weich) {
   if (!TAGE.length) return;
   k = klemm(k); if (k === ziel && Date.now() - zielZeit < 600) return;
   ziel = k; zielZeit = Date.now();
-  scrollTo({ top: Math.max(0, tops[k]), behavior: weich ? "smooth" : "instant" });
+  obenRuhe(weich ? 900 : 300);  // Sprünge blenden die Leiste oben weder ein noch aus
+  scrollTo({ top: Math.max(0, tops[k] - obenH()), behavior: weich ? "smooth" : "instant" });
   if (navigator.vibrate && Date.now() - summZeit > 90) try { navigator.vibrate(2); summZeit = Date.now(); } catch (e) {}
 }
 let griff = null;
@@ -934,6 +977,7 @@ function setTabIntern(t) {
   $("#tab-was").hidden = t !== "was"; $("#tab-karte").hidden = t !== "karte";
   if (t === "karte") renderEntdecken();
   else messen();  // Zeitstrahl neu vermessen: Layout kann sich verändert haben
+  obenRuhe(300); obenSetzen(false);
   scrollTo({ top: 0 });
 }
 

@@ -194,8 +194,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Code, Kommentare und UI sind auf Deutsch.
 
 ## Oberfläche (seit 2026-09-29: Richtungen, Filter, Sortierung)
-- Zeitstrahl-Galerie (Reiter „Was geht“) und Entdecken-Karte mit Leaflet + markercluster
-  von cdnjs (Reiter „Entdecken“). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
+- Zeitstrahl-Galerie (Reiter „Feed“) und Entdecken-Karte mit Leaflet + markercluster
+  von cdnjs (Reiter „Karte“; im Code weiter `was` und `karte`). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
   wird beim Bauen eingebettet. Entwürfe liegen unter `docs/ui-entwuerfe/` (gitignored).
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
@@ -230,13 +230,21 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
-- **Suchknopf** (Lupe unten, seit 2026-09-30, Davids Wahl): öffnet ein eigenes Blatt, nur
+- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ liegen fest und
+  dezent am unteren Rand (kein Schweben). Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
+  Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der
+  Terminspalte, nicht über der Zeitleiste. Beim Runterscrollen gleitet sie weg, beim Hochscrollen
+  kommt sie zurück (`obenPruefen`, erst nach `OBEN_SCHWELLE` = 28 px in eine Richtung). Ganz oben
+  und im Reiter Karte ist sie immer da, Hintergrund bekommt sie erst, wenn sie klebt. Sprünge über
+  Zeitleiste und Kalender blenden sie nicht ein oder aus (`obenRuhe`); ist sie sichtbar, landet
+  der Tag unter ihr, und die Lesekante der Zeitleiste rückt um ihre Höhe nach unten (`obenH`).
+- **Suche** (seit 2026-09-30, Davids Wahl): Tipp auf die Suchleiste oben öffnet ein eigenes Blatt, nur
   Suchfeld (Tastatur sofort offen) und eine Trefferliste ab heute (Datum, Zeit, Titel, Ort,
   höchstens 100). Sucht in allen Terminen, **unabhängig vom Filter**; jedes Wort muss in
   Titel, Ort oder Beschreibung stehen, laufende Termine erscheinen einmal. Der Begriff gilt
   nur, solange die Seite offen ist (`SU` in der Vorlage). Termin → Zurück zeigt die Liste
   an derselben Stelle.
-- **Filter-Knopf** unten rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld): Orte
+- **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld): Orte
   (Alle / Meine / Neue, darunter „♥ Orte auswählen“), Tageszeit, Deine Richtungen (Tippen merkt
   und holt nach vorne) und „Nur meine Richtungen“. **Tageszeit** (seit 2026-09-30): Chips
   „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
