@@ -37,11 +37,19 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
 
 ## Grundprinzip
 **Alles Kuratierte liegt in Dateien (git), die Events liegen in einer Wegwerf-DB.**
-- `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 750 Orte
+- `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 775 Orte
   mit Aliasen, Region, Art, Herz, Homepage, Cover, Adresse und Koordinaten.
   Unbekannte Schreibweisen legt der Scrape als neuen Ort mit `erstmals` an.
   Feld `raus` (Grund als Text): alle Termine dieses Orts werden aussortiert
-  (Haus der Brücke, TimeRide, Erlwein Forum, Dampfschifffahrt, Dampfzug, Wackerbarth).
+  (Haus der Brücke, TimeRide, Erlwein Forum, Dampfschifffahrt, Dampfzug, Wackerbarth, Kadampa,
+  AnuKan, riesa efau). Seit 2026-09-30 auch unklare Ortsnamen, die nur cybersax liefert
+  („Theater“, „Kulturhaus“, „Schloss“, „Börse“ usw.): Davids Regel „Quelle nicht eindeutig,
+  lieber verwerfen“. Neue solche Namen zeigt `python -m ddwg status` unter den neuen Orten.
+  **Doppelte Orte** (dieselbe Bühne unter zwei Schreibweisen) legt `Orte.zusammenlegen(ziel, …)`
+  zusammen: Die Schreibweisen werden Aliase, leere Felder wandern zum Ziel. Wichtig, weil
+  `dedup` Termine nur am selben Ort zusammenlegt; sonst stehen sie doppelt im Zeitstrahl.
+  Verschiedene Bühnen im selben Haus (Kulturpalast, Kraftwerk Mitte) bleiben getrennt.
+  Ein Eintrag in flavours.json muss dabei zum Ziel-Slug wandern (am 30.09. 25 Orte zusammengelegt).
 - `orte/flavours.json`: 8 Flavours (liefern die Orte der Richtungen, siehe „Oberfläche“) und die
   Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
   Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.
@@ -139,9 +147,9 @@ Davids Herz-Orte sind zehn, seit 2026-09-27 alle mit eigener Quelle: Sektor,
 Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS),
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
-**Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
-(Flavours verfeinern mit der kürzeren Liste: Hole of Fame und C. Rockefeller Center stehen
-unter „museum“; danach doppelte Orte zusammenlegen, z. B. tante-ju / tante-ju-liveclub).
+**Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
+Flavour-Check (80 Orte mit Terminen) und doppelte Orte sind seit 2026-09-30 erledigt.
+Hole of Fame und C. Rockefeller Center bleiben „museum“ (Kunstateliers, Davids Entscheidung).
 Seit 2026-09-30 haben alle Herz-Orte einen Flavour (Straße E und Sektor club, Der Lude
 indie = Bar). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de,
@@ -179,7 +187,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   (`relevanz()` in der Vorlage): Herz-Ort +100, eigene Richtung +40, Bild +10,
   Beschreibung +5, mehrere Quellen +8, ab 18 Uhr +5, keine Richtung −10, Umland −10.
 - **Richtungen** verschmelzen Flavours und Kategorien (`ddwg/richtungen.py`, Tests in
-  `tests/test_richtungen.py`): Musik (Club, Rock, Indie, Jazz, Klassik), Kultur (Bühne,
+  `tests/test_richtungen.py`): Musik (Club, Rock & Metal, Punk/Indie & Bars, Jazz, Klassik;
+  Punk zählt seit 2026-09-30 zu Indie, Davids Entscheidung), Kultur (Bühne,
   Film, Lesung, Ausstellungen), Demos, Feste & Märkte, Sport. Familie wird noch berechnet
   (zum Aussortieren), steht aber nicht mehr im Filter. Jazz schlägt Klassik
   („Quartett“ im Blue Note). Ein Termin trifft

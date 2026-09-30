@@ -105,17 +105,12 @@
   "lon": 13.7296566,
   "geo_quelle": "nominatim"
  },
- "alte-feuerwache-loschwitz": {
-  "name": "Alte Feuerwache Loschwitz",
-  "aliase": [
-   "Alte Feuerwache Loschwitz"
-  ],
-  "region": "dresden"
- },
  "alte-feuerwache-loschwitz-puppentheater": {
   "name": "Alte Feuerwache Loschwitz Puppentheater",
   "aliase": [
-   "Alte Feuerwache Loschwitz Puppentheater"
+   "Alte Feuerwache Loschwitz Puppentheater",
+   "Alte Feuerwache Loschwitz",
+   "Puppentheater Alte Feuerwache"
   ],
   "region": "dresden",
   "homepage": "https://www.puppentheater-vollmann.de/spielplan.html",
@@ -965,7 +960,8 @@
  "blaue-fabrik": {
   "name": "Blaue Fabrik Dresden (parablau)",
   "aliase": [
-   "Blaue Fabrik Dresden (parablau)"
+   "Blaue Fabrik Dresden (parablau)",
+   "Blaue Fabrik im Alten Leipziger Bahnhof"
   ],
   "region": "dresden",
   "homepage": "http://www.blauefabrik.de/",
@@ -975,13 +971,6 @@
   "lat": 51.0656512,
   "lon": 13.7378115,
   "geo_quelle": "nominatim"
- },
- "blaue-fabrik-im-alten-leipziger-bahnhof": {
-  "name": "Blaue Fabrik im Alten Leipziger Bahnhof",
-  "aliase": [
-   "Blaue Fabrik im Alten Leipziger Bahnhof"
-  ],
-  "region": "dresden"
  },
  "blauer-salon": {
   "name": "Blauer Salon",
@@ -1023,7 +1012,8 @@
   "aliase": [
    "Börse"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "boerse-coswig": {
   "name": "Börse Coswig",
@@ -1200,7 +1190,8 @@
   "aliase": [
    "Burgtheater"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "c-bechstein-centrum": {
   "name": "C. Bechstein Centrum Dresden GmbH",
@@ -1410,20 +1401,6 @@
   "lon": 13.6767035,
   "geo_quelle": "nominatim"
  },
- "club-puschkin": {
-  "name": "Club Puschkin",
-  "aliase": [
-   "Club Puschkin"
-  ],
-  "region": "dresden",
-  "homepage": "http://www.clubpuschkin.de/veranstaltungen/",
-  "cover": "https://i.ytimg.com/vi/BMrDjkKUjqY/maxresdefault.jpg",
-  "beschreibung": "Das aktuelle Programm vom Club Puschkin, Dresden. Konzerte, Partys, Open Air uvm. Clubprogramm auf 2 Floors (Mainfloor + Redfloor) + Open Air im Sommer",
-  "adresse": "Leipziger Straße 12, 01097 Dresden",
-  "lat": 51.0698242,
-  "lon": 13.7319367,
-  "geo_quelle": "nominatim"
- },
  "club-traumtaenzer": {
   "name": "Club Traumtänzer",
   "aliase": [
@@ -1519,7 +1496,8 @@
  "deutsches-hygiene-museum": {
   "name": "Deutsches Hygiene-Museum Dresden",
   "aliase": [
-   "Deutsches Hygiene-Museum Dresden"
+   "Deutsches Hygiene-Museum Dresden",
+   "Hygiene-Museum"
   ],
   "region": "dresden",
   "art": "museum",
@@ -1645,29 +1623,18 @@
   ],
   "region": "dresden"
  },
- "dreikoenigskirche": {
-  "name": "Dreikönigskirche",
+ "dreikoenigskirche-haus-der-kirche": {
+  "name": "Dreikönigskirche Dresden - Haus der Kirche",
   "aliase": [
+   "Dreikönigskirche Dresden - Haus der Kirche",
    "Dreikönigskirche"
   ],
   "region": "dresden",
   "art": "kirche",
-  "homepage": "https://www.hdk-dkk.de/",
-  "adresse": "Hauptstraße 23 01097 Dresden",
-  "telefon": "8 12 41 01",
-  "lat": 51.060883,
-  "lon": 13.7433605,
-  "geo_quelle": "nominatim"
- },
- "dreikoenigskirche-haus-der-kirche": {
-  "name": "Dreikönigskirche Dresden - Haus der Kirche",
-  "aliase": [
-   "Dreikönigskirche Dresden - Haus der Kirche"
-  ],
-  "region": "dresden",
   "homepage": "https://www.hdk-dkk.de/veranstaltungen/",
   "cover": "https://www.kulturkalender-dresden.de/storage/11710/responsive-images/sb___thumb_2383_1361.jpg",
   "adresse": "Hauptstr. 23, 01097 Dresden",
+  "telefon": "8 12 41 01",
   "lat": 51.060883,
   "lon": 13.7433605,
   "geo_quelle": "nominatim"
@@ -1682,7 +1649,8 @@
  "dresdner-whisky-manufaktur-h42": {
   "name": "Dresdner Whisky Manufaktur H42",
   "aliase": [
-   "Dresdner Whisky Manufaktur H42"
+   "Dresdner Whisky Manufaktur H42",
+   "H42 – Dresdner Whisky Manufaktur"
   ],
   "region": "dresden",
   "cover": "https://www.kulturkalender-dresden.de/storage/49414/responsive-images/dresdner_whisky_manufaktur_01_c_burkhard_schade-2cae696a___thumb_1000_571.jpg",
@@ -2188,13 +2156,6 @@
   "lat": 50.9618471,
   "lon": 13.9344842,
   "geo_quelle": "nominatim"
- },
- "filmtheater-schauburg": {
-  "name": "Filmtheater Schauburg",
-  "aliase": [
-   "Filmtheater Schauburg"
-  ],
-  "region": "dresden"
  },
  "flughafen": {
   "name": "Flughafen Dresden",
@@ -2861,13 +2822,6 @@
   "lon": 13.7680933,
   "geo_quelle": "nominatim"
  },
- "h42-dresdner-whisky-manufaktur": {
-  "name": "H42 – Dresdner Whisky Manufaktur",
-  "aliase": [
-   "H42 – Dresdner Whisky Manufaktur"
-  ],
-  "region": "dresden"
- },
  "haltestelle-merianplatz-gorbitz": {
   "name": "Haltestelle Merianplatz - Dresden Gorbitz",
   "aliase": [
@@ -3119,17 +3073,11 @@
   "lon": 13.7272847,
   "geo_quelle": "nominatim"
  },
- "hellerau": {
-  "name": "Hellerau",
-  "aliase": [
-   "Hellerau"
-  ],
-  "region": "dresden"
- },
  "hellerau-europaeisches-zentrum-der-kuenste": {
   "name": "HELLERAU - Europäisches Zentrum der Künste",
   "aliase": [
-   "HELLERAU - Europäisches Zentrum der Künste"
+   "HELLERAU - Europäisches Zentrum der Künste",
+   "Hellerau"
   ],
   "region": "dresden",
   "homepage": "https://www.hellerau.org/programm/spielplan",
@@ -3369,7 +3317,8 @@
  "hoftheater": {
   "name": "Hoftheater Dresden (Hoppes Hoftheater)",
   "aliase": [
-   "Hoftheater Dresden (Hoppes Hoftheater)"
+   "Hoftheater Dresden (Hoppes Hoftheater)",
+   "Hoppes Hoftheater"
   ],
   "region": "dresden",
   "art": "theater",
@@ -3401,14 +3350,6 @@
   "lon": 13.7481965,
   "geo_quelle": "nominatim"
  },
- "hoppes-hoftheater": {
-  "name": "Hoppes Hoftheater",
-  "aliase": [
-   "Hoppes Hoftheater"
-  ],
-  "region": "dresden",
-  "art": "theater"
- },
  "hospitalkirche": {
   "name": "Hospitalkirche",
   "aliase": [
@@ -3437,13 +3378,6 @@
    "Hutbergbühne Kamenz"
   ],
   "region": "weiter"
- },
- "hygiene-museum": {
-  "name": "Hygiene-Museum",
-  "aliase": [
-   "Hygiene-Museum"
-  ],
-  "region": "dresden"
  },
  "immergruen-tanz-und-familiengaststaette": {
   "name": "Immergrün - Tanz- und Familiengaststätte",
@@ -4177,17 +4111,11 @@
   ],
   "region": "dresden"
  },
- "kleines-welttheater": {
-  "name": "Kleines Welttheater",
-  "aliase": [
-   "Kleines Welttheater"
-  ],
-  "region": "dresden"
- },
  "kleines-welttheater-im-sonnenhof": {
   "name": "Kleines Welttheater im Sonnenhof",
   "aliase": [
-   "Kleines Welttheater im Sonnenhof"
+   "Kleines Welttheater im Sonnenhof",
+   "Kleines Welttheater"
   ],
   "region": "umland",
   "homepage": "http://www.kleines-welttheater.de",
@@ -4334,22 +4262,16 @@
   "lon": 13.7630112,
   "geo_quelle": "nominatim"
  },
- "kreative-werkstatt": {
-  "name": "Kreative Werkstatt Dresden e.V.",
+ "kreative-werkstatt-im-galvanohof": {
+  "name": "Kreative Werkstatt im Galvanohof",
   "aliase": [
+   "Kreative Werkstatt im Galvanohof",
    "Kreative Werkstatt Dresden e.V."
   ],
   "region": "dresden",
   "homepage": "http://www.kreative-werkstatt.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/11535/responsive-images/Kreative-Werkstatt-%28Bild-von-denen%29___thumb_1500_858.jpg",
   "adresse": "Bürgerstraße 50 - Galvanohof, 01127 Dresden"
- },
- "kreative-werkstatt-im-galvanohof": {
-  "name": "Kreative Werkstatt im Galvanohof",
-  "aliase": [
-   "Kreative Werkstatt im Galvanohof"
-  ],
-  "region": "dresden"
  },
  "kreativraum-malspiel": {
   "name": "Kreativraum Malspiel Dresden",
@@ -4417,17 +4339,11 @@
   "lon": 13.8391936,
   "geo_quelle": "nominatim"
  },
- "kuegelgenhaus": {
-  "name": "Kügelgenhaus",
-  "aliase": [
-   "Kügelgenhaus"
-  ],
-  "region": "dresden"
- },
  "kuegelgenhaus-museum-der-dresdner-romantik": {
   "name": "Kügelgenhaus - Museum der Dresdner Romantik (Museum Dresden)",
   "aliase": [
-   "Kügelgenhaus - Museum der Dresdner Romantik (Museum Dresden)"
+   "Kügelgenhaus - Museum der Dresdner Romantik (Museum Dresden)",
+   "Kügelgenhaus"
   ],
   "region": "dresden",
   "homepage": "https://kuegelgen-dresden.de/",
@@ -4504,7 +4420,8 @@
   "aliase": [
    "KulturFabrik"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "kulturfabrik-hoyerswerda": {
   "name": "Kulturfabrik Hoyerswerda e.V.",
@@ -4536,7 +4453,8 @@
   "aliase": [
    "Kulturhaus"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "kulturhaus-freital": {
   "name": "Kulturhaus Freital",
@@ -4645,7 +4563,8 @@
   "aliase": [
    "Kulturschloss"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "kulturschlosserei": {
   "name": "KulturSchlosserei Dresden",
@@ -4746,7 +4665,8 @@
  "kunsthaus-robotron-kantine": {
   "name": "Kunsthaus Dresden - robotron Kantine",
   "aliase": [
-   "Kunsthaus Dresden - robotron Kantine"
+   "Kunsthaus Dresden - robotron Kantine",
+   "Robotron-Kantine"
   ],
   "region": "dresden",
   "homepage": "https://kunst-haus-dresden.de/",
@@ -5322,22 +5242,18 @@
   "lon": 13.6800465,
   "geo_quelle": "nominatim"
  },
- "motorenhalle": {
-  "name": "Motorenhalle",
-  "aliase": [
-   "Motorenhalle"
-  ],
-  "region": "dresden"
- },
  "motorenhalle-kultur-forum-projektzentrum-fuer-zeitgenoessische-kunst": {
   "name": "Motorenhalle Kultur Forum - Projektzentrum für zeitgenössische Kunst (riesa efau)",
   "aliase": [
-   "Motorenhalle Kultur Forum - Projektzentrum für zeitgenössische Kunst (riesa efau)"
+   "Motorenhalle Kultur Forum - Projektzentrum für zeitgenössische Kunst (riesa efau)",
+   "Motorenhalle",
+   "riesa efau, Motorenhalle"
   ],
   "region": "dresden",
   "homepage": "https://riesa-efau.de/kunst-erleben/motorenhalle/aktuell-vorschau/",
   "cover": "https://www.kulturkalender-dresden.de/storage/3622/responsive-images/c-riesa-efau___thumb_800_489.jpg",
   "adresse": "Wachsbleichstraße 4a, 01067 Dresden",
+  "telefon": "0351 8660211",
   "lat": 51.0560141,
   "lon": 13.7207176,
   "geo_quelle": "nominatim"
@@ -5479,7 +5395,8 @@
   "aliase": [
    "Neue Bühne"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "neuer-friedhof-klotzsche": {
   "name": "Neuer Friedhof Klotzsche",
@@ -5592,7 +5509,8 @@
    "Dresden Neustadt (verschiedene Straßen, Kneipen und Museen)",
    "Neustadt"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "neustadt-art-kollektiv": {
   "name": "Neustadt Art Kollektiv",
@@ -6007,13 +5925,6 @@
   "lon": 13.7533481,
   "geo_quelle": "nominatim"
  },
- "puppentheater-alte-feuerwache": {
-  "name": "Puppentheater Alte Feuerwache",
-  "aliase": [
-   "Puppentheater Alte Feuerwache"
-  ],
-  "region": "dresden"
- },
  "puppentheatersammlung": {
   "name": "Puppentheatersammlung",
   "aliase": [
@@ -6043,9 +5954,17 @@
  "puschkin": {
   "name": "Puschkin",
   "aliase": [
-   "Puschkin"
+   "Puschkin",
+   "Club Puschkin"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "http://www.clubpuschkin.de/veranstaltungen/",
+  "cover": "https://i.ytimg.com/vi/BMrDjkKUjqY/maxresdefault.jpg",
+  "beschreibung": "Das aktuelle Programm vom Club Puschkin, Dresden. Konzerte, Partys, Open Air uvm. Clubprogramm auf 2 Floors (Mainfloor + Redfloor) + Open Air im Sommer",
+  "adresse": "Leipziger Straße 12, 01097 Dresden",
+  "lat": 51.0698242,
+  "lon": 13.7319367,
+  "geo_quelle": "nominatim"
  },
  "putjatinhaus": {
   "name": "Putjatinhaus",
@@ -6216,8 +6135,8 @@
    "Riesa efau"
   ],
   "region": "dresden",
-  "raus": "vor allem Kurse und Werkstätten (David, 30.09.2026)",
-  "art": "galerie"
+  "art": "galerie",
+  "raus": "vor allem Kurse und Werkstätten (David, 30.09.2026)"
  },
  "riesa-efau-kultur-forum": {
   "name": "riesa efau. Kultur Forum Dresden",
@@ -6231,18 +6150,6 @@
   "adresse": "Adlergasse 14, 01067 Dresden",
   "lat": 51.0557335,
   "lon": 13.7206546,
-  "geo_quelle": "nominatim"
- },
- "riesa-efau-motorenhalle": {
-  "name": "riesa efau, Motorenhalle",
-  "aliase": [
-   "riesa efau, Motorenhalle"
-  ],
-  "region": "dresden",
-  "adresse": "Wachsbleichstraße 4 01067 Dresden",
-  "telefon": "0351 8660211",
-  "lat": 51.0560141,
-  "lon": 13.7207176,
   "geo_quelle": "nominatim"
  },
  "rinne": {
@@ -6278,13 +6185,6 @@
   "lat": 50.9540581,
   "lon": 14.0386713,
   "geo_quelle": "nominatim"
- },
- "robotron-kantine": {
-  "name": "Robotron-Kantine",
-  "aliase": [
-   "Robotron-Kantine"
-  ],
-  "region": "dresden"
  },
  "roedersaal": {
   "name": "RöderSaal (Großröhrsdorf)",
@@ -6543,7 +6443,8 @@
   "name": "Schauburg Dresden (Kino)",
   "aliase": [
    "Schauburg",
-   "Schauburg Dresden (Kino)"
+   "Schauburg Dresden (Kino)",
+   "Filmtheater Schauburg"
   ],
   "region": "dresden",
   "art": "kino",
@@ -6559,7 +6460,8 @@
   "aliase": [
    "Scheune",
    "Scheune Dresden",
-   "Scheune Dresden (Vorplatz)"
+   "Scheune Dresden (Vorplatz)",
+   "Scheune-Vorplatz"
   ],
   "region": "dresden",
   "herz": true,
@@ -6570,13 +6472,6 @@
   "lat": 51.0662864,
   "lon": 13.7516707,
   "geo_quelle": "nominatim"
- },
- "scheune-vorplatz": {
-  "name": "Scheune-Vorplatz",
-  "aliase": [
-   "Scheune-Vorplatz"
-  ],
-  "region": "dresden"
  },
  "schifferkirche-maria-am-wasser": {
   "name": "Schifferkirche Maria am Wasser",
@@ -6616,7 +6511,8 @@
   "aliase": [
    "Schloss"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "schloss-albrechtsberg": {
   "name": "Schloss Albrechtsberg",
@@ -6884,13 +6780,6 @@
   "lon": 13.7663885,
   "geo_quelle": "nominatim"
  },
- "semper-zwei": {
-  "name": "Semper Zwei",
-  "aliase": [
-   "Semper Zwei"
-  ],
-  "region": "dresden"
- },
  "semperoper": {
   "name": "Semperoper Dresden",
   "aliase": [
@@ -6909,7 +6798,8 @@
  "semperoper-semper-zwei": {
   "name": "Semperoper Dresden - Semper Zwei",
   "aliase": [
-   "Semperoper Dresden - Semper Zwei"
+   "Semperoper Dresden - Semper Zwei",
+   "Semper Zwei"
   ],
   "region": "dresden",
   "homepage": "http://www.semperoper.de",
@@ -6987,25 +6877,13 @@
  "societaetstheater": {
   "name": "Societaetstheater",
   "aliase": [
-   "Societaetstheater"
+   "Societaetstheater",
+   "Societaetstheater - Gartenbühne"
   ],
   "region": "dresden",
   "art": "theater",
   "homepage": "http://www.societaetstheater.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/23767/responsive-images/Societaetstheater-2023-kuka___thumb_1200_675.jpg",
-  "adresse": "An der Dreikönigskirche 1a, 01097 Dresden",
-  "lat": 51.0605595,
-  "lon": 13.7426372,
-  "geo_quelle": "nominatim"
- },
- "societaetstheater-gartenbuehne": {
-  "name": "Societaetstheater - Gartenbühne",
-  "aliase": [
-   "Societaetstheater - Gartenbühne"
-  ],
-  "region": "dresden",
-  "homepage": "http://www.societaetstheater.de/",
-  "cover": "https://www.kulturkalender-dresden.de/storage/8948/responsive-images/gartenbuehne-societaetstheater-c-kuka___thumb_800_450.jpg",
   "adresse": "An der Dreikönigskirche 1a, 01097 Dresden",
   "lat": 51.0605595,
   "lon": 13.7426372,
@@ -7032,17 +6910,11 @@
   ],
   "region": "weiter"
  },
- "sowieso": {
-  "name": "sowieso",
-  "aliase": [
-   "sowieso"
-  ],
-  "region": "dresden"
- },
  "sowieso-kultur-beratung-bildung": {
   "name": "sowieso - Kultur Beratung Bildung",
   "aliase": [
-   "sowieso - Kultur Beratung Bildung"
+   "sowieso - Kultur Beratung Bildung",
+   "sowieso"
   ],
   "region": "dresden",
   "homepage": "http://www.frauen-ev-sowieso.de",
@@ -7129,7 +7001,8 @@
  "st-pauli-ruine": {
   "name": "St. Pauli Ruine (Theaterruine)",
   "aliase": [
-   "St. Pauli Ruine (Theaterruine)"
+   "St. Pauli Ruine (Theaterruine)",
+   "TheaterRuine St. Pauli"
   ],
   "region": "dresden",
   "art": "buehne",
@@ -7245,14 +7118,16 @@
   "aliase": [
    "Stadtgalerie"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "stadtgebiet": {
   "name": "Stadtgebiet",
   "aliase": [
    "Stadtgebiet"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "stadthalle-krone": {
   "name": "Stadthalle Krone",
@@ -7396,14 +7271,16 @@
   "aliase": [
    "Steinhaus"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "sternwarte": {
   "name": "Sternwarte",
   "aliase": [
    "Sternwarte"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "sternwarte-graupa": {
   "name": "Sternwarte Graupa",
@@ -7466,17 +7343,11 @@
   "lon": 13.7990413,
   "geo_quelle": "nominatim"
  },
- "stromwerk": {
-  "name": "Stromwerk",
-  "aliase": [
-   "Stromwerk"
-  ],
-  "region": "dresden"
- },
  "stromwerk-im-kraftwerk-mitte": {
   "name": "STROMWERK im Kraftwerk Mitte",
   "aliase": [
-   "STROMWERK im Kraftwerk Mitte"
+   "STROMWERK im Kraftwerk Mitte",
+   "Stromwerk"
   ],
   "region": "dresden",
   "homepage": "https://www.dresden-stromwerk.de/kalender/",
@@ -7570,13 +7441,7 @@
   "aliase": [
    "Tante JU",
    "Tante-JU",
-   "Tante Ju"
-  ],
-  "region": "dresden"
- },
- "tante-ju-liveclub": {
-  "name": "Tante JU Liveclub",
-  "aliase": [
+   "Tante Ju",
    "Tante JU Liveclub"
   ],
   "region": "dresden",
@@ -7670,7 +7535,8 @@
   "aliase": [
    "Theater"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "theater-am-wettiner-platz": {
   "name": "Theater am Wettiner Platz (ehem. FriedrichstaTT Palast, Breschke-Schuch)",
@@ -7771,14 +7637,6 @@
   "lat": 51.0538077,
   "lon": 13.7356598,
   "geo_quelle": "nominatim"
- },
- "theaterruine-st-pauli": {
-  "name": "TheaterRuine St. Pauli",
-  "aliase": [
-   "TheaterRuine St. Pauli"
-  ],
-  "region": "dresden",
-  "art": "theater"
  },
  "theaterscheune": {
   "name": "TheaterScheune",
@@ -8015,21 +7873,11 @@
   "lon": 13.6967033,
   "geo_quelle": "nominatim"
  },
- "ukrainisches-haus": {
-  "name": "Ukrainisches Haus",
-  "aliase": [
-   "Ukrainisches Haus"
-  ],
-  "region": "dresden",
-  "adresse": "Neumarkt 2 Dresden",
-  "lat": 51.0521402,
-  "lon": 13.7405676,
-  "geo_quelle": "nominatim"
- },
  "ukrainisches-haus-qf-passage": {
   "name": "Ukrainisches Haus, QF Passage",
   "aliase": [
-   "Ukrainisches Haus, QF Passage"
+   "Ukrainisches Haus, QF Passage",
+   "Ukrainisches Haus"
   ],
   "region": "dresden",
   "homepage": "https://dresdenstandswithukraine.de/ort/ukrainisches-haus-qf-passage/",
@@ -8089,7 +7937,8 @@
   "aliase": [
    "Veranstaltungsscheune"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "unklarer Ortsname von cybersax, Quelle nicht eindeutig (David, 30.09.2026)"
  },
  "vereinshaus-aktives-leben": {
   "name": "Vereinshaus Aktives Leben",
@@ -8241,7 +8090,8 @@
  "volkshochschule": {
   "name": "Volkshochschule Dresden e.V.",
   "aliase": [
-   "Volkshochschule Dresden e.V."
+   "Volkshochschule Dresden e.V.",
+   "Volkshochschule, Annenstraße"
   ],
   "region": "dresden",
   "homepage": "http://www.vhs-dresden.de",
@@ -8251,13 +8101,6 @@
   "lat": 51.0495466,
   "lon": 13.7298459,
   "geo_quelle": "nominatim"
- },
- "volkshochschule-annenstrasse": {
-  "name": "Volkshochschule, Annenstraße",
-  "aliase": [
-   "Volkshochschule, Annenstraße"
-  ],
-  "region": "dresden"
  },
  "volkshochschule-dreilaendereck-im-salzhaus": {
   "name": "Volkshochschule Dreiländereck im Salzhaus",

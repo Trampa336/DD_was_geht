@@ -69,3 +69,12 @@ def test_kino_mit_buehnen_flavour_ist_buehne():
 
 def test_sport_am_kinder_ort_zaehlt_nicht():
     assert "sport" not in rt("Yoga mit Pat", "sport", None, "Integrative Kindertagesstätte Pat's Bunnyhouse")
+
+
+def test_punk_gehoert_zu_indie():
+    # Davids Entscheidung 30.09.2026: "Punk, Indie & Bars", Rock nur noch Rock & Metal
+    assert "indie" in rt("Deutschpunk-Abend mit drei Bands", "musik")
+    assert "rock" not in rt("Punk Night", "musik")
+    assert "rock" in rt("Stoner Rock Night", "musik")
+    assert "indie" not in rt("Treffpunkt Jugendclub")
+

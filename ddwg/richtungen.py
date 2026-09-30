@@ -23,8 +23,8 @@ from .normalize import _SPORT_FALSE_FRIENDS_RE, _SPECTATOR_SPORT_RE, _SPORT_TITL
 BEREICHE = [
     {"k": "musik", "n": "Musik", "sub": [
         {"k": "club", "n": "Club & Party", "fl": "club"},
-        {"k": "rock", "n": "Rock, Punk & Metal", "fl": "rock"},
-        {"k": "indie", "n": "Indie & Bars", "fl": "indie"},
+        {"k": "rock", "n": "Rock & Metal", "fl": "rock"},
+        {"k": "indie", "n": "Punk, Indie & Bars", "fl": "indie"},
         {"k": "jazz", "n": "Jazz, Blues & Swing", "fl": "jazz"},
         {"k": "klassik", "n": "Klassik & Chor", "fl": "klassik"},
     ]},
@@ -49,10 +49,10 @@ STICHWORTE = {
         r"|electronic|drum-(?:and|n)-bass|dnb|disco|hip-?hop|rap|dancehall|clubnacht|bass|trance"
         r"|psytrance|goa|afrobeats?|reggaeton|ebm|darkwave|minimal)" + _E),
     "rock": re.compile(
-        _W + r"(?:[a-z]*rock|[a-z]*punk|[a-z]*metal|hardcore|grunge|ska|rockabilly|rock-n-roll"
+        _W + r"(?:[a-z]*rock|[a-z]*metal|hardcore|grunge|ska|rockabilly|rock-n-roll"
         r"|stoner|doom|thrash|emo|garage)" + _E),
     "indie": re.compile(
-        _W + r"(?:indie|indiepop|singer-songwriter|songwriter|folk|pop|acoustic|akustik|unplugged"
+        _W + r"(?:[a-z]*punk|indie|indiepop|singer-songwriter|songwriter|folk|pop|acoustic|akustik|unplugged"
         r"|liedermacher|chanson)" + _E),
     "jazz": re.compile(
         _W + r"(?:[a-z]*jazz|blues|swing|soul|funk|dixie|dixieland|bebop|bigband|big-band"
@@ -77,9 +77,9 @@ STICHWORTE = {
 
 # Fehlgriffe, die ein Stichwort sonst einsammelt
 FALSCHE_FREUNDE = {
-    "rock": re.compile(r"barock|rocky|minirock|(?:^|-)[a-z]*punkt" + _E),
+    "rock": re.compile(r"barock|rocky|minirock"),
     "club": re.compile(r"kinderparty|kinder-party|(?:^|-)house-of" + _E),
-    "indie": re.compile(r"popcorn|pop-up|popup"),
+    "indie": re.compile(r"popcorn|pop-up|popup|(?:^|-)[a-z]*punkt" + _E),
 }
 
 # Sport: Mitmachen (Yoga, Laufen, Team-Challenge), nicht Zuschauen. Senioren- und
