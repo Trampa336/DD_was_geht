@@ -152,7 +152,10 @@ Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS)
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
-Flavour-Check (80 Orte mit Terminen) und doppelte Orte sind seit 2026-09-30 erledigt.
+Flavour-Check (80 Orte mit Terminen), doppelte Orte, Koordinaten für Musik-Orte (Adressen von den
+Seiten der Orte, Koordinaten über nominatim im Browser, weil Cowork nominatim sperrt) und Ortsfoto
+als Ersatzbild sind seit 2026-09-30 erledigt. Als Nächstes der Richtungs-Check: 409 von 2.397
+Terminen bekommen keine Richtung (Lauf #20); je Ort Flavour, Art oder `raus` entscheiden (David).
 Hole of Fame und C. Rockefeller Center bleiben „museum“ (Kunstateliers, Davids Entscheidung).
 Seit 2026-09-30 haben alle Herz-Orte einen Flavour (Straße E und Sektor club, Der Lude
 indie = Bar). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
