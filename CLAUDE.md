@@ -200,6 +200,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
   Relevanz zählt nur das eigene Bild (`e.img`).
+- **Herz-Orte im Feed** (seit 2026-09-30): nur eine kleine rote Ecke oben rechts an der Kachel
+  (`.herz-b`), kein Etikett, kein roter Rahmen (Davids Wunsch).
 - **Grundprinzip (Davids Entscheidung): sortieren statt verstecken.** Je Tag werden die
   8 passendsten Termine Kacheln, der Rest kompakte Zeilen darunter. Relevanz
   (`relevanz()` in der Vorlage): Herz-Ort +100, eigene Richtung +40, Bild +10,

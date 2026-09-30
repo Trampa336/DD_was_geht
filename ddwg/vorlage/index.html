@@ -82,19 +82,19 @@ main { flex: 1; }
 .tag.we .tag-kopf { color: var(--accent2); }
 .raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .gk { position: relative; display: block; border-radius: var(--r); overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
-.gk.herz { border-color: color-mix(in srgb, var(--heart) 70%, transparent); }
 .medium { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface2); }
 .poster { display: flex; align-items: flex-end; padding: 10px; overflow: hidden; font-weight: 700; font-size: 20px; line-height: 1.02; word-break: break-word; hyphens: auto; letter-spacing: -.01em; }
 .p0 { background: var(--accent); color: var(--on-accent); }
 .p1 { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--on-accent); }
 .p2 { background: var(--surface2); color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
 .p3 { background: var(--surface2); color: var(--accent2); box-shadow: inset 0 0 0 2px var(--accent2); }
-.herz-b { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--heart); color: #fff; font-size: 10.5px; font-weight: 700; }
+/* Herz-Ort: nur eine kleine Ecke oben rechts (Davids Wunsch 30.09.2026) */
+.herz-b { position: absolute; top: 0; right: 0; width: 26px; height: 26px; background: linear-gradient(225deg, var(--heart) 50%, transparent 50%); color: #fff; pointer-events: none; }
+.herz-b svg { position: absolute; top: 3px; right: 3px; width: 9px; height: 9px; }
 .gk-txt { display: block; padding: 8px 10px 10px; }
 .gk-zeit { display: block; font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .gk-titel { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; font-size: 14px; font-weight: 700; line-height: 1.22; }
 .gk-ort { display: block; margin-top: 3px; font-size: 11.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gk-ort.h { color: var(--heart); }
 .mehr { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 120px; border-radius: var(--r); border: 1px dashed var(--line); color: var(--soft); font-size: 13px; text-align: center; padding: 10px; }
 .mehr b { font-size: 22px; color: var(--accent); }
 
@@ -545,7 +545,7 @@ function medium(e) {
   return `<div class="medium poster p${p}">${esc(text)}</div>`;
 }
 window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };
-const kachel = e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b">${HERZ}Dein Ort</span>` : ""}
+const kachel = e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b" aria-label="Dein Ort">${HERZ}</span>` : ""}
   <span class="gk-txt"><span class="gk-zeit">${esc(e.t || "")}</span><span class="gk-titel">${esc(e.ti)}</span><span class="gk-ort ${ort(e).h ? "h" : ""}">${esc(ort(e).n || e.or || "")}</span></span></button>`;
 const zeile = e => `<button class="rz" data-ev="${e.i}"><span class="gk-zeit">${esc(e.t || "–")}</span><span><b>${esc(e.ti)}</b><i>${esc(ortName(e))} · ${esc(rtName(e))}</i></span></button>`;
 
