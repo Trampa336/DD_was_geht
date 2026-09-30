@@ -245,7 +245,10 @@
    "Altmarkt"
   ],
   "region": "dresden",
-  "cover": "https://www.kulturkalender-dresden.de/storage/348/responsive-images/altmarktdresdenfotoemodd___thumb_613_460.jpg"
+  "cover": "https://www.kulturkalender-dresden.de/storage/348/responsive-images/altmarktdresdenfotoemodd___thumb_613_460.jpg",
+  "lat": 51.0496269,
+  "lon": 13.7378803,
+  "geo_quelle": "nominatim"
  },
  "altmarkt-galerie": {
   "name": "Altmarkt-Galerie",
@@ -564,7 +567,11 @@
   "aliase": [
    "Barnyard Club"
   ],
-  "region": "dresden"
+  "region": "umland",
+  "adresse": "Kötzschenbrodaer Str. 60, 01445 Radebeul",
+  "lat": 51.0972678,
+  "lon": 13.6561663,
+  "geo_quelle": "nominatim"
  },
  "barockgarten-grosssedlitz-heidenau": {
   "name": "Barockgarten Großsedlitz Heidenau",
@@ -1228,7 +1235,11 @@
    "Cafe Pawlow",
    "Pawlow"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Görlitzer Str. 34, 01099 Dresden",
+  "lat": 51.068739,
+  "lon": 13.7556326,
+  "geo_quelle": "nominatim"
  },
  "carl-maria-von-weber-museum": {
   "name": "Carl-Maria-von-Weber-Museum (Museum Dresden)",
@@ -1469,7 +1480,14 @@
   ],
   "region": "dresden",
   "art": "club",
-  "herz": true
+  "herz": true,
+  "homepage": "https://derlude.de/",
+  "cover": "https://derlude.de/wp-content/uploads/2021/06/derlude_kopflogo.jpg",
+  "beschreibung": "Exzess, Ekstase, Insomnia ❤ Tanzt, trinkt, reibt euch aneinander zur Musik ♫ Tanzbar in der Dresdner Neustadt ➳ Der Lude",
+  "adresse": "Görlitzer Str. 3, 01099 Dresden",
+  "lat": 51.0666843,
+  "lon": 13.7537826,
+  "geo_quelle": "nominatim"
  },
  "deutsch-russisches-kulturinstitut": {
   "name": "Deutsch-Russisches Kulturinstitut e.V.",
@@ -1621,7 +1639,12 @@
   "aliase": [
    "Downtown"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://www.downtown-dresden.de/",
+  "adresse": "Katharinenstr. 11-13, 01099 Dresden",
+  "lat": 51.0664362,
+  "lon": 13.7492299,
+  "geo_quelle": "nominatim"
  },
  "dreikoenigskirche-haus-der-kirche": {
   "name": "Dreikönigskirche Dresden - Haus der Kirche",
@@ -2048,7 +2071,11 @@
   "aliase": [
    "Fat Fenders"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Böhmische Str. 14, 01099 Dresden",
+  "lat": 51.065033,
+  "lon": 13.7522374,
+  "geo_quelle": "nominatim"
  },
  "feiermanufaktur-am-waldbad-weixdorf": {
   "name": "Feiermanufaktur am Waldbad Weixdorf",
@@ -3998,7 +4025,10 @@
   "region": "umland",
   "homepage": "https://www.kirche-graupa.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/22243/responsive-images/Kirche-Liebethal___thumb_1200_900.jpg",
-  "adresse": "Bei der Liebethaler Kirche 14, 01796 Pirna OT Liebethal"
+  "adresse": "Bei der Liebethaler Kirche 14, 01796 Pirna OT Liebethal",
+  "lat": 50.9973164,
+  "lon": 13.9571628,
+  "geo_quelle": "nominatim"
  },
  "kirche-loschwitz": {
   "name": "Kirche Loschwitz",
@@ -6049,13 +6079,6 @@
   "lon": 13.7542115,
   "geo_quelle": "nominatim"
  },
- "reithalle": {
-  "name": "Reithalle",
-  "aliase": [
-   "Reithalle"
-  ],
-  "region": "dresden"
- },
  "residenzschloss-staatliche-kunstsammlungen": {
   "name": "Residenzschloss Dresden - Staatliche Kunstsammlungen Dresden",
   "aliase": [
@@ -6437,7 +6460,10 @@
   "region": "umland",
   "homepage": "http://www.saxstall.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/60171/responsive-images/Saxstall___thumb_1200_677.jpg",
-  "adresse": "Dorfstraße 87, 01737 Pohrsdorf (bei Tharandt)"
+  "adresse": "Dorfstraße 87, 01737 Pohrsdorf (bei Tharandt)",
+  "lat": 50.9997518,
+  "lon": 13.5287782,
+  "geo_quelle": "nominatim"
  },
  "schauburg": {
   "name": "Schauburg Dresden (Kino)",
@@ -7313,7 +7339,8 @@
    "Strasse E (Reithalle, Bunker)",
    "Reithalle Straße E",
    "Bunker Straße E",
-   "Straße E, Reithalle"
+   "Straße E, Reithalle",
+   "Reithalle"
   ],
   "region": "dresden",
   "herz": true,
@@ -8394,7 +8421,11 @@
   "aliase": [
    "Wu 5"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "August-Bebel-Straße 12, 01219 Dresden",
+  "lat": 51.0320527,
+  "lon": 13.7515842,
+  "geo_quelle": "nominatim"
  },
  "yenidze-theater": {
   "name": "Yenidze Theater Dresden",
@@ -8521,7 +8552,11 @@
    "Zilles Anker"
   ],
   "region": "dresden",
-  "cover": "https://www.kulturkalender-dresden.de/storage/52663/responsive-images/Eventbrite_Anker___thumb_2160_1080.jpg"
+  "cover": "https://www.kulturkalender-dresden.de/storage/52663/responsive-images/Eventbrite_Anker___thumb_2160_1080.jpg",
+  "adresse": "Görlitzer Straße 5, 01099 Dresden",
+  "lat": 51.0667929,
+  "lon": 13.7538458,
+  "geo_quelle": "nominatim"
  },
  "zmo-jugend": {
   "name": "ZMO-Jugend e.V.",
