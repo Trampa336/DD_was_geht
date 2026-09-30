@@ -39,7 +39,7 @@ ORTE_PATH = os.environ.get(
 )
 
 FELDER = (
-    "name", "aliase", "region", "art", "herz", "treffpunkt", "homepage", "cover",
+    "name", "aliase", "region", "art", "herz", "raus", "treffpunkt", "homepage", "cover",
     "beschreibung", "adresse", "telefon", "oeffnungszeiten", "lat", "lon",
     "geo_quelle", "erstmals", "notiz",
 )

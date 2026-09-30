@@ -522,6 +522,7 @@
    "Bahnhof Radebeul Ost"
   ],
   "region": "umland",
+  "raus": "Touristen-Angebot: Dampfzug (David, 30.09.2026)",
   "cover": "https://www.kulturkalender-dresden.de/storage/22305/responsive-images/20230404.L%C3%B6%C3%9Fnitzgrundbahn.-02___thumb_9225_5531.jpg",
   "lat": 51.1133108,
   "lon": 13.6410212,
@@ -955,7 +956,7 @@
   "aliase": [
    "Bioschäferei & Spinnstube Drutschmann"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "homepage": "https://schaeferei-drutschmann.de/home",
   "cover": "https://www.kulturkalender-dresden.de/storage/58788/responsive-images/Sch%C3%A4fereie-Drutschmann___thumb_1200_675.jpg",
   "adresse": "Am Dorfbach 10, 01744 Dippoldiswalde / OT Reichstädt"
@@ -1818,6 +1819,7 @@
    "Erlwein Forum"
   ],
   "region": "dresden",
+  "raus": "Touristen-Angebot: Titanic- und Banksy-Show (David, 30.09.2026)",
   "homepage": "http://www.goldendoor.group",
   "cover": "https://www.kulturkalender-dresden.de/storage/51249/responsive-images/DD-Ostra-Areal-1___thumb_1000_574.jpg",
   "adresse": "Messering 8 (gegenüber Haupteingang Messe), 01067 Dresden"
@@ -2952,6 +2954,7 @@
    "Haus der Brücke"
   ],
   "region": "dresden",
+  "raus": "Beratung und Integration, kein Abendprogramm (David, 30.09.2026)",
   "homepage": "https://www.dresden.de/de/leben/gesellschaft/migration/aktuelles/haus-der-bruecke.php",
   "cover": "https://www.kulturkalender-dresden.de/storage/48883/responsive-images/2025-09-15-15.31.48___thumb_1000_570.jpg",
   "beschreibung": "Das \"Haus der Brücke\" soll ein lebendiger Begegnungsort für Menschen, Vereine und Projekte in Dresden werden. Es fördert den interkulturellen Austausch und bietet Migrantenorganisationen einen zentralen Raum, um ihre Arbeit zu gestalten und sich zu vernetzen.",
@@ -4056,7 +4059,7 @@
   "aliase": [
    "Kirche Liebethal"
   ],
-  "region": "dresden",
+  "region": "umland",
   "homepage": "https://www.kirche-graupa.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/22243/responsive-images/Kirche-Liebethal___thumb_1200_900.jpg",
   "adresse": "Bei der Liebethaler Kirche 14, 01796 Pirna OT Liebethal"
@@ -4110,7 +4113,7 @@
   "aliase": [
    "Kirche Röhrsdorf"
   ],
-  "region": "dresden",
+  "region": "umland",
   "homepage": "https://www.kirchgemeinde-roehrsdorf.de/unsere-kirchen/kirche-roehrsdorf/",
   "adresse": "Bornweg 2, 01809 Dohna",
   "lat": 50.9621494,
@@ -4184,7 +4187,7 @@
   "aliase": [
    "Kleines Welttheater im Sonnenhof"
   ],
-  "region": "dresden",
+  "region": "umland",
   "homepage": "http://www.kleines-welttheater.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/20182/responsive-images/Kleines-Welttheater_aussen-scaled___thumb_1200_675.jpg",
   "beschreibung": "KLEINES WELTTHEATER​ von Alf Mahlo & Henriette Ehrlich | Besuchen Sie unsere Spielstätte in Radebeul und Reichenberg (Moritzburg)",
@@ -4199,7 +4202,7 @@
    "Kleinkunstbühne Q24",
    "Kleinkunstbühne Q24 e. V."
   ],
-  "region": "dresden",
+  "region": "umland",
   "art": "buehne",
   "homepage": "http://www.q24pirna.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/3641/responsive-images/q24-kleinkunstbuehne-pirna-c-ktp___thumb_800_450.jpg",
@@ -4226,7 +4229,7 @@
   "aliase": [
    "König Albert Theater"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "homepage": "https://koenig-albert-theater.de/",
   "cover": "https://i.ytimg.com/vi/RFzTVR8tZpE/maxresdefault.jpg",
   "beschreibung": "Das König Albert Theater Bad Elster - das kulturelle Zentrum der Kultur- und Festspielstadt Bad Elster mit einem ganzjährigen Spielplan.",
@@ -4470,7 +4473,7 @@
   "aliase": [
    "Kulturbahnhof"
   ],
-  "region": "dresden",
+  "region": "umland",
   "adresse": "Sidonienstraße 1c 01445 Radebeul",
   "lat": 51.0991497,
   "lon": 13.679257,
@@ -4878,7 +4881,7 @@
   "aliase": [
    "Landgut Kemper & Schlomski"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "homepage": "https://www.lgks.eu",
   "cover": "https://www.kulturkalender-dresden.de/storage/34668/responsive-images/LGKS___thumb_1200_800.jpg",
   "beschreibung": "Seit 2004 engagieren wir uns erfolgreich für Naturschutz, Bildung für nachhaltige Entwicklung (BNE) und Fjordpferdezucht mit Reiterferien.",
@@ -5692,7 +5695,7 @@
   "aliase": [
    "Oskarshausen"
   ],
-  "region": "dresden",
+  "region": "umland",
   "homepage": "https://www.oskarshausen.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/13549/responsive-images/Oskarshausen_Rutsche___thumb_1000_572.jpg",
   "beschreibung": "Freizeitpark auf 20.000m2 mit über 50 Attraktionen innen & außen. Das perfekte Ausflugziel mit Spaß für Kinder, Erwachsene und ganze Familie!",
@@ -5752,9 +5755,9 @@
   "cover": "https://www.kulturkalender-dresden.de/storage/251/responsive-images/palais-im-grossen-garten-c-schloesserland-sachsen___thumb_634_460.jpg",
   "beschreibung": "Erleben Sie im Großen Garten Dresden den Wandel der Jahreszeiten, tanken Sie Ruhe und Kraft oder erkunden Sie den Park mit einer Fahrt in der Dresdner Parkeisenbahn.",
   "adresse": "Hauptallee / Am Palaisteich, 01219 Dresden",
-  "lat": 51.0598716,
-  "lon": 13.737341,
-  "geo_quelle": "nominatim"
+  "lat": 51.03778,
+  "lon": 13.76278,
+  "geo_quelle": "hand (Wikipedia, 30.09.2026)"
  },
  "palais-zabeltitz": {
   "name": "Palais Zabeltitz",
@@ -6061,7 +6064,7 @@
   "aliase": [
    "Radeberger Biertheater"
   ],
-  "region": "dresden",
+  "region": "umland",
   "art": "theater",
   "homepage": "https://www.biertheater.de/spielplan",
   "cover": "https://www.kulturkalender-dresden.de/storage/3234/responsive-images/c-radeberger-biertheater-jpg___thumb_800_450.jpg",
@@ -6184,7 +6187,7 @@
   "aliase": [
    "Richard-Wagner-Stätten"
   ],
-  "region": "dresden",
+  "region": "umland",
   "homepage": "http://www.wagnerstaetten.de",
   "beschreibung": "Richard-Wagner-Stätten Graupa | Ausstellungen und Veranstaltungen zu Richard Wagner, Vermietung Festsaal für Feiern und Hochzeiten | Kultur- und Tourismusgesellschaft Pirna mbH",
   "adresse": "Richard-Wagner-Straße 6 01796 Graupa",
@@ -6433,6 +6436,7 @@
    "Sächsische Dampfschifffahrt"
   ],
   "region": "dresden",
+  "raus": "Touristen-Angebot (David, 30.09.2026)",
   "homepage": "http://www.saechsische-dampfschifffahrt.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/21868/responsive-images/20030812100DR_Dresden_Terrassenufer_Wei%C3%9Fe_Flotte___thumb_1000_570.jpg",
   "beschreibung": "Unser Fahrgebiet Entdecken Sie unser Fahrgebiet zwischen der malerischen Sächsischen Weinstraße und der atemberaubenden Sächsischen Schweiz. Erleben S...",
@@ -6750,7 +6754,7 @@
   "aliase": [
    "Schloss Thürmsdorf"
   ],
-  "region": "dresden",
+  "region": "weiter",
   "homepage": "https://www.schloss-thuermsdorf.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/23636/responsive-images/Schlosspark_Th%C3%BCrmsdorf_1200x675-%28002%29___thumb_1200_675.jpg",
   "adresse": "Am Schlossberg 9, 01796 Struppen OT Thürmsdorf"
@@ -6762,6 +6766,7 @@
   ],
   "region": "umland",
   "art": "weingut",
+  "raus": "Touristen-Angebot: Weingut (David, 30.09.2026)",
   "homepage": "http://www.schloss-wackerbarth.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/256/responsive-images/schloss-wackerbarth-c-wckerbarth___thumb_690_460.jpg",
   "beschreibung": "Besuchen Sie Europas erstes Erlebnisweingut. Erleben Sie ein einzigartiges Ensemble aus barocker Anlage, malerischen Weinbergen und moderner Manufaktur.",
@@ -7819,6 +7824,7 @@
    "TimeRide Dresden"
   ],
   "region": "dresden",
+  "raus": "Touristen-Angebot (David, 30.09.2026)",
   "homepage": "https://timeride.de/dresden/",
   "cover": "https://www.kulturkalender-dresden.de/storage/16394/responsive-images/20181215_132144___thumb_1000_573.jpg",
   "beschreibung": "Dresden im Wandel der Epochen ✓ das barocke Dresden ✓ Virtual Reality Experience ► Jetzt Dresdner Geschichte mit VR Brille entdecken!",
@@ -8409,6 +8415,7 @@
    "Weinberge in Radebeul"
   ],
   "region": "umland",
+  "raus": "Touristen-Angebot: Weinproben (David, 30.09.2026)",
   "cover": "https://i.ytimg.com/vi/bukcki7NjZ8/maxresdefault.jpg"
  },
  "weinbergkirche-pillnitz": {

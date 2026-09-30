@@ -389,11 +389,11 @@ function zeigeUebernehmen() {
 
 /* ---------- Filter: gilt in beiden Reitern und wird in diesem Browser gemerkt ---------- */
 const FILTER_KEY = "ddwg-filter";
-const FILTER_LEER = () => ({ q: "", orte: "alle", nur: false });
+const FILTER_LEER = () => ({ q: "", orte: "alle", nur: false, dauer: null });
 function filterLaden() {
   try {
     const x = JSON.parse(localStorage.getItem(FILTER_KEY));
-    if (x && typeof x === "object") return { q: String(x.q || ""), orte: ["alle", "meine", "neu"].includes(x.orte) ? x.orte : "alle", nur: !!x.nur };
+    if (x && typeof x === "object") return { q: String(x.q || ""), orte: ["alle", "meine", "neu"].includes(x.orte) ? x.orte : "alle", nur: !!x.nur, dauer: typeof x.dauer === "boolean" ? x.dauer : null };
   } catch (e) {}
   return FILTER_LEER();
 }
@@ -404,7 +404,17 @@ D.events.forEach((e, i) => { e.i = i; e.s = klein([e.ti, ort(e).n, e.or, e.b].jo
 function sucheLesen() { SUCHE = klein(F.q).split(/\s+/).filter(Boolean); }
 sucheLesen();
 const nurAn = () => F.nur && MEINE_RT.size > 0;
-const filterTeile = () => (SUCHE.length ? 1 : 0) + (F.orte !== "alle" ? 1 : 0) + (nurAn() ? 1 : 0);
+/* Dauerausstellungen: Ausstellungen, die viele Tage laufen (e.l und Richtung Kunst). In "Alle"
+   ausgeblendet; der Chip im Filter-Blatt zeigt sie, je Ausstellung einmal (am ersten Tag).
+   Ohne eigene Wahl (F.dauer null) sind sie an, sobald die Richtung Ausstellungen oder Kultur gewählt ist. */
+const istDauer = e => !!e.l && (e.rt || []).includes("kunst");
+const dauerKey = e => e.ti + "|" + (e.o || e.or || "");
+const DAUER_ERSTER = {};
+D.events.forEach(e => { if (istDauer(e)) { const k = dauerKey(e); if (!DAUER_ERSTER[k] || e.d < DAUER_ERSTER[k]) DAUER_ERSTER[k] = e.d; } });
+const dauerAn = () => F.dauer !== null ? F.dauer : M.fl.includes("kunst") || M.fl.includes("kultur");
+// Kommt der Termin in Zeitstrahl und Karte? Laufende Angebote nur als Dauerausstellung und nur einmal.
+const sichtbar = e => !e.l || (dauerAn() && istDauer(e) && e.d === DAUER_ERSTER[dauerKey(e)]);
+const filterTeile = () => (SUCHE.length ? 1 : 0) + (F.orte !== "alle" ? 1 : 0) + (nurAn() ? 1 : 0) + (F.dauer === true ? 1 : 0);
 // ohne = Teil des Filters, der beim Zählen für die Knöpfe im Blatt nicht mitzählt
 function passt(e, ohne) {
   if (ohne !== "q" && SUCHE.length && !SUCHE.every(w => e.s.includes(w))) return false;
@@ -441,7 +451,7 @@ const perTagAlle = {};
 D.events.forEach(e => (perTagAlle[e.d] ||= []).push(e));
 function tageBauen() {
   perTag = {};
-  D.events.forEach(e => { if (!e.l && passt(e)) (perTag[e.d] ||= []).push(e); });
+  D.events.forEach(e => { if (sichtbar(e) && passt(e)) (perTag[e.d] ||= []).push(e); });
   TAGE = Object.keys(perTag).sort();
 }
 const HEUTE = D.heute;
@@ -666,7 +676,9 @@ const S = { tab: "was", ez: "we" };
 let karte = null, markerLayer = null, herzLayer = null, gewaehlt = null, ENT = { orteL: [], proOrt: {} };
 function renderEntdecken() {
   const [von, bis] = entBereich();
-  const evs = D.events.filter(e => e.d >= von && e.d <= bis && !e.l && e.o && D.orte[e.o] && passt(e)), proOrt = {};
+  const dSchon = new Set();  // Dauerausstellung je Zeitraum nur einmal auf der Karte
+  const evs = D.events.filter(e => e.d >= von && e.d <= bis && e.o && D.orte[e.o] && passt(e)
+    && (!e.l || (dauerAn() && istDauer(e) && !dSchon.has(dauerKey(e)) && dSchon.add(dauerKey(e))))), proOrt = {};
   evs.forEach(e => (proOrt[e.o] ||= []).push(e));
   Object.values(proOrt).forEach(l => l.sort(nachZeit));
   const orteL = Object.keys(proOrt).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
@@ -756,9 +768,10 @@ function filterBlatt() {
 }
 function fiRest() {
   const host = $("#fi-rest"); if (!host || $("#sheet").hidden) return;
-  const nOrte = { alle: 0, meine: 0, neu: 0 }, nRt = {}; let treffer = 0;
+  const nOrte = { alle: 0, meine: 0, neu: 0 }, nRt = {}; let treffer = 0, nDauer = 0;
   D.events.forEach(e => {
-    if (e.l) return;
+    if (istDauer(e) && e.d === DAUER_ERSTER[dauerKey(e)] && passt(e)) nDauer++;
+    if (!sichtbar(e)) return;
     if (passt(e, "orte")) { nOrte.alle++; nOrte[ort(e).h ? "meine" : "neu"]++; }
     if (passt(e, "rt")) (e.rt || []).forEach(k => nRt[k] = (nRt[k] || 0) + 1);
     if (passt(e)) treffer++;
@@ -770,6 +783,8 @@ function fiRest() {
       ${RB.filter(b => b.sub).map(b => gruppe(b.n, [{ k: b.k, n: "Alles" }].concat(b.sub))).join("")}
       ${gruppe("Weitere", RB.filter(b => !b.sub))}
       <button class="schalter" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen zeigen<small>Sonst kommen sie nur nach vorne</small></span><i></i></button></div>
+    <div class="fi-teil"><h3>Dauerausstellungen</h3><div class="fi-chips"><button class="fc" data-fdauer aria-pressed="${dauerAn()}">Dauerausstellungen zeigen<em>${nDauer}</em></button></div>
+      <p class="fi-info">Ausstellungen, die viele Tage laufen, stehen je einmal am ersten Tag. Mit der Richtung Ausstellungen sind sie automatisch an.</p></div>
     <p class="fi-info">Sortiert wird immer: deine Orte zuerst, dann deine Richtungen, dann Termine mit Bild und Beschreibung, in mehreren Kalendern genannt, abends. Was in keine Richtung passt und Umland rutschen nach unten. Richtungen mit festen Orten (Club, Rock, Bühne …) geben diesen Orten ein Herz. Alles bleibt in diesem Browser gespeichert.</p>
     <div class="fi-fuss"><button class="knopf primaer" data-fzu>${treffer} ${treffer === 1 ? "Termin" : "Termine"} zeigen</button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`;
 }
@@ -778,7 +793,8 @@ function filterZeile() {
   if (SUCHE.length) teile.push(`„${esc(F.q.trim())}“`);
   if (F.orte !== "alle") teile.push(F.orte === "meine" ? "♥ Meine Orte" : "Neue Orte");
   if (nurAn()) teile.push("Nur meine Richtungen");
-  const z = $("#aktiv-filter"), n = teile.length ? D.events.filter(e => !e.l && passt(e)).length : 0;
+  if (F.dauer === true) teile.push("Dauerausstellungen");
+  const z = $("#aktiv-filter"), n = teile.length ? D.events.filter(e => sichtbar(e) && passt(e)).length : 0;
   z.hidden = !teile.length;
   z.innerHTML = teile.length ? `<button class="af-text" data-filter>${teile.join(" · ")} · <b>${n} ${n === 1 ? "Termin" : "Termine"}</b></button><button class="af-zu" data-freset aria-label="Filter zurücksetzen">${X_ICON}</button>` : "";
   const k = $(".filterknopf"), i = k.querySelector("i");
@@ -816,7 +832,12 @@ document.addEventListener("click", e => {
   if ("zu" in ds) return sheetZu();  // ✕ und Tippen daneben
   if ("filter" in ds) return filterBlatt();
   if (ds.forte) { F.orte = ds.forte; return filterGeaendert(); }
-  if (ds.rt) { richtungUmschalten(ds.rt); if (nurAn()) scrollTo({ top: 0 }); return fiRest(); }
+  if (ds.rt) {
+    // Wer Ausstellungen/Kultur an- oder abwählt, bekommt die Dauerausstellungen wieder automatisch
+    if (ds.rt === "kunst" || ds.rt === "kultur") F.dauer = null;
+    richtungUmschalten(ds.rt); if (nurAn()) scrollTo({ top: 0 }); filterSpeichern(); return fiRest();
+  }
+  if ("fdauer" in ds) { F.dauer = !dauerAn(); return filterGeaendert(); }
   if ("fnur" in ds) { F.nur = !F.nur; return filterGeaendert(); }
   if ("fzu" in ds) return sheetZu();
   if ("freset" in ds) { F = FILTER_LEER(); sucheLesen(); const inp = $("#fi-suche"); if (inp) inp.value = ""; return filterGeaendert(); }

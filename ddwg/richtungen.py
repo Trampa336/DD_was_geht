@@ -139,6 +139,10 @@ def fuer(titel, kategorie, ort=None, ort_name=None, flavour_von_ort=None):
                 rt.append(k)
         if any(_sub_von(k)[0] == b["k"] for k in rt) or kategorie == b["k"] and "sub" in b:
             rt.append(b["k"])
+    # Jazz vor Klassik: "Tito Lopez Quartett" im Blue Note ist Jazz, das Wort
+    # Quartett allein macht keine Klassik daraus.
+    if "jazz" in rt and "klassik" in rt:
+        rt.remove("klassik")
     if kategorie == "demo":
         rt.append("demo")
     if kategorie == "familie" or (flavour == "familie" and kategorie in ("familie", "sonstiges")):
@@ -151,6 +155,11 @@ def fuer(titel, kategorie, ort=None, ort_name=None, flavour_von_ort=None):
     return list(dict.fromkeys(rt))
 
 
+# Richtungen, die intern berechnet werden, aber nicht im Filter-Blatt stehen:
+# Familie-Termine sortiert ddwg/aussortieren.py seit 30.09.2026 ganz aus.
+NICHT_ZEIGEN = {"familie"}
+
+
 def fuer_ausgabe():
     """Aufbau fuer die Seite: Bereiche mit Richtungen (ohne interne Felder)."""
-    return BEREICHE
+    return [b for b in BEREICHE if b["k"] not in NICHT_ZEIGEN]

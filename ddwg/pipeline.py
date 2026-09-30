@@ -5,7 +5,8 @@
                 Region "weiter" und ersetzt die listings der Quelle. Danach
                 build() und das Nachladen fehlender Beschreibungen.
     build()     baut die Tabelle events komplett neu aus den listings und
-                verwirft dabei Fuehrungen (VERWORFENE_KATEGORIEN).
+                verwirft dabei Fuehrungen (VERWORFENE_KATEGORIEN) und alles,
+                was ddwg/aussortieren.py aussortiert (Hotels, Familie ...).
 
 Beides laeuft ohne Server, einmal aufgerufen und fertig (python -m ddwg).
 """
@@ -14,7 +15,7 @@ import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
-from . import db, dedup, geo, merge, quellen
+from . import aussortieren, db, dedup, geo, merge, quellen
 from .orte import Orte
 from .quellen import base, detail_fetch
 
@@ -28,6 +29,10 @@ logger = logging.getLogger("ddwg")
 # einmal in build() nach der Kategorie-Vergabe ueber den Ort (Stufe 3), sonst
 # rutschte eine dort vererbte Fuehrung durch.
 VERWORFENE_KATEGORIEN = {"fuehrungen"}
+
+# Kategorien, die ein Ort nie an seine 'sonstiges'-Termine weitergibt (Stufe 3):
+# Eine Demo ist ein einzelnes Ereignis, keine Eigenschaft des Platzes.
+NICHT_VERERBEN = ("demo",)
 
 # So viele Tage voraus wird gescrapt.
 TAGE_VORAUS = 31
@@ -184,22 +189,42 @@ def build(conn, orte, heute=None):
     _kategorie_vom_ort(out, orte)
     vorher = len(out)
     out = [(ev, ids) for ev, ids in out if ev["category"] not in VERWORFENE_KATEGORIEN]
+    fuehrungen = vorher - len(out)
+    out, aussortiert = _aussortieren(out, orte)
     _laufend(out)
     db.replace_events(conn, out)
-    logger.info("%d Einträge -> %d Events (%d Führungen verworfen).",
-                len(items), len(out), vorher - len(out))
+    logger.info("%d Einträge -> %d Events (%d Führungen verworfen, aussortiert: %s).",
+                len(items), len(out), fuehrungen,
+                ", ".join(f"{g} {n}" for g, n in sorted(aussortiert.items())) or "nichts")
     return len(out)
+
+
+def _aussortieren(out, orte):
+    """Termine, die David nie sehen will (siehe ddwg/aussortieren.py), fliegen
+    raus. Gibt (verbliebene, {grund: anzahl}) zurueck."""
+    flavours = aussortieren.flavour_von_ort()
+    bleibt, zaehler = [], defaultdict(int)
+    for ev, ids in out:
+        ort = (orte.get(ev["ort"]) if ev["ort"] else None) or {"name": ev.get("ort_roh")}
+        grund = aussortieren.grund(ev["title"], ev["category"], ev["ort"], ort, flavours)
+        if grund:
+            zaehler[grund.split(":")[0]] += 1
+        else:
+            bleibt.append((ev, ids))
+    return bleibt, dict(zaehler)
 
 
 def _kategorie_vom_ort(out, orte):
     """Stufe 3 der Kategorie-Vergabe: ein Ort mit gepflegter Art, dessen Events
     sich auf GENAU EINE echte Kategorie einigen, vererbt sie an seine
     'sonstiges'-Events. Ein Ort, der mehrere Dinge macht, vererbt nichts -
-    'sonstiges' ist eine ehrliche Antwort, eine geratene Kategorie nicht."""
+    'sonstiges' ist eine ehrliche Antwort, eine geratene Kategorie nicht.
+    Demos zaehlen dabei nicht (NICHT_VERERBEN): Eine Menschenkette auf dem
+    Schlossplatz machte sonst die Schnitzeljagd dort zur Demo (30.09.2026)."""
     seen = defaultdict(set)
     for ev, _ids in out:
         ort = orte.get(ev["ort"]) if ev["ort"] else None
-        if ort and ort.get("art") and ev["category"] != "sonstiges":
+        if ort and ort.get("art") and ev["category"] not in ("sonstiges",) + NICHT_VERERBEN:
             seen[ev["ort"]].add(ev["category"])
     for ev, _ids in out:
         cats = seen.get(ev["ort"])

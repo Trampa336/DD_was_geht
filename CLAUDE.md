@@ -32,6 +32,8 @@ python -m pytest tests           # Kerntests ohne Netz
 - `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 750 Orte
   mit Aliasen, Region, Art, Herz, Homepage, Cover, Adresse und Koordinaten.
   Unbekannte Schreibweisen legt der Scrape als neuen Ort mit `erstmals` an.
+  Feld `raus` (Grund als Text): alle Termine dieses Orts werden aussortiert
+  (Haus der Brücke, TimeRide, Erlwein Forum, Dampfschifffahrt, Dampfzug, Wackerbarth).
 - `orte/flavours.json`: 8 Flavours (liefern die Orte der Richtungen, siehe „Oberfläche“) und die
   Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
   Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.
@@ -48,8 +50,16 @@ python -m pytest tests           # Kerntests ohne Netz
    jeder Quelle höchstens einen Eintrag.
 4. `merge.merge()` verschmilzt Feld für Feld nach Quellen-Rang: Datum, Zeit und Titel
    kommen von der ranghöchsten Quelle, Beschreibung, Preis und Bild von der
-   ranghöchsten Quelle, die sie hat.
-   Danach verwirft `build()` noch einmal alle Führungen (auch über den Ort geerbte).
+   ranghöchsten Quelle, die sie hat. Seit 2026-09-30: Fehlt der besten Quelle die
+   Uhrzeit, kommt sie von der nächsten (Ostpol nennt oft keine). Der Link ist der erste
+   Einzellink; Startseiten und cybersax-Tagesseiten nur, wenn es nichts anderes gibt.
+   Im Preis fällt ein angehängtes „Quelle: …“ weg.
+   Danach verwirft `build()` noch einmal alle Führungen (auch über den Ort geerbte)
+   und alles aus **`ddwg/aussortieren.py`** (Davids Entscheidung 29./30.09.2026, weder
+   Zeitstrahl noch Karte): Orte mit `raus`, Hotels und Gasthöfe (am Ortsnamen), Familie
+   und Kinder (Richtung `familie`), Senioren, abgesagte Termine und Touristen-Angebote
+   (Candlelight, Babykonzerte, Stadtabenteuer, Weinwanderungen und -proben). Umland
+   bleibt. Das Log von `build` nennt die Anzahl je Grund.
 5. Für alle Events ohne Beschreibung lädt die Pipeline die Kulturkalender-Detailseite
    nach (seit 2026-09-29, vorher nur Herz-Orte): nächste Tage zuerst, jede Seite nur
    einmal, höchstens 2.500 pro Lauf, Abbruch nach 20 Fehlschlägen in Folge. Ergebnisse
@@ -122,7 +132,10 @@ Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS)
 Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“
-(z. B. Flavours verfeinern: Hole of Fame und C. Rockefeller Center stehen unter „museum“).
+(Flavours verfeinern mit der kürzeren Liste: Hole of Fame und C. Rockefeller Center stehen
+unter „museum“; danach doppelte Orte zusammenlegen, z. B. tante-ju / tante-ju-liveclub).
+Seit 2026-09-30 haben alle Herz-Orte einen Flavour (Straße E und Sektor club, Der Lude
+indie = Bar). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de,
 terminal.digital, dresden.de, omasgegenrechts-dresden.de und nominatim (Stand 2026-09-29). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
@@ -133,7 +146,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - **`sonstiges` ist eine gültige Antwort.** Kategorie-Reihenfolge: **Titel-Stichwort für Demos und Führungen**
   (`_titel_entscheidet` in `normalize.py`, seit 2026-09-29, schlägt die Quelle) →
   Rohkategorie der Quelle → Titel-Stichwort (`normalize.py`) → Art des Ortes, nur wenn
-  der Ort genau eine Kategorie hat → `sonstiges`. Nichts wird zwangsweise einsortiert.
+  der Ort genau eine Kategorie hat (Demos werden dabei nie vererbt, `NICHT_VERERBEN`;
+  sonst wurde die Schnitzeljagd auf dem Schloßplatz zur Demo) → `sonstiges`.
+  Nichts wird zwangsweise einsortiert.
   Demos sind ausdrücklich erwünscht und haben die Kategorie `demo` („Demos“).
   Die Kategorie ist grob; genauer sind die Richtungen (siehe „Oberfläche“).
 - **Scraper höflich:** `base.REQUEST_DELAY_SECONDS` (1,2 s) zwischen Requests,
@@ -157,7 +172,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Beschreibung +5, mehrere Quellen +8, ab 18 Uhr +5, keine Richtung −10, Umland −10.
 - **Richtungen** verschmelzen Flavours und Kategorien (`ddwg/richtungen.py`, Tests in
   `tests/test_richtungen.py`): Musik (Club, Rock, Indie, Jazz, Klassik), Kultur (Bühne,
-  Film, Lesung, Ausstellungen), Demos, Familie, Feste & Märkte, Sport. Ein Termin trifft
+  Film, Lesung, Ausstellungen), Demos, Feste & Märkte, Sport. Familie wird noch berechnet
+  (zum Aussortieren), steht aber nicht mehr im Filter. Jazz schlägt Klassik
+  („Quartett“ im Blue Note). Ein Termin trifft
   über den Flavour seines Ortes, ein Titel-Stichwort (auf dem Slug, mit Wortgrenzen und
   Liste falscher Freunde) oder die Kategorie. Ort und Stichwort zählen nur, wenn die
   Kategorie passt oder `sonstiges` ist. Sport = Mitmachen, ohne Senioren-, Familien-
@@ -179,6 +196,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
   (`ddwg-filter`), Herzen und Richtungen unter `ddwg-meine`. Oben zeigt eine Zeile den
   aktiven Filter mit ✕. Die Karte hat oben nur noch die Zeit-Knöpfe.
+- **Dauerausstellungen** (seit 2026-09-30): Laufende Termine (`l`, gleicher Titel an
+  mindestens 7 Tagen) stehen weder im Zeitstrahl noch auf der Karte. Ausnahme: Ausstellungen
+  (`l` und Richtung Kunst) zeigt der Chip „Dauerausstellungen zeigen“ im Filter-Blatt, je
+  Ausstellung einmal am ersten Tag. Ohne eigene Wahl (`F.dauer` null) ist er an, sobald die
+  Richtung Ausstellungen oder Kultur gewählt ist; Tippen auf diese Richtung setzt die Wahl zurück.
 
 ## Offene Ideen
 - Führungen kommen seit 2026-09-29 gar nicht mehr auf die Seite (Davids Entscheidung):

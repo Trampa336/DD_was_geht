@@ -7,10 +7,18 @@ Konzert, das rauze und der Kulturkalender beide fuehren, bekommt so Titel,
 Beschreibung und Preis von rauze und notfalls das Bild vom Kulturkalender.
 
 Die Gruppe kommt aus dedup.cluster() schon sortiert, der ranghoechste Eintrag
-zuerst. Datum, Uhrzeit und Titel stammen immer von ihm - sonst koennte ein
-Event aus Titel der einen und Uhrzeit der anderen Quelle zusammengesetzt
-werden, und das waere eine Angabe, die keine Quelle so gemacht hat.
+zuerst. Datum und Titel stammen immer von ihm. Die Uhrzeit auch - nur wenn er
+keine hat, kommt sie von der naechsten Quelle, die eine hat (seit 30.09.2026:
+die Ostpol-Seite nennt oft keine, cybersax und der Kulturkalender schon).
+
+Der Link soll auf die Seite des Termins zeigen. Eine Startseite (ost-pol.de/)
+oder eine Tagesuebersicht (cybersax /terminal/day/) zaehlt nur, wenn keine
+Quelle einen eigenen Link hat. Im Preisfeld bleibt nur der Preis, ein
+angehaengtes "Quelle: Museen der Stadt Dresden" faellt weg.
 """
+import re
+from urllib.parse import urlparse
+
 from . import dedup, quellen
 
 KEINE_BESCHREIBUNG = "Keine weitere Beschreibung verfügbar."
@@ -24,6 +32,29 @@ def _first(members, field):
         if value and value != KEINE_BESCHREIBUNG:
             return value
     return None
+
+
+def ist_einzellink(url):
+    """False fuer Startseiten und Tagesuebersichten, die fuer viele Termine gleich sind."""
+    if not url:
+        return False
+    teile = urlparse(url)
+    pfad = teile.path.rstrip("/")
+    if not pfad or pfad in ("/index.php", "/index.html"):
+        return False
+    return "/terminal/day/" not in teile.path
+
+
+_PREIS_QUELLE_RE = re.compile(r"\s*\|?\s*quelle:.*$", re.IGNORECASE | re.DOTALL)
+
+
+def preis_bereinigen(text):
+    """"frei | Ohne Anmeldung Quelle: Bibliothek" -> "frei | Ohne Anmeldung";
+    "Quelle: Museen der Stadt Dresden" -> None."""
+    if not text:
+        return None
+    text = _PREIS_QUELLE_RE.sub("", text).strip(" |")
+    return text or None
 
 
 def merge(members, detail=None):
@@ -55,15 +86,16 @@ def merge(members, detail=None):
         # "uid" ist in der Gruppe nur der Zeilenschluessel fuer dedup.
         "uid": head.get("event_uid") or head["uid"],
         "date": head["date"],
-        "time": head.get("time"),
+        "time": head.get("time") or _first(members, "time"),
         "title": head["title"],
         "ort": ort_member.get("ort"),
         "ort_roh": ort_member.get("ort_roh"),
         "category": category,
-        "url": _first(members, "url"),
+        "url": next((m["url"] for m in members if ist_einzellink(m.get("url"))), None)
+               or _first(members, "url"),
         "image_url": _first(members, "image_url"),
         "description": _first(members, "description"),
-        "price_text": _first(members, "price_text"),
+        "price_text": next((p for p in (preis_bereinigen(m.get("price_text")) for m in members) if p), None),
         "sources": ",".join(sources),
     }
 
