@@ -50,6 +50,10 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
   `dedup` Termine nur am selben Ort zusammenlegt; sonst stehen sie doppelt im Zeitstrahl.
   Verschiedene Bühnen im selben Haus (Kulturpalast, Kraftwerk Mitte) bleiben getrennt.
   Ein Eintrag in flavours.json muss dabei zum Ziel-Slug wandern (am 30.09. 25 Orte zusammengelegt).
+  `python -m ddwg status` meldet Verdachtsfälle (`ddwg/doppelorte.py`): Orts-Paare mit mindestens
+  zwei Terminen am selben Tag und gleichem Titelanfang. Dieselbe Filmvorführung in zwei Kinos
+  (Rundkino, UCI) ist ein bekannter harmloser Treffer. Lokal zeigt `status` alte Ortsnamen, bis
+  der nächste Scrape die Einträge neu zuordnet (`build` ordnet nicht neu zu).
 - `orte/flavours.json`: 8 Flavours (liefern die Orte der Richtungen, siehe „Oberfläche“) und die
   Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
   Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.

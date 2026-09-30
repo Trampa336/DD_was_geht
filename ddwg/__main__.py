@@ -14,7 +14,7 @@ import sys
 from collections import Counter
 from datetime import date
 
-from . import ausgabe, db, pipeline, quellen
+from . import ausgabe, db, doppelorte, pipeline, quellen
 from .orte import Orte
 
 
@@ -120,6 +120,17 @@ def cmd_status(args):
     if neu:
         print(f"{len(neu)} Orte seit dem Umzug neu dazugekommen, zuletzt: "
               + ", ".join(slug for _d, slug in neu[-8:]))
+    with db.connect() as conn:
+        rows = [dict(r) for r in conn.execute(
+            "SELECT date, title, ort FROM events WHERE date >= ?", (heute,))]
+    raus = [slug for slug, o in orte.items() if o.get("raus")]
+    paare = doppelorte.verdacht(rows, raus)
+    if paare:
+        print(f"\nVerdacht auf doppelte Orte ({len(paare)}), zusammenlegen mit Orte.zusammenlegen():")
+        for a, b, n, bsp in paare[:15]:
+            print(f"  {a} + {b}: {n}x gleicher Tag und Titel, z. B. {bsp[:50]}")
+    else:
+        print("\nKein Verdacht auf doppelte Orte.")
 
 
 def main(argv=None):
