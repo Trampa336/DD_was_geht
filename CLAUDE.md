@@ -226,11 +226,17 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Sprünge setzen den Tag ganz nach oben; beim Scrollen gilt ein Tag als aktuell, sobald seine
   Überschrift die Lesekante oben erreicht (`LESE` = 60 px), nicht die Mitte der Leiste.
 - **Zurück-Knopf** (seit 2026-09-30): Jede geöffnete Ebene legt einen Eintrag im Browser-Verlauf
-  an (`ebenen` in der Vorlage): Blatt (Termin, Ort, Kalender, Filter, Herzen), Orts-Karte,
+  an (`ebenen` in der Vorlage): Blatt (Termin, Ort, Kalender, Suche, Filter, Herzen), Orts-Karte,
   Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
-- **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
+- **Suchknopf** (Lupe unten, seit 2026-09-30, Davids Wahl): öffnet ein eigenes Blatt, nur
+  Suchfeld (Tastatur sofort offen) und eine Trefferliste ab heute (Datum, Zeit, Titel, Ort,
+  höchstens 100). Sucht in allen Terminen, **unabhängig vom Filter**; jedes Wort muss in
+  Titel, Ort oder Beschreibung stehen, laufende Termine erscheinen einmal. Der Begriff gilt
+  nur, solange die Seite offen ist (`SU` in der Vorlage). Termin → Zurück zeigt die Liste
+  an derselben Stelle.
+- **Filter-Knopf** unten rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld): Orte
   (Alle / Meine / Neue, darunter „♥ Orte auswählen“), Tageszeit, Deine Richtungen (Tippen merkt
   und holt nach vorne) und „Nur meine Richtungen“. **Tageszeit** (seit 2026-09-30): Chips
   „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
