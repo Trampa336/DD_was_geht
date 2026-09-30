@@ -27,6 +27,14 @@ python -m ddwg status            # letzter Lauf je Quelle, Bestand, neu entdeckt
 python -m pytest tests           # Kerntests ohne Netz
 ```
 
+**Vorschau am Handy vor dem Push** (bei Änderungen an der Oberfläche, seit 2026-09-30):
+nach `python -m ddwg build` auf dem Proxmox-Rechner `cd ausgabe && python3 -m http.server 8000`
+starten und am Handy im selben WLAN `http://<IP des Proxmox-Rechners>:8000` öffnen. So lassen sich
+Wischen, Vibration und Zurück-Knopf am echten Gerät prüfen. Der Service Worker (offline) läuft dort
+nicht, er braucht https. Claude kann den Server nicht selbst dauerhaft starten (Cowork-Befehle enden
+nach höchstens 3 min, und das Handy erreicht Claudes Shell nicht), sagt aber vor dem Push Bescheid,
+wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansicht.
+
 ## Grundprinzip
 **Alles Kuratierte liegt in Dateien (git), die Events liegen in einer Wegwerf-DB.**
 - `orte/orte.json` (Quelle der Wahrheit, von Hand und von Werkzeugen gepflegt): rund 750 Orte
