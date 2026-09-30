@@ -303,7 +303,8 @@
   "aliase": [
    "Anukan – Zentrum für Berührungskunst"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "Massage- und Tantra-Angebote (David, 30.09.2026)"
  },
  "arbeit-und-leben": {
   "name": "Arbeit und Leben",
@@ -3784,6 +3785,7 @@
    "Kadampa Meditationszentrum Dresden e.V."
   ],
   "region": "dresden",
+  "raus": "Meditation und Kurse, kein Abendprogramm (David, 30.09.2026)",
   "homepage": "https://meditation-dresden.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/60860/responsive-images/di18___thumb_1280_1280.jpg",
   "beschreibung": "Jeder ist willkommen und kann die Kurse im Kadampa Meditationszentrum Dresden genießen und von ihnen profitieren, um meditieren zu lernen.",
@@ -6214,6 +6216,7 @@
    "Riesa efau"
   ],
   "region": "dresden",
+  "raus": "vor allem Kurse und Werkstätten (David, 30.09.2026)",
   "art": "galerie"
  },
  "riesa-efau-kultur-forum": {
@@ -6222,6 +6225,7 @@
    "riesa efau. Kultur Forum Dresden"
   ],
   "region": "dresden",
+  "raus": "vor allem Kurse und Werkstätten (David, 30.09.2026)",
   "homepage": "http://www.riesa-efau.de",
   "cover": "https://www.kulturkalender-dresden.de/storage/14719/responsive-images/Motorenhalle-Riesa-efau-2___thumb_1000_563.jpg",
   "adresse": "Adlergasse 14, 01067 Dresden",
