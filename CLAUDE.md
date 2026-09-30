@@ -169,6 +169,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
   Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
   40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.
+- **Zurück-Knopf** (seit 2026-09-30): Jede geöffnete Ebene legt einen Eintrag im Browser-Verlauf
+  an (`ebenen` in der Vorlage): Blatt (Termin, Ort, Kalender, Filter, Herzen), Orts-Karte,
+  Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
+  Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
+  entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
 - **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
   (Alle / Meine / Neue), Deine Richtungen (Tippen merkt und holt nach vorne) und
   „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt

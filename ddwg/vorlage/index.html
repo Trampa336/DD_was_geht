@@ -378,6 +378,7 @@ const rtName = e => {
 function zeigeUebernehmen() {
   const { an, weg } = herzenAnwenden();
   const befehl = [an.length ? `python -m ddwg herz ${an.join(" ")}` : "", weg.length ? `python -m ddwg herz --weg ${weg.join(" ")}` : "", "python -m ddwg build"].filter(Boolean).join(" && ");
+  merkeBlatt("herzen", () => zeigeUebernehmen());
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Herzen übernehmen</div>
     <h2>${an.length + weg.length} ${an.length + weg.length === 1 ? "Änderung" : "Änderungen"}</h2>
     <p class="sh-text">Deine Herzen gelten nur in diesem Browser. Mit dem Befehl stehen sie auch in orte.json (Davids Liste im Repo). Auf der Seite ändert das nichts, andere Nutzer sehen deine Herzen nicht.</p>
@@ -582,13 +583,53 @@ function zeigeKalender() {
       : `<button class="${kl}" data-kal="${k}" aria-label="${WTL[d.getDay()]}, ${d.getDate()}. ${MONL[d.getMonth()]}">${d.getDate()}</button>`);
   }
   const kopf = [1, 2, 3, 4, 5, 6, 0].map(i => `<span class="kal-wt">${WT[i]}</span>`).join(""), jahr = parse(HEUTE).getFullYear();
+  merkeBlatt("kalender", () => zeigeKalender());
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Zu einem Tag springen</div>
     ${bloecke.map(b => `<h3 class="kal-monat">${MONL[b.m]}${b.y !== jahr ? " " + b.y : ""}</h3><div class="kal">${kopf}${b.zellen.join("")}</div>`).join("")}</div>`);
 }
 function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; $(".sheet-body").scrollTop = 0; document.body.style.overflow = "hidden"; }
-function sheetZu() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
+function sheetZuIntern() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
+// ✕, Tippen daneben, Escape: im Verlauf zurück, damit keine toten Zurück-Schritte entstehen
+function sheetZu(dann) { zurueckBis(tiefeOhneBlatt(), dann); }
+
+/* ---------- Zurück-Knopf: jede geöffnete Ebene bekommt einen Eintrag im Browser-Verlauf ---------- */
+// Ebenen, jüngste zuletzt: {art: "tab"} (Entdecken) | {art: "okarte"} (Orts-Karte) | {art: "blatt", key, zeige}
+// „Zurück“ schließt die oberste. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
+const ebenen = [];
+let imZurueck = false, unterwegs = false, dannFn = null;
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";  // Zurück soll nicht scrollen
+try { history.replaceState({ dd: 0 }, ""); } catch (e) {}
+function ebeneAuf(e) {
+  const oben = ebenen.at(-1);
+  // gleiche Ebene neu gezeichnet oder anderer Ort auf der Karte: ersetzen statt neuer Schritt
+  if (oben && oben.art === e.art && (e.art === "okarte" || oben.key === e.key)) { ebenen[ebenen.length - 1] = e; return; }
+  ebenen.push(e);
+  try { history.pushState({ dd: ebenen.length }, ""); } catch (x) {}
+}
+function merkeBlatt(key, zeige) { if (!imZurueck) ebeneAuf({ art: "blatt", key, zeige }); }
+function tiefeOhneBlatt() { let t = ebenen.length; while (t > 0 && ebenen[t - 1].art === "blatt") t--; return t; }
+function zurueckBis(tiefe, dann) {
+  if (unterwegs) return;  // Doppeltipp: nicht zweimal zurück
+  const n = ebenen.length - tiefe;
+  if (n <= 0) { if (!$("#sheet").hidden && !ebenen.some(e => e.art === "blatt")) sheetZuIntern(); if (dann) dann(); return; }
+  unterwegs = true; dannFn = dann || null; history.go(-n);
+}
+addEventListener("popstate", ev => {
+  unterwegs = false;
+  const tiefe = Math.max(0, Math.min(ev.state?.dd ?? 0, ebenen.length));
+  while (ebenen.length > tiefe) {
+    const e = ebenen.pop();
+    if (e.art === "okarte") ortKarteZuIntern();
+    if (e.art === "tab") setTabIntern("was");
+  }
+  const oben = ebenen.at(-1);
+  if (oben?.art === "blatt") { imZurueck = true; try { oben.zeige(); } finally { imZurueck = false; } }
+  else if (!$("#sheet").hidden) sheetZuIntern();
+  const f = dannFn; dannFn = null; if (f) f();
+});
 function zeigeEvent(i) {
   const e = D.events[i], o = ort(e), q = (e.q || []).map(s => D.quellen[s] || s).join(", ");
+  merkeBlatt("ev" + i, () => zeigeEvent(i));
   sheetAuf(`<div class="sh-bild">${medium(e)}</div><div class="sh">
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
     <h2>${esc(e.ti)}</h2>
@@ -605,6 +646,7 @@ function herzKnopf(slug) {
 function zeigeOrt(slug) {
   const o = D.orte[slug]; if (!o) return;
   const evs = D.events.filter(e => e.o === slug).sort(nachZeit);
+  merkeBlatt("ort:" + slug, () => zeigeOrt(slug));
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
     <h2>${esc(o.n)}</h2>${o.a ? `<div class="sh-text">${esc(o.a)}</div>` : ""}
     <div class="sh-links">${herzKnopf(slug)}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}${o.lat ? `<button class="knopf" data-aufkarte="${esc(slug)}">Auf der Karte</button>` : ""}</div>
@@ -640,6 +682,7 @@ function renderEntdecken() {
 }
 function zeigeOrtKarte(slug, zentrieren = true) {
   const o = D.orte[slug]; if (!o) return;
+  if (zentrieren) ebeneAuf({ art: "okarte" });  // nur bei Nutzeraktion, nicht beim Neuzeichnen
   gewaehlt = slug;
   const l = ENT.proOrt[slug] || [], Z = { heute: "heute", morgen: "morgen", we: "am Wochenende", alle: `in ${TAGE_ALLE.length} Tagen` }[S.ez];
   $("#ort-karte").innerHTML = `<div class="ok-kopf"><h3>${o.h ? "♥ " : ""}${esc(o.n)}<small>${esc([o.art, o.a].filter(Boolean).join(" · ") || "Ort")}</small></h3>
@@ -652,7 +695,8 @@ function zeigeOrtKarte(slug, zentrieren = true) {
   document.querySelector(`.mk[data-slug="${CSS.escape(slug)}"]`)?.classList.add("gewaehlt");
   if (zentrieren && karte && o.lat) karte.panTo(karte.unproject(karte.project([o.lat, o.lon]).add([0, karte.getSize().y * .22])));
 }
-function ortKarteZu() { gewaehlt = null; $("#ort-karte").hidden = true; document.querySelectorAll(".mk.gewaehlt").forEach(m => m.classList.remove("gewaehlt")); }
+function ortKarteZu() { const i = ebenen.map(e => e.art).lastIndexOf("okarte"); if (i >= 0 && i === ebenen.length - 1) zurueckBis(i); else ortKarteZuIntern(); }
+function ortKarteZuIntern() { gewaehlt = null; $("#ort-karte").hidden = true; document.querySelectorAll(".mk.gewaehlt").forEach(m => m.classList.remove("gewaehlt")); }
 
 /* Leaflet und das Cluster-Plugin nacheinander laden (das Plugin braucht Leaflet) */
 function ladeSkript(src) { return new Promise((ok, fehler) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fehler; document.head.append(s); }); }
@@ -700,6 +744,7 @@ function karteZeichnen(mitGeo) {
 const X_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 let fiT;
 function filterBlatt() {
+  merkeBlatt("filter", () => filterBlatt());
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Filter</div><h2>Was suchst du?</h2>
     <input class="fi-suche" id="fi-suche" type="search" placeholder="Titel, Ort oder Stichwort" enterkeyhint="search" autocomplete="off" aria-label="Suche">
     <div id="fi-rest"></div></div>`);
@@ -746,7 +791,14 @@ function filterGeaendert() {
 }
 
 /* ---------- Reiter wechseln ---------- */
+// Entdecken ist eine Ebene; „Was geht“ antippen geht im Verlauf zurück
 function setTab(t) {
+  if (t === "karte" && S.tab !== "karte") { setTabIntern("karte"); ebeneAuf({ art: "tab" }); return; }
+  const i = ebenen.findIndex(e => e.art === "tab");
+  if (t === "was" && i >= 0) return zurueckBis(i);
+  setTabIntern(t);
+}
+function setTabIntern(t) {
   S.tab = t;
   $("#app").dataset.tab = t;
   document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
@@ -760,8 +812,8 @@ function setTab(t) {
 document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-zu]"); if (!el) return;
   const ds = el.dataset;
-  if (ds.kal !== undefined) { sheetZu(); return springe(+ds.kal, false); }
-  if ("zu" in ds) return sheetZu();
+  if (ds.kal !== undefined) { const k = +ds.kal; return sheetZu(() => springe(k, false)); }
+  if ("zu" in ds) return sheetZu();  // ✕ und Tippen daneben
   if ("filter" in ds) return filterBlatt();
   if (ds.forte) { F.orte = ds.forte; return filterGeaendert(); }
   if (ds.rt) { richtungUmschalten(ds.rt); if (nurAn()) scrollTo({ top: 0 }); return fiRest(); }
@@ -778,9 +830,9 @@ document.addEventListener("click", e => {
   if ("kopieren" in ds) { const t = $("#befehl").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Befehl kopiert")).catch(() => prompt("Zum Kopieren:", t)); return; }
   if ("verwerfen" in ds) { M = { start: true, fl: RT_STANDARD ? [RT_STANDARD] : [], an: [], weg: [] }; meineSpeichern(); sheetZu(); allesNeu(); return toast("Herzen zurückgesetzt"); }
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
-  if (ds.aufkarte) { const o = D.orte[ds.aufkarte]; sheetZu(); setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(ds.aufkarte); }
+  if (ds.aufkarte) { const slug = ds.aufkarte, o = D.orte[slug]; sheetZu(() => { setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(slug); }); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") sheetZu(); });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); });
 
 /* ---------- Start ---------- */
 herzenAnwenden();
