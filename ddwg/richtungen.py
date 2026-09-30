@@ -86,7 +86,7 @@ FALSCHE_FREUNDE = {
 # Familienangebote zaehlen ausdruecklich nicht (Davids Entscheidung, 29.09.2026).
 _SPORT_EXTRA_RE = re.compile(
     r"team-?challenge|firmenlauf|spendenlauf|stadtlauf|volkslauf|fun-?run|(?:^|-)run" + _E
-    + r"|" + _W + r"(?:yoga|lauf|laufen)" + _E)
+    + r"|" + _W + r"(?:yoga|lauf|laufen|eislaufen|schlittschuh|schlittschuhlaufen)" + _E)
 _SPORT_AUSGESCHLOSSEN_RE = re.compile(
     r"senior|(?:^|-)ue-?(?:50|55|60|65|70)" + _E + r"|(?:^|-)(?:50|60|65)-?plus" + _E
     + r"|kinder|kids|familie|eltern|baby|babys|kleinkind|mutter-kind|vater-kind|kita|seniorenheim"

@@ -1,5 +1,5 @@
 {
- "_info": "Flavours = voreingestellte Herz-Sets fuer den ersten Start der App. Wer einen Flavour waehlt, bekommt die Orte mit diesem haupt-Flavour als Herzen (nur im eigenen Browser). neben wird vorerst nicht genutzt. unklar = noch nachtragen. Zuordnung 25.09.2026: Sonnet (nur aus gescrapten Terminen) fuer die Top 100 der Orte-Vorauswahl, 20 Korrekturen von David. Verfeinern steht als ToDo im Leitstand. 30.09.2026: Korrekturen aus der Pruefseite nachgetragen (Chemiefabrik, Barnyard Club, objekt klein a = club; Cafe Pawlow, HD = indie), Strasse E = club, Der Lude = indie (Bar); Haus der Bruecke und Parkhotel raus (aussortiert). 30.09.2026 Flavour-Check (kuerzere Liste = 80 Orte mit Terminen auf der Live-Seite): Hofkirche, Frauenkirche = klassik; Club Baerenzwinger = club; Hole of Fame, C. Rockefeller Center = museum (Kunstateliers, bestaetigt); Hellerau, Schlossplatz = unklar; Kadampa, AnuKan, riesa efau raus (aussortiert).",
+ "_info": "Flavours = voreingestellte Herz-Sets fuer den ersten Start der App. Wer einen Flavour waehlt, bekommt die Orte mit diesem haupt-Flavour als Herzen (nur im eigenen Browser). neben wird vorerst nicht genutzt. unklar = noch nachtragen. Zuordnung 25.09.2026: Sonnet (nur aus gescrapten Terminen) fuer die Top 100 der Orte-Vorauswahl, 20 Korrekturen von David. Verfeinern steht als ToDo im Leitstand. 30.09.2026: Korrekturen aus der Pruefseite nachgetragen (Chemiefabrik, Barnyard Club, objekt klein a = club; Cafe Pawlow, HD = indie), Strasse E = club, Der Lude = indie (Bar); Haus der Bruecke und Parkhotel raus (aussortiert). 30.09.2026 Flavour-Check (kuerzere Liste = 80 Orte mit Terminen auf der Live-Seite): Hofkirche, Frauenkirche = klassik; Club Baerenzwinger = club; Hole of Fame, C. Rockefeller Center = museum (Kunstateliers, bestaetigt); Hellerau, Schlossplatz = unklar; Kadampa, AnuKan, riesa efau raus (aussortiert). 30.09.2026 Richtungs-Check: Tom Pauls, Theaterkahn, Hoftheater, Alter Schlachthof, Kulturhaus Freital, Zauberschloss Schoenfeld, Zaubertheater Chateau = buehne; Galerie Ines Schulz, Japanisches Palais, Ruestkammer = museum; H42 = jazz; kursif = indie. Seit 30.09. setzen Flavours keine Herzen mehr ueber Richtungen: sie sind das Genre des Orts (Richtungen) und die Gruppen-Knoepfe in der Orte-Liste.",
  "standard": "club",
  "flavours": [
   {"key": "club", "name": "Club, Party & DJ"},
@@ -102,6 +102,18 @@
   "schlosskapelle-im-residenzschloss": {"haupt": "museum", "neben": [], "von": "sonnet"},
   "altmarkt": {"haupt": "unklar", "neben": [], "von": "sonnet"},
   "strasse-e": {"haupt": "club", "neben": [], "von": "david"},
-  "der-lude": {"haupt": "indie", "neben": [], "von": "david"}
+  "der-lude": {"haupt": "indie", "neben": [], "von": "david"},
+  "tom-pauls-theater": {"haupt": "buehne", "neben": [], "von": "david"},
+  "theaterkahn-dresdner-brettl": {"haupt": "buehne", "neben": [], "von": "david"},
+  "hoftheater": {"haupt": "buehne", "neben": [], "von": "david"},
+  "alter-schlachthof": {"haupt": "buehne", "neben": [], "von": "david"},
+  "kulturhaus-freital": {"haupt": "buehne", "neben": [], "von": "david"},
+  "schloss-schoenfeld-das-zauberschloss-bei-weissig": {"haupt": "buehne", "neben": [], "von": "david"},
+  "zaubertheater-chateau": {"haupt": "buehne", "neben": [], "von": "david"},
+  "galerie-ines-schulz": {"haupt": "museum", "neben": [], "von": "david"},
+  "japanisches-palais-staatliche-kunstsammlungen": {"haupt": "museum", "neben": [], "von": "david"},
+  "ruestkammer-im-residenzschloss-staatliche-kunstsammlungen": {"haupt": "museum", "neben": [], "von": "david"},
+  "dresdner-whisky-manufaktur-h42": {"haupt": "jazz", "neben": [], "von": "david"},
+  "kursif": {"haupt": "indie", "neben": [], "von": "david"}
  }
 }

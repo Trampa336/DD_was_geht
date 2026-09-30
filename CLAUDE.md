@@ -54,9 +54,11 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
   zwei Terminen am selben Tag und gleichem Titelanfang. Dieselbe Filmvorführung in zwei Kinos
   (Rundkino, UCI) ist ein bekannter harmloser Treffer. Lokal zeigt `status` alte Ortsnamen, bis
   der nächste Scrape die Einträge neu zuordnet (`build` ordnet nicht neu zu).
-- `orte/flavours.json`: 8 Flavours (liefern die Orte der Richtungen, siehe „Oberfläche“) und die
-  Zuordnung der Top 100 Orte (`haupt`, `neben`, `unklar`), Standard `club`. Zuordnung von
-  Sonnet nur aus gescrapten Terminen, korrigiert von David. Es zählt nur `haupt`.
+- `orte/flavours.json`: 8 Flavours = **Genre des Orts** (Club, Rock, Punk/Indie, Jazz, Klassik,
+  Bühne, Ausstellungen, Familie) für gut 100 Orte (`haupt`, `neben`, `unklar`), Standard-Richtung
+  `club`. Es zählt nur `haupt`. Wofür (seit 2026-09-30): 1. Termine bekommen darüber ihre genaue
+  Richtung, wenn der Titel nichts sagt (gemessen: 733 von 2.395 Terminen nur so); 2. jede Gruppe
+  ist ein Knopf in der Orte-Liste. Flavours setzen **keine** Herzen mehr über Richtungen.
 - `cache/events.db` (SQLite, gitignored): `listings` (je Quelle roh, pro Lauf ersetzt) →
   `events` (verschmolzen, bei jedem Build komplett neu) + `scrape_runs` + `details`.
   Löschen ist erlaubt, der nächste Scrape baut die Datenbank neu auf.
@@ -143,8 +145,12 @@ Termine, KK 1. Resident Advisor ist raus, dort gab es nichts Eigenes.
 
 ## Herzen
 Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören dem Browser:**
-Die gewählten Richtungen bringen die Orte ihres Flavours als Herzen mit (ohne Wahl: Club,
-seit 2026-09-29 ohne Auswahlbildschirm), dazu eigene Änderungen am Herz-Knopf.
+Seit 2026-09-30 (Davids Entscheidung) kommen Herzen nur aus der **Orte-Liste** („Orte entdecken“,
+Knopf unter der Entdecken-Karte und im Filter-Blatt): Gruppen-Knöpfe `M.gr` („Solider Anfang“ =
+Herz-Orte aus orte.json, dazu je Genre eine Gruppe) plus Feinjustieren je Ort (`M.an`, `M.weg`).
+Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang“ an, Richtung Club
+(nur Sortierung). Alte Browser-Stände (ohne `v: 2`) bekommen einmal „Solider Anfang“, eigene
+Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr);
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
 Davids Herz-Orte sind zehn, seit 2026-09-27 alle mit eigener Quelle: Sektor,
@@ -154,8 +160,9 @@ Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit ort
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
 Flavour-Check (80 Orte mit Terminen), doppelte Orte, Koordinaten für Musik-Orte (Adressen von den
 Seiten der Orte, Koordinaten über nominatim im Browser, weil Cowork nominatim sperrt) und Ortsfoto
-als Ersatzbild sind seit 2026-09-30 erledigt. Als Nächstes der Richtungs-Check: 409 von 2.397
-Terminen bekommen keine Richtung (Lauf #20); je Ort Flavour, Art oder `raus` entscheiden (David).
+als Ersatzbild sind seit 2026-09-30 erledigt, ebenso Richtungs-Check (12 Orte mit Genre, „Internet“
+raus, Stichwort Eislaufen = Sport), Orte-Liste mit „Solider Anfang“ und Tageszeit-Chips.
+Offen: welche Orte genau in „Solider Anfang“ gehören (= `herz` in orte.json, mit David besprechen).
 Hole of Fame und C. Rockefeller Center bleiben „museum“ (Kunstateliers, Davids Entscheidung).
 Seit 2026-09-30 haben alle Herz-Orte einen Flavour (Straße E und Sektor club, Der Lude
 indie = Bar). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
@@ -221,8 +228,11 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
 - **Filter-Knopf** unten rechts öffnet ein Blatt: Suche (Titel, Ort, Beschreibung), Orte
-  (Alle / Meine / Neue), Deine Richtungen (Tippen merkt und holt nach vorne) und
-  „Nur meine Richtungen“. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
+  (Alle / Meine / Neue, darunter „♥ Orte auswählen“), Tageszeit, Deine Richtungen (Tippen merkt
+  und holt nach vorne) und „Nur meine Richtungen“. **Tageszeit** (seit 2026-09-30): Chips
+  „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
+  die die sichtbaren Termine am ehesten hälftig teilt (30.09.: 19:00, 1.067 von 2.011 ab dann).
+  Ohne Uhrzeit oder 00:00 (ganztägig) zählt als tagsüber. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
   (`ddwg-filter`), Herzen und Richtungen unter `ddwg-meine`. Oben zeigt eine Zeile den
   aktiven Filter mit ✕. Die Karte hat oben nur noch die Zeit-Knöpfe.
 - **Dauerausstellungen** (seit 2026-09-30): Laufende Termine (`l`, gleicher Titel an

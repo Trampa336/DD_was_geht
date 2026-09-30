@@ -78,3 +78,9 @@ def test_punk_gehoert_zu_indie():
     assert "rock" in rt("Stoner Rock Night", "musik")
     assert "indie" not in rt("Treffpunkt Jugendclub")
 
+
+def test_eislaufen_ist_sport():
+    # Richtungs-Check 30.09.2026: öffentliches Eislaufen in der JOYNEXT Arena
+    assert "sport" in rt("Eislaufen in Dresden Beginn der Saison")
+    assert "sport" not in rt("Eislaufen für Kinder")
+
