@@ -165,7 +165,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - **Zeitstrahl-Leiste** links (seit 2026-09-29 fertig): Alle Tage mit Terminen stehen als kleine,
   blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben und
   hinter der Reiter-Leiste blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
-  Monatswechsel als feine Linie mit Monatskürzel. Tipp auf ein kleines Datum springt hin, Tipp
+  Monatswechsel als feine Linie mit Monatskürzel (sonst kein Monat auf der Leiste). Tipp auf ein kleines Datum springt hin, Tipp
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
   Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
   40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.

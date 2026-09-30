@@ -56,7 +56,6 @@ main { flex: 1; }
 .tl-datum.aktiv::after, .tl-datum.mw::after, .tl-datum:first-child::after { display: none; }
 .tl-datum small { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
 .tl-datum b { font-size: 14px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
-.tl-datum i { display: none; font-style: normal; font-size: 9.5px; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
 .tl-datum.we small, .tl-datum.we b { color: var(--accent2); }
 /* Scrollen: Position folgt direkt (kein Nachlauf); Wischen auf der Leiste springt tageweise, dort kurz weich */
 .tl-datum { transition: opacity .2s; }
@@ -67,13 +66,13 @@ main { flex: 1; }
 .tl-datum.aktiv span { padding: 4px 0; min-width: 42px; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 6px 20px rgba(0,0,0,.45); }
 .tl-datum.aktiv small { font-size: 10px; color: var(--soft); }
 .tl-datum.aktiv b { font-size: 21px; color: var(--ink); }
-.tl-datum.aktiv i { display: block; }
 .tl-datum.aktiv.we small, .tl-datum.aktiv.we b { color: var(--accent2); }
 .tl-datum.aktiv.we span { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent2) 45%, transparent), 0 6px 20px rgba(0,0,0,.45); }
 /* Monatswechsel: feine Linie mit Monatskürzel über dem ersten Tag des neuen Monats */
 .tl-datum.mw::before { content: attr(data-mon); position: absolute; top: 1px; left: 5px; right: 5px; height: 9px; font-size: 7.5px; line-height: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; text-align: center; color: var(--soft);
   background: linear-gradient(to right, var(--soft) 0 22%, transparent 22% 78%, var(--soft) 78%) center / 100% 1px no-repeat; }
-.tl-datum.mw.aktiv::before { display: none; }
+/* Steht der Monatserste groß in der Mitte, rückt die Linie knapp darüber */
+.tl-datum.mw.aktiv::before { top: -6px; }
 
 /* ---------- Galerie: Liste über alle Tage ---------- */
 #tab-was { padding: 0 12px 40vh calc(var(--rail) + 8px); }
@@ -489,7 +488,7 @@ const NAH = 52, FERN = 40;  // Abstand großes Datum → Nachbar, dann je Tag au
 let labels = [], ys = [];
 function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden Terminen
   rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso), mw = k > 0 && parse(TAGE[k - 1]).getMonth() !== d.getMonth();
-    return `<div class="tl-datum${istWE(iso) ? " we" : ""}${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${kurzName(k)}</small><b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span></div>`; }).join("");
+    return `<div class="tl-datum${istWE(iso) ? " we" : ""}${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${kurzName(k)}</small><b>${d.getDate()}</b></span></div>`; }).join("");
   labels = [...rail.querySelectorAll(".tl-datum")];
   aktiv = -1;
 }
