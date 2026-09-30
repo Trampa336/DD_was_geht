@@ -984,7 +984,8 @@
   "aliase": [
    "Blauer Salon"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "raus": "im Parkhotel, unwichtig (David, 30.09.2026)"
  },
  "bloco-esperanca": {
   "name": "Bloco Esperança",
@@ -1355,7 +1356,11 @@
   "aliase": [
    "Circie"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "adresse": "Meschwitzstraße 15, 01099 Dresden",
+  "lat": 51.084495,
+  "lon": 13.7670142,
+  "geo_quelle": "nominatim"
  },
  "citybeach": {
   "name": "Citybeach Dresden",
