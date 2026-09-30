@@ -467,9 +467,11 @@ function auswahl(iso) {
   const alle = perTag[iso].slice().sort((a, b) => b.rel - a.rel || nachUhr(a, b));
   return { kacheln: alle.slice(0, KACHELN), rest: alle.slice(KACHELN).sort(nachUhr) };
 }
+// Bild des Termins, sonst das Foto des Orts (ort.c), sonst ein Schrift-Plakat.
+// Das Foto des Orts zählt nicht für die Relevanz, dort zählt nur e.img.
 function medium(e) {
-  const text = ort(e).n || e.or || e.ti, p = hash(e.o || e.ti) % 4;
-  if (e.img) return `<img class="medium" src="${esc(e.img)}" alt="" loading="lazy" decoding="async" data-t="${esc(text)}" data-p="${p}" onerror="bildFehler(this)">`;
+  const text = ort(e).n || e.or || e.ti, p = hash(e.o || e.ti) % 4, bild = e.img || ort(e).c;
+  if (bild) return `<img class="medium" src="${esc(bild)}" alt="" loading="lazy" decoding="async" data-t="${esc(text)}" data-p="${p}" onerror="bildFehler(this)">`;
   return `<div class="medium poster p${p}">${esc(text)}</div>`;
 }
 window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };

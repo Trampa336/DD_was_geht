@@ -104,6 +104,7 @@ def daten(conn, orte, heute=None, tage=None):
         orte_out[slug] = {k: v for k, v in {
             "n": ort.get("name"), "h": 1 if ort.get("herz") else None,
             "w": ort.get("homepage"), "a": ort.get("adresse"), "art": ort.get("art"),
+            "c": ort.get("cover"),   # Foto des Orts, Ersatz fuer Termine ohne eigenes Bild
             "lat": round(lat, 5) if lat is not None else None,
             "lon": round(lon, 5) if lon is not None else None,
         }.items() if v}
