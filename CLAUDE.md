@@ -203,6 +203,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
   Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
   40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.
+  Sprünge setzen den Tag ganz nach oben; beim Scrollen gilt ein Tag als aktuell, sobald seine
+  Überschrift die Lesekante oben erreicht (`LESE` = 60 px), nicht die Mitte der Leiste.
 - **Zurück-Knopf** (seit 2026-09-30): Jede geöffnete Ebene legt einen Eintrag im Browser-Verlauf
   an (`ebenen` in der Vorlage): Blatt (Termin, Ort, Kalender, Filter, Herzen), Orts-Karte,
   Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den

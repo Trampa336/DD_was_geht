@@ -75,7 +75,7 @@ main { flex: 1; }
 .tl-datum.mw.aktiv::before { top: -6px; }
 
 /* ---------- Galerie: Liste über alle Tage ---------- */
-#tab-was { padding: 0 12px 40vh calc(var(--rail) + 8px); }
+#tab-was { padding: 0 12px 70vh calc(var(--rail) + 8px); }  /* Platz, damit auch der letzte Tag nach oben springen kann */
 .tag { padding-top: 18px; }
 .tag-kopf { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 15px; font-weight: 700; color: var(--soft); }
 .tag-kopf em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--faint); }
@@ -503,6 +503,9 @@ function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden 
   labels = [...rail.querySelectorAll(".tl-datum")];
   aktiv = -1;
 }
+// mitte: Höhe des großen Datums auf der Leiste. LESE: Lesekante oben – ein Tag gilt als aktuell,
+// sobald seine Überschrift hier ankommt; Sprünge setzen den Tag ganz nach oben (nicht auf die Mitte).
+const LESE = 60;
 let tops = [], mitte = 0;
 function messen() {
   tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
@@ -511,7 +514,7 @@ function messen() {
   zeichnen();
 }
 function position() {
-  const y = scrollY + mitte;
+  const y = scrollY + LESE;
   if (y <= tops[0]) return 0;
   for (let k = 0; k < TAGE.length; k++) if (y < tops[k + 1]) return k + (y - tops[k]) / (tops[k + 1] - tops[k]);
   return TAGE.length - 1;
@@ -545,7 +548,7 @@ function springe(k, weich) {
   if (!TAGE.length) return;
   k = klemm(k); if (k === ziel && Date.now() - zielZeit < 600) return;
   ziel = k; zielZeit = Date.now();
-  scrollTo({ top: Math.max(0, tops[k] - mitte + 4), behavior: weich ? "smooth" : "instant" });
+  scrollTo({ top: Math.max(0, tops[k]), behavior: weich ? "smooth" : "instant" });
   if (navigator.vibrate && Date.now() - summZeit > 90) try { navigator.vibrate(2); summZeit = Date.now(); } catch (e) {}
 }
 let griff = null;
