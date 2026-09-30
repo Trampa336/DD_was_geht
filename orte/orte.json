@@ -1287,7 +1287,6 @@
   ],
   "region": "dresden",
   "art": "club",
-  "herz": true,
   "homepage": "http://www.chemiefabrik.info/gigs/",
   "cover": "https://www.kulturkalender-dresden.de/storage/3092/responsive-images/Club-2___thumb_800_450.jpg",
   "beschreibung": "Anlaufstelle für alternative Kunst - hauptsächlich Musik, oft Punk. Aber auch HC, Grind, RocknRoll, Metal, Crust, Industrial, Techno, D&B, Indiezeugs, 80er",
@@ -5582,6 +5581,7 @@
    "objekt klein a (club)"
   ],
   "region": "dresden",
+  "herz": true,
   "adresse": "Meschwitzstraße 9, 01099 Dresden",
   "lat": 51.0847862,
   "lon": 13.765186,
@@ -5847,6 +5847,7 @@
    "Club Paula"
   ],
   "region": "dresden",
+  "herz": true,
   "homepage": "http://www.club-paula.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/54735/responsive-images/Af1kmW1u6AVq-thumbnail___thumb_900_900.jpg",
   "adresse": "Meschwitzstr. 14, 01099 Dresden",
@@ -5994,6 +5995,7 @@
    "Club Puschkin"
   ],
   "region": "dresden",
+  "herz": true,
   "homepage": "http://www.clubpuschkin.de/veranstaltungen/",
   "cover": "https://i.ytimg.com/vi/BMrDjkKUjqY/maxresdefault.jpg",
   "beschreibung": "Das aktuelle Programm vom Club Puschkin, Dresden. Konzerte, Partys, Open Air uvm. Clubprogramm auf 2 Floors (Mainfloor + Redfloor) + Open Air im Sommer",
@@ -7478,6 +7480,7 @@
    "Tante JU Liveclub"
   ],
   "region": "dresden",
+  "herz": true,
   "homepage": "http://www.liveclub-dresden.de/termine/",
   "cover": "https://www.kulturkalender-dresden.de/storage/18390/responsive-images/Tante-Ju_sb___thumb_1000_571.jpg",
   "beschreibung": "Der Liveclub in Sachsen. Tante JU. Ständig Livebands und tolle Konzerte in einem der angesagtesten Clubs in Sachsen. Programmübersicht der Tante JU.",
@@ -8530,7 +8533,6 @@
   ],
   "region": "dresden",
   "art": "club",
-  "herz": true,
   "homepage": "https://zentralwerk.de/",
   "cover": "https://www.kulturkalender-dresden.de/storage/15347/responsive-images/Zentralwerk-kuka2___thumb_1200_675.jpg",
   "adresse": "Riesaer Str. 32, 01127 Dresden",

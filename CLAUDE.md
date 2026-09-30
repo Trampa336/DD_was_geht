@@ -153,9 +153,10 @@ Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang�
 Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr);
 „Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
-Davids Herz-Orte sind zehn, seit 2026-09-27 alle mit eigener Quelle: Sektor,
-Straße E, Der Lude, GrooveStation, Zentralwerk, AZ Conni, Ostpol, Scheune (ICS),
-Chemiefabrik und Hole of Fame (beide mit Detailseiten je Termin).
+Davids Herz-Orte (= Gruppe „Solider Anfang“) sind seit 2026-09-30 zwölf: Sektor, Straße E,
+Der Lude, GrooveStation, AZ Conni, Ostpol, Scheune, Hole of Fame (alle mit eigener Quelle) sowie
+Tante JU, Paula, objekt klein a und Puschkin (ohne eigene Quelle). Chemiefabrik und Zentralwerk
+haben weiter eigene Quellen, sind aber keine Herz-Orte mehr (Davids Entscheidung).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
 Flavour-Check (80 Orte mit Terminen), doppelte Orte, Koordinaten für Musik-Orte (Adressen von den

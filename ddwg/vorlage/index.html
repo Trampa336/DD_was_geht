@@ -336,7 +336,7 @@ const ALT_FLAVOUR = { museum: "kunst" };           // Flavour-Schlüssel, die an
 Object.values(D.orte).forEach(o => o.oj = !!o.h);
 // Gruppen für die Orte-Liste: Solider Anfang zuerst, dann die Genres (Familie wird aussortiert)
 const GRUPPEN = [{ k: "start", n: "Solider Anfang", orte: Object.keys(D.orte).filter(s => D.orte[s].oj) }]
-  .concat((D.flavours?.liste || []).filter(f => f.k !== "familie" && f.orte.length).map(f => ({ k: f.k, n: f.n, orte: f.orte })));
+  .concat((D.flavours?.liste || []).filter(f => f.k !== "familie" && f.orte.length).map(f => ({ k: f.k, n: RT_NAME[ALT_FLAVOUR[f.k] || f.k] || f.n, orte: f.orte })));  // Namen wie im Filter
 const GR = Object.fromEntries(GRUPPEN.map(g => [g.k, g]));
 function meineLaden() {
   try {
