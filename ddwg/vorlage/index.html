@@ -191,7 +191,7 @@ img.medium.da { opacity: 1; }
 .ol-gruppe:first-child, .ol-gruppe.ol-treffer { border-top: 0; padding-top: 0; margin-top: 8px; }
 .ol-zeile:last-child { border-bottom: 0; }  /* sonst stehen zwei Linien über der nächsten Gruppe */
 #ol-feld { scroll-margin-top: 64px; }
-.sh.ol { margin-top: -40px; }  /* Überschrift ganz oben neben dem ✕ (Davids Wunsch 02.10.) */
+.sh.ol, .sh.lz { margin-top: -40px; }  /* Überschrift ganz oben neben dem ✕ (Davids Wunsch 02.10.; Orte-Liste, Lesezeichen) */
 .ol-gr { flex-direction: column; gap: 5px; }  /* Gruppen untereinander, flach */
 .ol-gr .fc { padding: 5px 12px; }
 #ol-rest.sucht { min-height: 75vh; }  /* Blatt bleibt groß, das Suchfeld kann über die Tastatur rutschen */
@@ -697,7 +697,7 @@ function lzUmschalten(idx, knopf) {
 function lesezeichenBlatt() {
   merkeBlatt("lesezeichen", () => lesezeichenBlatt());
   const l = lzListe();
-  sheetAuf(`<div class="sh su" style="padding-top:0"><h2>Lesezeichen${l.length ? `<em>${l.length}</em>` : ""}</h2>
+  sheetAuf(`<div class="sh su lz" style="padding-top:0"><h2>Lesezeichen${l.length ? `<em>${l.length}</em>` : ""}</h2>
     ${l.length ? `<div class="sh-liste">${l.map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</span></span></button>`).join("")}</div>` : '<p class="su-info">Noch nichts gemerkt.</p>'}</div>`);
 }
 
