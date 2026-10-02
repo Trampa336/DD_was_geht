@@ -191,7 +191,7 @@ img.medium.da { opacity: 1; }
 .ol-gruppe:first-child, .ol-gruppe.ol-treffer { border-top: 0; padding-top: 0; margin-top: 8px; }
 .ol-zeile:last-child { border-bottom: 0; }  /* sonst stehen zwei Linien über der nächsten Gruppe */
 #ol-feld { scroll-margin-top: 64px; }
-.sh.ol, .sh.lz { margin-top: -40px; }  /* Überschrift ganz oben neben dem ✕ (Davids Wunsch 02.10.; Orte-Liste, Lesezeichen) */
+.sh.hoch { margin-top: -40px; }  /* Überschrift ganz oben neben dem ✕, in allen Blättern ohne Bild (Davids Wunsch 02.10.) */
 .ol-gr { flex-direction: column; gap: 5px; }  /* Gruppen untereinander, flach */
 .ol-gr .fc { padding: 5px 12px; }
 #ol-rest.sucht { min-height: 75vh; }  /* Blatt bleibt groß, das Suchfeld kann über die Tastatur rutschen */
@@ -384,7 +384,7 @@ button.kt { background: var(--surface2); }
 .lz-knopf[aria-pressed=true] { color: var(--ink); }
 .sh h2 em { font-style: normal; font-weight: 400; font-size: 14px; color: var(--faint); margin-left: 8px; }
 /* Links im Termin-Blatt: untereinander, klein und dezent (Davids Wunsch 02.10.) */
-.sh-links.leise { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 10px; }
+.sh-links.leise { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 6px; }  /* direkt unter der Ortsbox (Davids Wunsch 02.10.) */
 .link-leise { display: inline-flex; align-items: center; gap: 5px; padding: 5px 0; font-size: 13px; font-weight: 600; color: var(--soft); text-decoration: none; }
 .link-leise svg { opacity: .7; }
 </style>
@@ -562,7 +562,7 @@ const rtName = e => {
 /* ---------- Orte-Liste: Herzen gruppenweise wählen und einzeln feinjustieren ---------- */
 function orteListe() {
   merkeBlatt("orteliste", () => orteListe());
-  sheetAuf(`<div class="sh ol" style="padding-top:0"><div class="sh-datum">Deine Orte</div><h2>Orte entdecken</h2>
+  sheetAuf(`<div class="sh hoch" style="padding-top:0"><div class="sh-datum">Deine Orte</div><h2>Orte entdecken</h2>
     <div id="ol-gruppen"></div>
     <input class="fi-suche" id="ol-feld" type="search" placeholder="Ort suchen" enterkeyhint="search" autocomplete="off" aria-label="Ort suchen">
     <div id="ol-rest"></div></div>`);
@@ -697,7 +697,7 @@ function lzUmschalten(idx, knopf) {
 function lesezeichenBlatt() {
   merkeBlatt("lesezeichen", () => lesezeichenBlatt());
   const l = lzListe();
-  sheetAuf(`<div class="sh su lz" style="padding-top:0"><h2>Lesezeichen${l.length ? `<em>${l.length}</em>` : ""}</h2>
+  sheetAuf(`<div class="sh su hoch" style="padding-top:0"><h2>Lesezeichen${l.length ? `<em>${l.length}</em>` : ""}</h2>
     ${l.length ? `<div class="sh-liste">${l.map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</span></span></button>`).join("")}</div>` : '<p class="su-info">Noch nichts gemerkt.</p>'}</div>`);
 }
 
@@ -928,7 +928,7 @@ function zeigeKalender() {
   }
   const kopf = [1, 2, 3, 4, 5, 6, 0].map(i => `<span class="kal-wt">${WT[i]}</span>`).join(""), jahr = parse(HEUTE).getFullYear();
   merkeBlatt("kalender", () => zeigeKalender());
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Zu einem Tag springen</div>
+  sheetAuf(`<div class="sh hoch" style="padding-top:0"><div class="sh-datum">Zu einem Tag springen</div>
     ${bloecke.map(b => `<h3 class="kal-monat">${MONL[b.m]}${b.y !== jahr ? " " + b.y : ""}</h3><div class="kal">${kopf}${b.zellen.join("")}</div>`).join("")}</div>`);
 }
 function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; const b = $(".sheet-body"); b.classList.remove("zieht", "federt"); b.style.transform = ""; $(".sheet-bg").style.opacity = ""; b.scrollTop = 0; document.body.style.overflow = "hidden"; }
@@ -1083,9 +1083,9 @@ function zeigeEvent(i) {
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
     <div class="sh-titel"><h2>${esc(e.ti)}</h2>${lzKnopf(e)}</div>
     <button class="sh-ort" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
-    <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
-    ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
     <div class="sh-links leise">${e.url ? `<a class="link-leise" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle${PFEIL_RAUS}</a>` : ""}${o.w ? `<a class="link-leise" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes${PFEIL_RAUS}</a>` : ""}</div>
+    <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}</div>
+    ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
     ${auchHier(e)}
     <div class="sh-q">Quellen: ${esc(q)}</div></div>`);
 }
@@ -1108,7 +1108,7 @@ function zeigeOrt(slug) {
   const o = D.orte[slug]; if (!o) return;
   const evs = D.events.filter(e => e.o === slug).sort(nachZeit);
   merkeBlatt("ort:" + slug, () => zeigeOrt(slug));
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
+  sheetAuf(`<div class="sh hoch" style="padding-top:0"><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
     <h2>${esc(o.n)}</h2>${o.a ? `<div class="sh-text">${esc(o.a)}</div>` : ""}
     <div class="sh-links">${herzKnopf(slug)}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}${o.lat ? `<button class="knopf" data-aufkarte="${esc(slug)}">Auf der Karte</button>` : ""}</div>
     <h3 class="abschnitt">Nächste Termine<em>${evs.length} in ${TAGE_ALLE.length} Tagen</em></h3>
@@ -1221,7 +1221,7 @@ function themeSetzen(k) {
 themeSetzen(themeAktuell());  // unbekannte Namen fallen auf den Standard zurück, Statusleiste passt
 function themeBlatt() {
   merkeBlatt("themes", () => themeBlatt());
-  sheetAuf(`<div class="sh" style="padding-top:0"><h2>Aussehen</h2><div id="th-rest"></div></div>`);
+  sheetAuf(`<div class="sh hoch" style="padding-top:0"><h2>Aussehen</h2><div id="th-rest"></div></div>`);
   themeRest();
 }
 function themeRest() {
@@ -1231,7 +1231,7 @@ function themeRest() {
 }
 function filterBlatt() {
   merkeBlatt("filter", () => filterBlatt());
-  sheetAuf(`<div class="sh" style="padding-top:0"><h2>Filter</h2>
+  sheetAuf(`<div class="sh hoch" style="padding-top:0"><h2>Filter</h2>
     <div id="fi-rest"></div></div>`);
   fiRest();
 }

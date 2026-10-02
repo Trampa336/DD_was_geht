@@ -317,7 +317,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
   (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Runder Knopf in der Leiste oben
   zwischen Suche und Filter (mit Zahl; seit 2026-10-02 dort, vorher fest oben links über der Zeitleiste) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
-  Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links.
+  Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links,
+  seit 2026-10-02 direkt unter der Ortsbox; die Pille „Dein Ort“ gibt es dort nicht mehr (das ♥ am Ortsnamen reicht).
+  Alle Blätter ohne Bild haben die Überschrift oben neben dem ✕ (Klasse `.sh.hoch`).
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
   Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der
