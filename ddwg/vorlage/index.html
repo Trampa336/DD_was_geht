@@ -66,7 +66,7 @@ main { flex: 1; }
 
 /* ---------- Feed und Karte: Wischen statt Reiter-Pille (seit 2026-10-02, Davids Wunsch) ----------
    Im Feed nach links wischen öffnet die Karte, ebenso der kleine Knopf unten rechts (auf der Karte nicht zu sehen).
-   Zurück: Zurück-Knopf/-Geste, Escape oder Wisch vom linken Rand (.rand-zurueck); sonst verschiebt Wischen die Karte. */
+   Zurück: Zurück-Knopf/-Geste, Escape oder Wisch nach rechts vom linken Rand (.rand-zurueck) bzw. außerhalb der Karte. */
 #tab-was { touch-action: pan-y pinch-zoom; }  /* waagerechte Wische bekommt das Skript, senkrecht scrollt der Browser */
 #app.wischt.w-was :is(.kopf, .oben, #tab-was, .rail, .lz-oben, .karte-knopf),
 #app.wischt.w-karte :is(.kopf, .oben, #tab-karte) { translate: var(--wx, 0px) 0; }
@@ -78,7 +78,7 @@ main { flex: 1; }
 .karte-knopf { position: fixed; z-index: 30; right: max(14px, calc(50vw - 246px)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--soft); background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); box-shadow: 0 4px 14px var(--shade); transition: color .2s; }
 .karte-knopf:active { color: var(--accent); }
 #app[data-tab="karte"] .karte-knopf { display: none; }
-.rand-zurueck { display: none; position: fixed; z-index: 700; top: 0; bottom: 0; left: max(0px, calc(50vw - 260px)); width: 22px; touch-action: none; }
+.rand-zurueck { display: none; position: fixed; z-index: 700; top: 0; bottom: 0; left: max(0px, calc(50vw - 260px)); width: 32px; touch-action: none; }
 @media (pointer: coarse) { #app[data-tab="karte"] .rand-zurueck { display: block; } }
 @media (prefers-reduced-motion: reduce) { .rein-r, .rein-l { animation: none; } }
 #tab-karte { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
@@ -970,16 +970,16 @@ function wischenEinrichten() {
   b.addEventListener("touchcancel", ende);
 }
 /* ---------- Wischen zwischen Feed und Karte (seit 2026-10-02, ersetzt die Reiter-Pille) ----------
-   Im Feed nach links wischen öffnet die Karte; auf der Karte führt ein Wisch vom linken Rand zurück (dort
-   verschiebt Wischen sonst die Karte). Die Seite folgt dem Finger; ab WISCH_TAB px oder schnellem Wisch
+   Im Feed nach links wischen öffnet die Karte; auf der Karte führt ein Wisch nach rechts zurück, wenn er am
+   linken Rand oder außerhalb der Karte beginnt (auf der Karte verschiebt Wischen die Karte). Die Seite folgt dem Finger; ab WISCH_TAB px oder schnellem Wisch
    schaltet sie um, sonst federt sie zurück. Umgeschaltet wird über setTab, also mit Zurück-Verlauf. */
 const WISCH_TAB = 90;
-function tabWischen(flaeche, vz, teil, fertig) {
+function tabWischen(flaeche, vz, teil, fertig, darf = () => true) {
   const app = $("#app");
   let x0 = null, y0 = 0, t0 = 0, dx = 0, aktiv = false, uhr = 0;
   flaeche.addEventListener("touchstart", e => {
     x0 = null;
-    if (e.touches.length !== 1 || !$("#sheet").hidden || griff) return;
+    if (e.touches.length !== 1 || !$("#sheet").hidden || griff || !darf(e)) return;
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; aktiv = false;
   }, { passive: true });
   flaeche.addEventListener("touchmove", e => {
@@ -1376,7 +1376,10 @@ filterZeile();
 lzOben();
 wischenEinrichten();
 tabWischen($("#tab-was"), -1, "w-was", () => setTab("karte"));
-tabWischen($("#rand-zurueck"), 1, "w-karte", () => setTab("was"));
+// Karte: zurück per Wisch nach rechts vom linken Rand (Streifen, den Leaflet nicht sieht) oder überall außerhalb
+// der Karte selbst (Kopf, Suchleiste, Zeit-Knöpfe, darunter); auf der Karte und in waagerechten Leisten nicht
+tabWischen($("#app"), 1, "w-karte", () => setTab("was"),
+  e => S.tab === "karte" && (!!e.target.closest(".rand-zurueck") || !e.target.closest("#karte, .zeile, .ort-karte")));
 </script>
 <script>
 // Service Worker nur online (https/http) registrieren, nicht beim lokalen file://-Oeffnen.

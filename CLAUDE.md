@@ -283,8 +283,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   wischen öffnet die Karte (`tabWischen`; die Seite folgt dem Finger, ab `WISCH_TAB` = 90 px oder schnellem
   Wisch um, sonst federt sie zurück; `#tab-was` hat `touch-action: pan-y`). Dazu ein kleiner, dezenter
   Karten-Knopf unten rechts (`.karte-knopf`), auf der Karte nicht zu sehen (Davids Wahl). Zurück zum Feed:
-  Zurück-Knopf/-Geste (die Karte ist eine Ebene im Verlauf), Escape oder Wisch vom linken Rand
-  (`.rand-zurueck`, 22 px, nur Touch), weil Wischen sonst die Karte verschiebt. Am PC ohne Wischen nur
+  Zurück-Knopf/-Geste (die Karte ist eine Ebene im Verlauf), Escape oder Wisch nach rechts, der am linken
+  Rand (`.rand-zurueck`, 32 px, nur Touch) oder außerhalb der Karte beginnt (Kopf, Suchleiste, Zeit-Knöpfe,
+  darunter); auf der Karte selbst verschiebt Wischen die Karte. 22 px Rand allein reichten am Handy nicht. Am PC ohne Wischen nur
   Zurück/Escape. Die neue Seite gleitet von der Seite herein (`.rein-r`/`.rein-l`).
 - **Leisten** (seit 2026-09-30, Davids Wunsch): Die Zeitleiste geht bis ganz nach unten. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
   Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der
