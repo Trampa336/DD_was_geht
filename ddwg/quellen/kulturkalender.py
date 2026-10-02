@@ -67,13 +67,26 @@ def _extract_image(container):
     return img.get("src")
 
 
+def _extract_title(container):
+    """Titel = nur der Link in der Überschrift. Daneben steht in der
+    Überschrift ein <span> mit Untertitel oder Werbetext („Ein Konzertabend
+    zwischen …“, „11:00 und 12:30 Uhr“). Der gehört nicht in den Titel; die
+    ganze Beschreibung kommt ohnehin von der Detailseite."""
+    link = container.select_one("h3.title-event a")
+    if link is not None:
+        text = link.get_text(" ", strip=True)
+        if text:
+            return text
+    return base.extract_title(container)
+
+
 def _parse(html, day, source_url):
     """Reine Parse-Funktion (ohne Netzzugriff), damit sie testbar bleibt."""
     soup = base.make_soup(html)
 
     events = []
     for time_text, container in base.find_event_blocks(soup):
-        title = base.extract_title(container)
+        title = _extract_title(container)
         if not title:
             continue
         venue = base.extract_venue(container)
