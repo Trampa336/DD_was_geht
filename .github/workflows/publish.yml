@@ -8,7 +8,7 @@ name: Website veröffentlichen
 # Branch "gh-pages" (Ordner /) stellen, siehe CLAUDE.md.
 on:
   schedule:
-    - cron: "0 5 * * *"  # 05:00 UTC, ca. 6-7 Uhr in Dresden
+    - cron: "17 3 * * *"  # 03:17 UTC; zur vollen Stunde verschiebt GitHub Läufe um Stunden
   workflow_dispatch: {}
   push:
     branches: [main]
@@ -50,12 +50,17 @@ jobs:
           key: events-db-${{ github.run_id }}
           restore-keys: events-db-
 
-      # Push mit vorhandener Datenbank: nur bauen. Sonst (taeglich, manuell,
-      # oder keine Datenbank da): frisch scrapen.
+      # Push mit frischer Datenbank (letzter Scrape vor < 20 h): nur bauen. Sonst
+      # scrapen, auch wenn der Push einen wartenden Tageslauf verdrängt hat
+      # (concurrency ersetzt wartende Läufe).
       - name: Bauen bzw. scrapen
         run: |
-          if [ "${{ github.event_name }}" = "push" ] && [ -s cache/events.db ]; then
-            echo "Push mit Datenbank vom letzten Lauf: nur bauen, kein Scrape."
+          STUNDEN=999
+          if [ -s cache/events.db ]; then
+            STUNDEN=$(python -c "import sqlite3, datetime as d; t = sqlite3.connect('cache/events.db').execute('SELECT max(started_at) FROM scrape_runs').fetchone()[0]; print(int((d.datetime.now(d.timezone.utc) - d.datetime.fromisoformat(t)).total_seconds() // 3600))" || echo 999)
+          fi
+          if [ "${{ github.event_name }}" = "push" ] && [ "$STUNDEN" -lt 20 ]; then
+            echo "Push, letzter Scrape vor $STUNDEN h: nur bauen, kein Scrape."
             python -m ddwg build
           else
             python -m ddwg scrape

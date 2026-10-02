@@ -17,6 +17,16 @@ from datetime import date
 from . import ausgabe, db, doppelorte, pipeline, quellen
 from .orte import Orte
 
+# Weniger Termine heißt: fast alle Quellen sind ausgefallen. Dann mit Fehler enden,
+# damit der Workflow die alte Seite stehen lässt statt eine leere zu veröffentlichen.
+MINDEST_EVENTS = 200
+
+
+def _genug(n):
+    if n < MINDEST_EVENTS:
+        print(f"Nur {n} Events (Minimum {MINDEST_EVENTS}), Seite nicht veröffentlichen.", file=sys.stderr)
+        sys.exit(1)
+
 
 def cmd_scrape(args):
     orte = Orte.load()
@@ -28,6 +38,7 @@ def cmd_scrape(args):
     if orte.neu:
         print(f"{len(orte.neu)} neue Orte in orte/orte.json (Feld 'erstmals').")
     _status_kurz()
+    _genug(n)
 
 
 def cmd_build(args):
@@ -36,6 +47,7 @@ def cmd_build(args):
         n = pipeline.build(conn, orte)
         pfad = ausgabe.schreiben(conn, orte)
     print(f"{n} Events. Ausgabe: {pfad}")
+    _genug(n)
 
 
 def _finde_ort(orte, text):
