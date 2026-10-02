@@ -49,6 +49,11 @@ def _kurz(text):
     return text[:BESCHREIBUNG_MAX].rsplit(" ", 1)[0] + " …"
 
 
+def _web(url):
+    """Nur http(s)-Adressen; javascript: o. Ä. aus einer Quelle käme sonst als Link auf die Seite."""
+    return url if url and url.lower().startswith(("http://", "https://")) else None
+
+
 def flavours_laden(orte, pfad=None):
     """Flavours (voreingestellte Herz-Sets fuer den ersten Start) aus orte/flavours.json.
 
@@ -80,7 +85,7 @@ def daten(conn, orte, heute=None, tage=None):
         item = {
             "u": ev["uid"], "d": ev["date"], "t": ev["time"], "ti": ev["title"],
             "o": ev["ort"], "or": ev["ort_roh"], "k": ev["category"],
-            "url": ev["url"], "img": ev["image_url"],
+            "url": _web(ev["url"]), "img": _web(ev["image_url"]),
             "b": _kurz(ev["description"]), "p": ev["price_text"],
             "q": ev["sources"].split(","), "r": ev["region"],
             "rt": richtungen.fuer(ev["title"], ev["category"], ev["ort"],
@@ -103,8 +108,8 @@ def daten(conn, orte, heute=None, tage=None):
         lat, lon = ort.get("lat"), ort.get("lon")
         orte_out[slug] = {k: v for k, v in {
             "n": ort.get("name"), "h": 1 if ort.get("herz") else None,
-            "w": ort.get("homepage"), "a": ort.get("adresse"), "art": ort.get("art"),
-            "c": ort.get("cover"),   # Foto des Orts, Ersatz fuer Termine ohne eigenes Bild
+            "w": _web(ort.get("homepage")), "a": ort.get("adresse"), "art": ort.get("art"),
+            "c": _web(ort.get("cover")),   # Foto des Orts, Ersatz fuer Termine ohne eigenes Bild
             "lat": round(lat, 5) if lat is not None else None,
             "lon": round(lon, 5) if lon is not None else None,
         }.items() if v}
