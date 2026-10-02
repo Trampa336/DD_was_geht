@@ -214,7 +214,8 @@ img.medium.da { opacity: 1; }
 @keyframes hoch { from { transform: translateY(40px); opacity: 0; } }
 .sheet-griff { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; padding: 10px; pointer-events: none; }
 .sheet-griff button { pointer-events: auto; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 80%, transparent); }
-.sh-bild { margin-top: -56px; }
+.sh-bild { margin-top: -56px; overflow: hidden; }
+img.medium.yt { clip-path: inset(12.5% 0); transform: scale(1.334); }  /* 4:3 mit Balken: Balken abschneiden, Rest füllt die Fläche (seitlich schneidet die Kachel ab) */
 .sh-bild .medium { aspect-ratio: 16/10; }
 .sh-bild .poster { font-size: 34px; }
 .sh { padding: 14px 18px 0; }
@@ -645,7 +646,9 @@ function auswahl(iso) {
 // Das Foto des Orts zählt nicht für die Relevanz, dort zählt nur e.img.
 function medium(e) {
   const text = ort(e).n || e.or || e.ti, p = hash(e.o || e.ti) % 4, bild = e.img || ort(e).c;
-  if (bild) return `<img class="medium" src="${esc(bild)}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" data-t="${esc(text)}" data-p="${p}" onerror="bildFehler(this)">`;
+  // YouTube-Vorschau in 4:3 (hq/sddefault) hat oben und unten schwarze Streifen: per Vergrößerung wegschneiden
+  const yt = /ytimg\.com\/vi\/[^/]+\/(hq|sd)default\.jpg/.test(bild || "");
+  if (bild) return `<img class="medium${yt ? " yt" : ""}" src="${esc(bild)}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" data-t="${esc(text)}" data-p="${p}" onerror="bildFehler(this)">`;
   return `<div class="medium poster p${p}">${esc(text)}</div>`;
 }
 window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };

@@ -249,11 +249,20 @@ def details_nachladen(conn, orte, heute, fetch=detail_fetch.fetch_detail, limit=
     einmal geholt. Seiten ohne Text bleiben in details (leer) und werden nicht
     erneut abgefragt."""
     known = db.details(conn)
+    # Kulturkalender-Seite je Termin, auch wenn der Hauptlink zur Seite des Orts führt
+    kk_url = {}
+    for uid, url in conn.execute(
+            "SELECT el.uid, l.url FROM event_listings el JOIN listings l ON l.id = el.listing_id "
+            "WHERE l.url IS NOT NULL"):
+        if any(h in url for h in DETAIL_HOSTS):
+            kk_url.setdefault(uid, url)
     urls = []
     for ev in db.events(conn, heute.isoformat()):
-        url = ev["url"]
-        if (not ev["description"] and url and url not in known and url not in urls
-                and any(h in url for h in DETAIL_HOSTS)):
+        # ohne Beschreibung oder nur eine Kurzzeile (seit 02.10.2026)
+        if not merge.ist_kurz(ev["description"]):
+            continue
+        url = ev["url"] if ev["url"] and any(h in ev["url"] for h in DETAIL_HOSTS) else kk_url.get(ev["uid"])
+        if url and url not in known and url not in urls:
             urls.append(url)
     candidates = urls[:limit]
     gespeichert = fehler = in_folge = 0

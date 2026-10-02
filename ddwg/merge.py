@@ -22,6 +22,20 @@ from urllib.parse import urlparse
 from . import dedup, quellen
 
 KEINE_BESCHREIBUNG = "Keine weitere Beschreibung verfügbar."
+# Kürzer ist nur eine Kurzzeile (Scheune/GrooveStation-ICS: „Literatur / Gegenmacht“). Die verliert
+# gegen einen ausführlichen Text einer rangniedrigeren Quelle (Davids Wunsch 02.10.2026).
+KURZZEILE = 80
+
+
+def ist_kurz(text):
+    return len((text or "").strip()) < KURZZEILE
+
+
+def _beschreibung(members):
+    """Ranghöchste ausführliche Beschreibung; gibt es keine, die ranghöchste überhaupt."""
+    texte = [t for t in ((m.get("description") or "").strip() for m in members)
+             if t and t != KEINE_BESCHREIBUNG]
+    return next((t for t in texte if not ist_kurz(t)), texte[0] if texte else None)
 
 
 def _first(members, field):
@@ -94,7 +108,7 @@ def merge(members, detail=None):
         "url": next((m["url"] for m in members if ist_einzellink(m.get("url"))), None)
                or _first(members, "url"),
         "image_url": _first(members, "image_url"),
-        "description": _first(members, "description"),
+        "description": _beschreibung(members),
         "price_text": next((p for p in (preis_bereinigen(m.get("price_text")) for m in members) if p), None),
         "sources": ",".join(sources),
     }
@@ -108,4 +122,7 @@ def _with_detail(member, detail):
     for field in ("description", "price_text", "image_url"):
         if not (out.get(field) or "").strip() and found.get(field):
             out[field] = found[field]
+    # Kurzzeile der Quelle, aber die Detailseite hat mehr: die Detailseite gewinnt
+    if ist_kurz(out.get("description")) and not ist_kurz(found.get("description")):
+        out["description"] = found["description"]
     return out

@@ -205,3 +205,46 @@ if __name__ == "__main__":
         if name.startswith("test_"):
             fn()
             print("ok ", name)
+
+
+LANG = "Ein ausführlicher Text über den Abend, mit allem, was man vorher wissen möchte, und noch etwas mehr."
+
+
+def test_kurzzeile_der_ortsseite_verliert_gegen_ausfuehrlichen_text():
+    # Scheune (Rang 66) liefert nur „Literatur / Gegenmacht“, Rauze (Rang 70) den ganzen Text
+    ev = merge.merge([_ev("1", "scheune", "Arne Semsrott", "Scheune", description="Literatur\nGegenmacht"),
+                      _ev("2", "rauze", "Arne Semsrott", "Scheune", description=LANG)])
+    assert ev["description"] == LANG
+    # gibt es nur Kurzzeilen, bleibt die ranghöchste
+    ev = merge.merge([_ev("1", "scheune", "X", "Scheune", description="Party"),
+                      _ev("2", "rauze", "X", "Scheune", description="Pop Hits")])
+    assert ev["description"] == "Party"
+
+
+def test_detailseite_ersetzt_kurzzeile():
+    kk = "https://www.kulturkalender-dresden.de/veranstaltung/x"
+    ev = merge.merge([_ev("1", "kulturkalender", "X", "Scheune", url=kk, description="Konzert")],
+                     {kk: {"description": LANG}})
+    assert ev["description"] == LANG
+
+
+def test_details_nachladen_auch_fuer_kurzzeile_ueber_kk_eintrag(tmp_path, monkeypatch):
+    # Hauptlink führt zur Seite des Orts, die Kulturkalender-Seite steckt im zweiten Eintrag
+    from ddwg import db
+    monkeypatch.setattr(pipeline.base.time_module, "sleep", lambda s: None)
+    kk = "https://www.kulturkalender-dresden.de/veranstaltung/semsrott"
+    orte = _orte()
+    sch, _ = pipeline.listing_rows([_ev("1", "scheune", "Arne Semsrott", "Neuer Laden",
+                                        url="https://scheune.org/show/5413/arne-semsrott.html",
+                                        description="Literatur\nGegenmacht")], orte, HEUTE)
+    kkr, _ = pipeline.listing_rows([_ev("2", "kulturkalender", "Arne Semsrott", "Neuer Laden", url=kk)], orte, HEUTE)
+    abrufe = []
+    with db.connect(str(tmp_path / "t.db")) as conn:
+        db.replace_listings(conn, "scheune", sch)
+        db.replace_listings(conn, "kulturkalender", kkr)
+        pipeline.build(conn, orte, HEUTE)
+        assert pipeline.details_nachladen(conn, orte, HEUTE,
+                                          fetch=lambda ev: abrufe.append(ev["url"]) or {"ok": True, "description": LANG}) == 1
+        assert abrufe == [kk]
+        pipeline.build(conn, orte, HEUTE)
+        assert db.events(conn)[0]["description"] == LANG

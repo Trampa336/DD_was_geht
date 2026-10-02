@@ -73,7 +73,9 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
 4. `merge.merge()` verschmilzt Feld für Feld nach Quellen-Rang: Datum, Zeit und Titel
    kommen von der ranghöchsten Quelle, Beschreibung, Preis und Bild von der
    ranghöchsten Quelle, die sie hat. Seit 2026-09-30: Fehlt der besten Quelle die
-   Uhrzeit, kommt sie von der nächsten (Ostpol nennt oft keine). Der Link ist der erste
+   Uhrzeit, kommt sie von der nächsten (Ostpol nennt oft keine). Seit 2026-10-02: Eine Beschreibung
+   unter 80 Zeichen (`merge.KURZZEILE`, z. B. Scheune/GrooveStation-ICS „Literatur / Gegenmacht“) verliert gegen
+   einen ausführlichen Text einer rangniedrigeren Quelle oder der Detailseite. Der Link ist der erste
    Einzellink; Startseiten und cybersax-Tagesseiten nur, wenn es nichts anderes gibt.
    Im Preis fällt ein angehängtes „Quelle: …“ weg.
    Danach verwirft `build()` noch einmal alle Führungen (auch über den Ort geerbte)
@@ -82,7 +84,7 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
    und Kinder (Richtung `familie`), Senioren, abgesagte Termine und Touristen-Angebote
    (Candlelight, Babykonzerte, Stadtabenteuer, Weinwanderungen und -proben). Umland
    bleibt. Das Log von `build` nennt die Anzahl je Grund.
-5. Für alle Events ohne Beschreibung lädt die Pipeline die Kulturkalender-Detailseite
+5. Für alle Events ohne Beschreibung oder nur mit Kurzzeile (seit 2026-10-02) lädt die Pipeline die Kulturkalender-Detailseite
    nach (seit 2026-09-29, vorher nur Herz-Orte): nächste Tage zuerst, jede Seite nur
    einmal, höchstens 2.500 pro Lauf, Abbruch nach 20 Fehlschlägen in Folge. Ergebnisse
    liegen in der Tabelle `details`; Netzfehler werden nicht gemerkt, sondern beim
@@ -219,7 +221,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - **Bildgröße** (seit 2026-10-02): Große Bilder ließen das Scrollen am Handy stocken (gemessen mit 4× gebremster
   CPU: 1.200 px 19–33 Stocker über 50 ms, 400 px 5–14). Darum nehmen Kulturkalender-Scraper und Detailabruf aus
   dem srcset die kleinste Fassung ab 500 px (`base.srcset_waehlen`), `ausgabe._bild` macht YouTube-Vorschauen
-  klein (hqdefault) und wirft das KK-Platzhalterbild weg; Bilder blenden weich ein (`.da`).
+  klein (hqdefault) und wirft das KK-Platzhalterbild weg; Bilder blenden weich ein (`.da`). YouTube-Bilder
+  in 4:3 (hq/sddefault) haben schwarze Balken: Klasse `yt` schneidet sie ab (clip-path + Vergrößerung).
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
   Relevanz zählt nur das eigene Bild (`e.img`).
