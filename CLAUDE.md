@@ -230,6 +230,12 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
+- **Blätter** (seit 2026-10-02, Davids Wunsch): Alle Blätter (Termin, Ort, Suche, Filter, Kalender, Herzen)
+  sind schwebende Karten mit runden Ecken rundum und 8 px Abstand zum Rand, der untere Rand ist immer
+  zu sehen. Nach unten wischen schließt (`wischenEinrichten`), aber nur, wenn das Blatt ganz oben steht;
+  ab `WISCH_ZU` = 100 px oder schnellem Wisch zu, sonst federt es zurück. Geschlossen wird über `sheetZu`
+  (Zurück-Verlauf). Klebende Fußleisten im Blatt (`.fi-fuss`) brauchen `bottom: -20px` als Ausgleich
+  für den Innenabstand der Karte.
 - **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ liegen fest und
   dezent am unteren Rand (kein Schweben). Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
   Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der

@@ -174,7 +174,11 @@ main { flex: 1; }
 .sheet { position: fixed; inset: 0; z-index: 60; }
 .sheet[hidden] { display: none; }
 .sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.6); }
-.sheet-body { position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto; max-height: 90vh; overflow: auto; overscroll-behavior: contain; background: var(--surface); border-radius: calc(var(--r) + 6px) calc(var(--r) + 6px) 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); animation: hoch .25s ease-out; }
+/* Schwebende Karte (seit 2026-10-02): rundum runde Ecken, Abstand zum Rand, der untere Rand ist immer zu sehen */
+.sheet-body { position: absolute; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; max-height: calc(100% - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; background: var(--surface); border-radius: calc(var(--r) + 6px); box-shadow: 0 12px 40px rgba(0,0,0,.55); padding-bottom: 20px; animation: hoch .25s ease-out; }
+.sheet-body.zieht { transition: none; }
+.sheet-body.federt { transition: transform .22s ease-out; }
+.sheet-bg { transition: opacity .22s; }
 @keyframes hoch { from { transform: translateY(40px); opacity: 0; } }
 .sheet-griff { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; padding: 10px; pointer-events: none; }
 .sheet-griff button { pointer-events: auto; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 80%, transparent); }
@@ -282,7 +286,7 @@ button.kt { background: var(--surface2); }
 .fi-richtung { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 12px; border-radius: var(--r-s); background: var(--surface2); font-size: 13px; color: var(--soft); }
 .fi-richtung .knopf { padding: 7px 12px; font-size: 13px; }
 .fi-info { margin: 16px 0 0; font-size: 12px; line-height: 1.45; color: var(--faint); }
-.fi-fuss { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 16px -18px 0; padding: 12px 18px 4px; background: var(--surface); border-top: 1px solid var(--line); }
+.fi-fuss { position: sticky; bottom: -20px; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 16px -18px -20px; padding: 12px 18px 16px; background: var(--surface); border-top: 1px solid var(--line); }
 .fi-fuss .knopf:disabled { opacity: .45; }
 .rt-gruppe { display: grid; gap: 6px; margin-bottom: 14px; }
 .rt-kopf { font-size: 12.5px; font-weight: 650; color: var(--soft); }
@@ -765,7 +769,48 @@ function zeigeKalender() {
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Zu einem Tag springen</div>
     ${bloecke.map(b => `<h3 class="kal-monat">${MONL[b.m]}${b.y !== jahr ? " " + b.y : ""}</h3><div class="kal">${kopf}${b.zellen.join("")}</div>`).join("")}</div>`);
 }
-function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; $(".sheet-body").scrollTop = 0; document.body.style.overflow = "hidden"; }
+function sheetAuf(html) { $("#sheet-inhalt").innerHTML = html; $("#sheet").hidden = false; const b = $(".sheet-body"); b.classList.remove("zieht", "federt"); b.style.transform = ""; $(".sheet-bg").style.opacity = ""; b.scrollTop = 0; document.body.style.overflow = "hidden"; }
+// Nach unten wischen schließt das Blatt (seit 2026-10-02). Nur wenn es ganz oben steht und der Finger
+// eher senkrecht nach unten zieht. Ab WISCH_ZU px (oder schnellem Wisch) zu, sonst federt es zurück.
+// Geschlossen wird über sheetZu, also denselben Weg wie ✕ und Zurück.
+const WISCH_ZU = 100;
+function wischenEinrichten() {
+  const b = $(".sheet-body"), bg = $(".sheet-bg");
+  let y0 = null, x0 = 0, t0 = 0, dy = 0, aktiv = false;
+  b.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1 || b.scrollTop > 0) { y0 = null; return; }
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; t0 = Date.now(); dy = 0; aktiv = false;
+  }, { passive: true });
+  b.addEventListener("touchmove", e => {
+    if (y0 === null) return;
+    const ny = e.touches[0].clientY - y0, nx = e.touches[0].clientX - x0;
+    if (!aktiv) {
+      if (Math.abs(ny) < 8 && Math.abs(nx) < 8) return;
+      if (ny <= 0 || Math.abs(nx) > ny || b.scrollTop > 0) { y0 = null; return; }
+      aktiv = true; b.classList.remove("federt"); b.classList.add("zieht");
+    }
+    e.preventDefault();
+    dy = Math.max(0, ny);
+    b.style.transform = `translateY(${dy}px)`;
+    bg.style.opacity = String(Math.max(.3, 1 - dy / 400));
+  }, { passive: false });
+  const ende = () => {
+    if (y0 === null) return;
+    y0 = null;
+    if (!aktiv) return;
+    aktiv = false;
+    const schnell = dy > 40 && dy / Math.max(1, Date.now() - t0) > .6;
+    b.classList.remove("zieht"); b.classList.add("federt");
+    if (dy > WISCH_ZU || schnell) {
+      b.style.transform = "translateY(110%)"; bg.style.opacity = "0";
+      setTimeout(() => sheetZu(), 200);
+    } else {
+      b.style.transform = ""; bg.style.opacity = "";
+    }
+  };
+  b.addEventListener("touchend", ende);
+  b.addEventListener("touchcancel", ende);
+}
 function sheetZuIntern() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
 // ✕, Tippen daneben, Escape: im Verlauf zurück, damit keine toten Zurück-Schritte entstehen
 function sheetZu(dann) { zurueckBis(tiefeOhneBlatt(), dann); }
@@ -1088,6 +1133,7 @@ herzenAnwenden();
 orteKnopf();
 renderTage();
 filterZeile();
+wischenEinrichten();
 </script>
 <script>
 // Service Worker nur online (https/http) registrieren, nicht beim lokalen file://-Oeffnen.
