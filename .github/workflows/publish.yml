@@ -11,6 +11,12 @@ on:
 permissions:
   contents: write
 
+# Nie zwei Läufe gleichzeitig: Ein zweiter Start wartet, bis der erste fertig ist,
+# statt parallel auf gh-pages zu schreiben.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 jobs:
   scrape-und-veroeffentlichen:
     runs-on: ubuntu-latest
