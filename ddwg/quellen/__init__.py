@@ -72,12 +72,21 @@ QUELLEN = {
     "chemiefabrik": {"name": "Chemiefabrik", "rang": 67, "ort": "chemiefabrik"},
     # Herz-Ort seit 2026-09-25. Detailseiten fuer Tag und Beginn, siehe holeoffame.py.
     "holeoffame": {"name": "Hole of Fame", "rang": 68, "ort": "hole-of-fame"},
+    # Herz-Ort seit 2026-09-30, eigene Quelle seit 2026-10-02: Monatsseiten,
+    # siehe objektkleina.py.
+    "objektkleina": {
+        "name": "objekt klein a", "rang": 69, "ort": "objekt-klein-a",
+        "venue_key": "objekt-klein-a",
+        "alias": ["oka", "objektkleina", "objekt-klein-a-oka"],
+    },
+    # Seit 2026-10-02 (Davids Wunsch), kein Herz-Ort. Wix-Galerie ohne
+    # Beschreibungen, siehe arteum.py.
+    "arteum": {"name": "Arteum", "rang": 63, "ort": "arteum"},
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
 # unterschiedlich schreiben. Sicherheitsnetz fuer dedup._venue_key, siehe oben.
 EXTRA_VENUE_ALIASES = {
-    "objekt-klein-a": ["oka", "objektkleina", "objekt-klein-a-oka"],
     "chemiefabrik": ["chemo", "chemiefabrik-dresden"],
     "beatpol": ["beatpol-ehemals-starclub", "starclub"],
     "kraftwerk-mitte": ["kraftwerk-mitte-dresden"],

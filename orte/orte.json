@@ -340,6 +340,22 @@
   "beschreibung": "Die Staatlichen Kunstsammlungen Dresden zählen zu den bedeutendsten Museen der Welt - 15 Museen bieten eine thematische Vielfalt, die in ihrer Art einzigartig ist.",
   "adresse": "Blockhaus, Neustädter Markt 19, 01097 Dresden"
  },
+ "arteum": {
+  "name": "Arteum",
+  "aliase": [
+   "Arteum",
+   "ARTEUM im Waldschlösschen",
+   "Arteum Eventlocation",
+   "Arteum Dresden"
+  ],
+  "region": "dresden",
+  "art": "club",
+  "homepage": "https://www.arteum.de/",
+  "adresse": "Am Brauhaus 3, 01099 Dresden",
+  "lat": 51.0686852,
+  "lon": 13.7785755,
+  "geo_quelle": "nominatim"
+ },
  "asb-beratungs-und-begegnungszentrum-luise": {
   "name": "ASB-Beratungs- und Begegnungszentrum \"Luise\"",
   "aliase": [
