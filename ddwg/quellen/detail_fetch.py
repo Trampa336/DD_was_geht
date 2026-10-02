@@ -64,9 +64,9 @@ def _first_image(soup, selectors):
             continue
         srcset = el.get("srcset")
         if srcset:
-            first = srcset.split(",")[0].strip().split(" ")[0]
-            if first:
-                return first
+            url = base.srcset_waehlen(srcset)  # kleinste Fassung ab 500 px
+            if url:
+                return url
         if el.get("src"):
             return el["src"]
         bg = base.extract_bg_image_url(el)

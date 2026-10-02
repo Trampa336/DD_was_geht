@@ -234,5 +234,25 @@ def extract_parenthesized_category(container):
     return match.group(1).strip() if match else None
 
 
+def srcset_waehlen(srcset, mind_breite=500):
+    """Aus einem srcset die kleinste Fassung, die mindestens mind_breite px breit ist
+    (Kachel ~170 px mal Pixeldichte 3; gemessen: 1.200 px 19–33 Stocker, 400 px 5–14).
+    Ohne Breitenangaben oder wenn keine breit genug ist: die breiteste. Vorher nahmen
+    wir immer die größte (oft 1.200–1.920 px), das ließ das Scrollen am Handy stocken."""
+    fassungen = []
+    for teil in (srcset or "").split(","):
+        stuecke = teil.strip().split()
+        if not stuecke:
+            continue
+        breite = 0
+        if len(stuecke) > 1 and stuecke[1].endswith("w") and stuecke[1][:-1].isdigit():
+            breite = int(stuecke[1][:-1])
+        fassungen.append((breite, stuecke[0]))
+    if not fassungen:
+        return None
+    gross_genug = [f for f in fassungen if f[0] >= mind_breite]
+    return (min(gross_genug) if gross_genug else max(fassungen))[1]
+
+
 def make_soup(html):
     return BeautifulSoup(html, HTML_PARSER)

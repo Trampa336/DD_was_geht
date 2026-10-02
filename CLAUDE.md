@@ -216,6 +216,10 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   neben dem Titel „DD was geht“ (`themeBlatt`), gemerkt als `ddwg-theme`; ein kleines Skript im Kopf setzt das
   Theme vor dem ersten Zeichnen, unbekannte fallen auf den Standard zurück. Neues Theme = CSS-Block plus Eintrag
   in `THEMES` (Muster und Statusleisten-Farbe).
+- **Bildgröße** (seit 2026-10-02): Große Bilder ließen das Scrollen am Handy stocken (gemessen mit 4× gebremster
+  CPU: 1.200 px 19–33 Stocker über 50 ms, 400 px 5–14). Darum nehmen Kulturkalender-Scraper und Detailabruf aus
+  dem srcset die kleinste Fassung ab 500 px (`base.srcset_waehlen`), `ausgabe._bild` macht YouTube-Vorschauen
+  klein (hqdefault) und wirft das KK-Platzhalterbild weg; Bilder blenden weich ein (`.da`).
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
   Relevanz zählt nur das eigene Bild (`e.img`).

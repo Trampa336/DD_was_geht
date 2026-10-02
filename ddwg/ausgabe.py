@@ -12,6 +12,7 @@ Oberflaeche baut, aendert die Vorlage - dieses Modul liefert nur die Daten
 import base64
 import json
 import os
+import re
 import shutil
 from datetime import date, datetime, timedelta
 
@@ -54,6 +55,20 @@ def _web(url):
     return url if url and url.lower().startswith(("http://", "https://")) else None
 
 
+# Allgemeines Platzhalterbild des Kulturkalenders: zählt als „kein Bild“ (dann Ortsfoto).
+KK_PLATZHALTER = "kulturkalender-dresden.de/img/fallback"
+_YT_GROSS = re.compile(r"(//i\.ytimg\.com/vi/[^/]+/)(maxresdefault|sddefault)\.jpg")
+
+
+def _bild(url):
+    """Bildadresse für die Seite: nur http(s), kein KK-Platzhalter, YouTube in 480 px statt
+    1.280 px (große Bilder ließen das Scrollen am Handy stocken, gemessen 02.10.2026)."""
+    url = _web(url)
+    if not url or KK_PLATZHALTER in url:
+        return None
+    return _YT_GROSS.sub(r"\1hqdefault.jpg", url)
+
+
 def flavours_laden(orte, pfad=None):
     """Flavours (voreingestellte Herz-Sets fuer den ersten Start) aus orte/flavours.json.
 
@@ -85,7 +100,7 @@ def daten(conn, orte, heute=None, tage=None):
         item = {
             "u": ev["uid"], "d": ev["date"], "t": ev["time"], "ti": ev["title"],
             "o": ev["ort"], "or": ev["ort_roh"], "k": ev["category"],
-            "url": _web(ev["url"]), "img": _web(ev["image_url"]),
+            "url": _web(ev["url"]), "img": _bild(ev["image_url"]),
             "b": _kurz(ev["description"]), "p": ev["price_text"],
             "q": ev["sources"].split(","), "r": ev["region"],
             "rt": richtungen.fuer(ev["title"], ev["category"], ev["ort"],
@@ -109,7 +124,7 @@ def daten(conn, orte, heute=None, tage=None):
         orte_out[slug] = {k: v for k, v in {
             "n": ort.get("name"), "h": 1 if ort.get("herz") else None,
             "w": _web(ort.get("homepage")), "a": ort.get("adresse"), "art": ort.get("art"),
-            "c": _web(ort.get("cover")),   # Foto des Orts, Ersatz fuer Termine ohne eigenes Bild
+            "c": _bild(ort.get("cover")),   # Foto des Orts, Ersatz fuer Termine ohne eigenes Bild
             "lat": round(lat, 5) if lat is not None else None,
             "lon": round(lon, 5) if lon is not None else None,
         }.items() if v}

@@ -59,11 +59,10 @@ def _extract_image(container):
         return None
     srcset = img.get("srcset")
     if srcset:
-        # srcset ist nach Breite absteigend sortiert; der erste Eintrag ist die
-        # größte Variante und damit die brauchbarste fürs Cover.
-        first = srcset.split(",")[0].strip().split(" ")[0]
-        if first:
-            return first
+        # Nicht die größte Fassung, sondern die kleinste ab 500 px (Scrollen am Handy).
+        url = base.srcset_waehlen(srcset)
+        if url:
+            return url
     return img.get("src")
 
 
