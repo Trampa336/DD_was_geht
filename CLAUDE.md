@@ -257,8 +257,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Kategorie passt oder `sonstiges` ist. Sport = Mitmachen, ohne Senioren-, Familien-
   und Zuschauersport (auch am Ortsnamen erkannt). Neue Stichworte immer mit Test.
 - **Zeitstrahl-Leiste** links (seit 2026-09-29 fertig): Alle Tage mit Terminen stehen als kleine,
-  blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben (erst unter dem
-  Lesezeichen-Knopf, seit 2026-10-02) und am unteren Rand blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
+  blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben (erst ab 56 px, früher
+  saß dort der Lesezeichen-Knopf) und am unteren Rand blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
   Monatswechsel als feine Linie mit Monatskürzel (sonst kein Monat auf der Leiste). Tipp auf ein kleines Datum springt hin, Tipp
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
   Das große Datum steht immer fest bei 1/3 der Höhe (`mitte`, CSS `--mitte`). Über „Heute“ zeigt die Leiste die 3
@@ -273,6 +273,12 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
+  **Schutz vor versehentlichem Schließen** (seit 2026-10-02, Davids Wunsch): Über dem Start-Eintrag liegt ein
+  Wächter-Eintrag (`{dd: 0, w: 1}`, `waechterSetzen`, erst bei der ersten Berührung, sonst überspringt Chrome ihn).
+  Landet „Zurück“ darunter, zeigt `.hinweis-unten` „Zum Schließen nochmal Zurück“; ein zweites Zurück innerhalb
+  `WARN_MS` = 2,5 s schließt, danach steht der Wächter wieder. Ein echter Dialog ist bei „Zurück“ nicht möglich.
+  **Feed-Position** (seit 2026-10-02): Wechsel zur Karte merkt `feedY`, zurück zum Feed landet man wieder dort
+  (ein neuer Filter auf der Karte setzt sie auf oben).
 - **Blätter** (seit 2026-10-02, Davids Wunsch): Alle Blätter (Termin, Ort, Suche, Filter, Kalender, Herzen)
   sind schwebende Karten mit runden Ecken rundum und 8 px Abstand zum Rand, der untere Rand ist immer
   zu sehen. Nach unten wischen schließt (`wischenEinrichten`), aber nur, wenn das Blatt ganz oben steht;
@@ -309,8 +315,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Knopf rechts neben dem Titel im Termin-Blatt merkt den Termin, gespeichert im Browser (`ddwg-lesezeichen`,
   je Termin-ID `u` mit Datum, Ort, Titel). Ändert ein Neubau die ID (z. B. neue Uhrzeit), findet der Termin über
   Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
-  (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Knopf oben links fest über der
-  Zeitleiste (mit Zahl, seit 2026-10-02 kräftiger: 22 px, Strich 2,6) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
+  (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Runder Knopf in der Leiste oben
+  zwischen Suche und Filter (mit Zahl; seit 2026-10-02 dort, vorher fest oben links über der Zeitleiste) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
   Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links.
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
