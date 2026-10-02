@@ -209,12 +209,13 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Zeitstrahl-Galerie (Reiter „Feed“) und Entdecken-Karte mit Leaflet + markercluster
   von cdnjs (Reiter „Karte“; im Code weiter `was` und `karte`). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
   wird beim Bauen eingebettet. Entwürfe liegen unter `docs/ui-entwuerfe/` (gitignored).
-- **Themes** (seit 2026-10-02, Davids Wunsch): 10 Farbsätze, 8 dunkel (Industriegelände = Standard,
-  Elbe bei Nacht, Neon, Plattenbau, Kellerbar, Nachtviolett, Wald, Mitternacht), 2 hell und ruhig (Papier,
-  Salbei). Nur Farben über die CSS-Variablen in `:root[data-theme=…]`, dazu `--glow` (Schimmer oben),
-  `--tiles` (Kartenfilter, hell ohne Invertieren), `--shade`, `--dim`. Wahl im Filter-Blatt unter
-  „Aussehen“ (`themeBlatt`), gemerkt als `ddwg-theme`; ein kleines Skript im Kopf setzt sie vor dem ersten
-  Zeichnen. Neues Theme = CSS-Block plus Eintrag in `THEMES` (Muster und Statusleisten-Farbe).
+- **Themes** (seit 2026-10-02, Davids Wunsch): 5 dunkle Farbsätze, Industriegelände (Standard), Elbe bei
+  Nacht, Neon, Plattenbau, Wald (Davids Auswahl aus 10 Entwürfen; Kellerbar, Nachtviolett, Mitternacht und die
+  hellen Papier und Salbei sind raus). Nur Farben über die CSS-Variablen in `:root[data-theme=…]`, dazu `--glow`
+  (Schimmer oben), `--tiles` (Kartenfilter), `--shade`, `--dim`. Einziger Zugang: kleiner Paletten-Knopf rechts
+  neben dem Titel „DD was geht“ (`themeBlatt`), gemerkt als `ddwg-theme`; ein kleines Skript im Kopf setzt das
+  Theme vor dem ersten Zeichnen, unbekannte fallen auf den Standard zurück. Neues Theme = CSS-Block plus Eintrag
+  in `THEMES` (Muster und Statusleisten-Farbe).
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
   Relevanz zählt nur das eigene Bild (`e.img`).
