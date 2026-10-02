@@ -237,6 +237,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   dem srcset die kleinste Fassung ab 500 px (`base.srcset_waehlen`), `ausgabe._bild` macht YouTube-Vorschauen
   klein (hqdefault) und wirft das KK-Platzhalterbild weg; Bilder blenden weich ein (`.da`). YouTube-Bilder
   in 4:3 (hq/sddefault) haben schwarze Balken: Klasse `yt` schneidet sie ab (clip-path + Vergrößerung).
+- **Kein Seitenzoom** (seit 2026-10-02, Davids Wunsch): Viewport `maximum-scale=1, user-scalable=no` (Android),
+  `touch-action: pan-x pan-y` auf `html` (auch kein Doppeltipp-Zoom) und `gesturestart` abgefangen (iOS ignoriert
+  user-scalable). Die Karte zoomt weiter, Leaflet rechnet Zwei-Finger-Gesten selbst. Kein `pinch-zoom` in touch-action setzen.
 - **Bilder** (seit 2026-09-30): Hat ein Termin kein eigenes Bild, zeigt die Kachel das Foto des Orts
   (`cover` aus orte.json, in der Ausgabe `c`), sonst ein Schrift-Plakat mit dem Ortsnamen. Für die
   Relevanz zählt nur das eigene Bild (`e.img`).
