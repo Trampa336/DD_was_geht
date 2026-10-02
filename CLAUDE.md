@@ -244,10 +244,19 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Titel, Ort oder Beschreibung stehen, laufende Termine erscheinen einmal. Der Begriff gilt
   nur, solange die Seite offen ist (`SU` in der Vorlage). Termin → Zurück zeigt die Liste
   an derselben Stelle.
-- **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld): Orte
-  (Alle / Meine / Neue, darunter „♥ Orte auswählen“), Tageszeit, Deine Richtungen (Tippen merkt
-  und holt nach vorne) und „Nur meine Richtungen“. **Tageszeit** (seit 2026-09-30): Chips
-  „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
+- **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
+  am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
+  Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der
+  Überschrift), Tageszeit als Umschalter (Immer / Tagsüber / Abends), Deine Richtungen als
+  gleich breite Kacheln (3 je Zeile, Icon über dem Namen, Zahl grau dahinter; Tippen merkt und
+  holt nach vorne), dann zwei Kippschalter „Nur meine Richtungen“ und „Dauerausstellungen“.
+  Unten „Zeigen“ mit Zahl. **Zahlen ohne Wort** (seit 2026-10-02): Suche, Filter-Zeile und
+  Tageskopf zeigen nur die Zahl, nicht „198 Treffer“/„Termine“. Der Kopf zeigt keinen Stand mehr.
+  **Icons je Richtung** (`RT_ICON` in der Vorlage, Linien-Icons aus Lucide, ISC-Lizenz, inline):
+  im Filter und auf der Karte. Ein Ort-Punkt der Karte zeigt das Icon seiner häufigsten Richtung
+  im Zeitraum (`hauptRichtung`, feinste zuerst) statt der Zahl, Herz-Orte rot; Sammelpunkte
+  behalten die Zahl. Neue Richtung = neues Icon in `RT_ICON`, sonst bleibt der Punkt leer.
+  **Tageszeit** (seit 2026-09-30): „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
   die die sichtbaren Termine am ehesten hälftig teilt (30.09.: 19:00, 1.067 von 2.011 ab dann).
   Ohne Uhrzeit oder 00:00 (ganztägig) zählt als tagsüber. Der Filter gilt in beiden Reitern und wird im Browser gemerkt
   (`ddwg-filter`), Herzen und Richtungen unter `ddwg-meine`. Oben zeigt eine Zeile den

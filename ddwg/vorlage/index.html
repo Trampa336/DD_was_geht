@@ -32,7 +32,6 @@ main { flex: 1; }
 #app[data-tab="karte"] .kopf { padding-left: 16px; }
 .kopf h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
 .kopf h1 b { color: var(--accent); font-weight: inherit; }
-.kopf p { margin: 4px 0 0; font-size: 12px; color: var(--faint); }
 
 /* ---------- Reiter unten ---------- */
 .reiter { order: 99; position: sticky; bottom: 0; z-index: 30; display: flex; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); background: color-mix(in srgb, var(--bg) 96%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
@@ -142,8 +141,7 @@ main { flex: 1; }
 .ol-herz { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--faint); font-size: 18px; line-height: 1; }
 .ol-herz[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
 .mk { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 2px solid var(--bg); font: 700 11px var(--f); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
-.mk.klein { font-size: 0; }
-.mk.h { background: var(--heart); color: #fff; font-size: 15px; border: 3px solid var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--heart) 35%, transparent); }
+.mk.h { background: var(--heart); color: #fff; border: 3px solid var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--heart) 35%, transparent); }
 .mk.cl { background: var(--surface); color: var(--accent); border: 2px solid var(--accent); font-size: 12px; box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent); }
 .mk.gewaehlt { outline: 3px solid var(--ink); outline-offset: 3px; }
 .ort-karte { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 600; max-height: 60%; overflow: auto; padding: 12px 12px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 12px 40px rgba(0,0,0,.55); animation: hoch .2s ease-out; }
@@ -255,6 +253,17 @@ button.kt { background: var(--surface2); }
 .seg button em { display: block; font-style: normal; font-weight: 400; font-size: 11px; opacity: .75; }
 .seg button[aria-pressed=true] { background: var(--accent); color: var(--on-accent); }
 .fi-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fi-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.fi-link { margin-bottom: 8px; font-size: 13px; font-weight: 650; color: var(--heart); }
+/* Richtungen: gleich breite Kacheln, Icon über dem Namen, Zahl grau dahinter */
+.rt-raster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.rk { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; padding: 10px 6px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); text-align: center; font-size: 12.5px; font-weight: 650; line-height: 1.2; color: var(--soft); }
+.rk svg { color: var(--accent); }
+.rk em { font-style: normal; font-weight: 400; color: var(--faint); }
+.rk[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rk[aria-pressed=true] svg, .rk[aria-pressed=true] em { color: var(--on-accent); }
+.schalter em { font-style: normal; font-weight: 400; color: var(--faint); }
+.knopf b { font-weight: 700; opacity: .7; }
 .fi-richtung { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 12px; border-radius: var(--r-s); background: var(--surface2); font-size: 13px; color: var(--soft); }
 .fi-richtung .knopf { padding: 7px 12px; font-size: 13px; }
 .fi-info { margin: 16px 0 0; font-size: 12px; line-height: 1.45; color: var(--faint); }
@@ -283,7 +292,7 @@ button.kt { background: var(--surface2); }
 </head>
 <body>
 <div id="app" data-tab="was">
-  <header class="kopf"><h1>DD <b>was</b> geht</h1><p id="stand"></p></header>
+  <header class="kopf"><h1>DD <b>was</b> geht</h1></header>
   <div class="oben" id="oben">
     <div class="oben-zeile">
       <button class="suchleiste" data-suche aria-label="Suche"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><span>Suchen …</span></button>
@@ -302,7 +311,6 @@ button.kt { background: var(--surface2); }
         <div class="optionen" id="ent-optionen"></div>
         <div class="ort-karte" id="ort-karte" hidden></div>
       </div>
-      <p class="legende" id="legende"></p>
       <button class="orte-knopf" id="orte-knopf" data-orteliste>Orte entdecken und Herzen setzen</button>
     </section>
   </main>
@@ -332,6 +340,24 @@ const WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WTL = ["Sonntag", "Montag
 const MON = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Dez"];
 const HERZ = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 3 1.5-1.9 3-3 5.1-3 3.9 0 6 3.9 4.5 7.3C19.5 16.4 12 21 12 21Z"/></svg>';
 const HERZ_G = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.9 4.5c2.1 0 3.6 1.1 5.1 3 1.5-1.9 3-3 5.1-3 3.9 0 6 3.9 4.5 7.3C19.5 16.4 12 21 12 21Z"/></svg>';
+/* Icons je Richtung: Linien-Icons aus Lucide (lucide.dev, ISC-Lizenz), nur der Inhalt des <svg> */
+const RT_ICON = {
+  musik: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  club: '<circle cx="12" cy="12" r="10"/><path d="M6 12c0-1.7.7-3.2 1.8-4.2"/><circle cx="12" cy="12" r="2"/><path d="M18 12c0 1.7-.7 3.2-1.8 4.2"/>',
+  rock: '<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.23 9.85A3 3 0 0 1 11 8a5 5 0 0 1 5 5 3 3 0 0 1-1.85 2.77l-.92.38A2 2 0 0 0 12 18a4 4 0 0 1-4 4 6 6 0 0 1-6-6 4 4 0 0 1 4-4 2 2 0 0 0 1.85-1.23z"/>',
+  indie: '<path d="M17 11h1a3 3 0 0 1 0 6h-1"/><path d="M9 12v6"/><path d="M13 12v6"/><path d="M14 7.5c-1 0-1.44.5-3 .5s-2-.5-3-.5-1.72.5-2.5.5a2.5 2.5 0 0 1 0-5c.78 0 1.57.5 2.5.5S9.44 2 11 2s2 1.5 3 1.5 1.72-.5 2.5-.5a2.5 2.5 0 0 1 0 5c-.78 0-1.5-.5-2.5-.5Z"/><path d="M5 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/>',
+  jazz: '<path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/><path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5"/><circle cx="16" cy="7" r="5"/>',
+  klassik: '<path d="M10 13v4"/><path d="M14 13v4"/><path d="M18 13v4"/><path d="M2 13h20"/><path d="M22 11.5A3.5 3.5 0 0018.5 8a3.52 3.52 0 01-3.173-2A7 7 0 002 9v10a2 2 0 002 2h16a2 2 0 002-2z"/><path d="M6 13v4"/>',
+  kultur: '<path d="M10 18v-7"/><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
+  buehne: '<path d="M10 11h.01"/><path d="M14 6h.01"/><path d="M18 6h.01"/><path d="M6.5 13.1h.01"/><path d="M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3"/><path d="M17.4 9.9c-.8.8-2 .8-2.8 0"/><path d="M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7"/><path d="M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4"/>',
+  film: '<path d="m12.296 3.464 3.02 3.956"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m6.18 5.276 3.1 3.899"/>',
+  wort: '<path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>',
+  kunst: '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>',
+  demo: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
+  outdoor: '<circle cx="12" cy="12" r="2"/><path d="M12 2v4"/><path d="m6.8 15-3.5 2"/><path d="m20.7 7-3.5 2"/><path d="M6.8 9 3.3 7"/><path d="m20.7 17-3.5-2"/><path d="m9 22 3-8 3 8"/><path d="M8 22h8"/><path d="M18 18.7a9 9 0 1 0-12 0"/>',
+  sport: '<path d="M11 7a16 16 20 0 1 10.98 4.362"/><path d="M12 12a13 13 0 0 1-8.66 5"/><path d="M16.83 13.634a16 16 0 0 1-9.267 7.328"/><path d="M20.66 17A13 13 0 0 0 12 12a13 13 0 0 1 0-10"/><path d="M8.17 15.366a16 16 0 0 1-1.713-11.69"/><circle cx="12" cy="12" r="10"/>',
+};
+const rtIcon = (k, g = 20) => RT_ICON[k] ? `<svg width="${g}" height="${g}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RT_ICON[k]}</svg>` : "";
 const ICON_R = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
 const parse = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
 const isoVon = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
@@ -584,7 +610,7 @@ function renderTage() {
     const d = parse(iso), { kacheln, rest } = auswahl(iso), n = perTag[iso].length;
     const zeilen = offen.has(iso) ? rest : rest.slice(0, ZEILEN);
     return `<section class="tag ${istWE(iso) ? "we" : ""}" data-k="${k}">
-      <h2 class="tag-kopf">${relTag(iso)}, ${d.getDate()}. ${MON[d.getMonth()]}<em>${n} ${n === 1 ? "Termin" : "Termine"}${istWE(iso) ? " · Wochenende" : ""}</em></h2>
+      <h2 class="tag-kopf">${relTag(iso)}, ${d.getDate()}. ${MON[d.getMonth()]}<em>${n}</em></h2>
       <div class="raster">${kacheln.map(kachel).join("")}${rest.length ? `<div class="rest-liste">${zeilen.map(zeile).join("")}${rest.length > zeilen.length ? `<button class="mehr-zeile" data-mehr="${iso}">+${rest.length - zeilen.length} weitere an diesem Tag</button>` : ""}</div>` : ""}</div></section>`;
   }).join("");
   railBauen(); messen();
@@ -813,7 +839,6 @@ function renderEntdecken() {
   const { an, weg } = herzenAnwenden(), offen2 = an.length + weg.length;
   const Z = [["heute", "Heute"], ["morgen", "Morgen"], ["we", "Wochenende"], ["alle", `${TAGE_ALLE.length} Tage`]];
   $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}</div>`;
-  $("#legende").textContent = `${evs.length} Termine an ${orteL.length} Orten, ${mitGeo.length} davon auf der Karte · Zahl = Termine · Ring = mehrere Orte`;
   $("#ent-optionen").innerHTML = offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "";
   karteZeichnen(mitGeo);
   if (gewaehlt) zeigeOrtKarte(gewaehlt, false);
@@ -846,6 +871,12 @@ const kartenLib = ladeSkript(CDN + "leaflet/1.9.4/leaflet.min.js")
   .then(() => { if (S.tab === "karte") renderEntdecken(); })
   .catch(() => { $("#karte").innerHTML = `<div class="karte-aus">Karte konnte nicht geladen werden (braucht Internet).</div>`; });
 
+// Häufigste Richtung der Termine eines Orts, die feinste zuerst (Club vor Musik); ohne Richtung leer
+function hauptRichtung(l) {
+  const z = {};
+  l.forEach(e => { const r = e.rt || [], fein = r.filter(k => !RB.some(b => b.k === k && b.sub)); (fein.length ? fein : r).forEach(k => z[k] = (z[k] || 0) + 1); });
+  return Object.keys(z).sort((a, b) => z[b] - z[a])[0] || "";
+}
 function karteZeichnen(mitGeo) {
   if (!window.L) {
     if (!karte) $("#karte").innerHTML = `<div class="karte-aus">Karte lädt …</div>`;
@@ -869,8 +900,8 @@ function karteZeichnen(mitGeo) {
   markerLayer.clearLayers(); herzLayer.clearLayers();
   const max = Math.max(1, ...mitGeo.map(x => x.l.length));
   mitGeo.forEach(x => {
-    const n = x.l.length, s = Math.max(x.o.h ? 30 : 0, Math.round(18 + Math.sqrt(n / max) * 24));
-    const icon = L.divIcon({ className: "", iconSize: [s, s], html: `<div class="mk ${x.o.h ? "h" : ""} ${s < 22 ? "klein" : ""} ${x.slug === gewaehlt ? "gewaehlt" : ""}" data-slug="${esc(x.slug)}">${x.o.h ? "♥" : n}</div>` });
+    const n = x.l.length, s = Math.max(x.o.h ? 34 : 26, Math.round(20 + Math.sqrt(n / max) * 22));
+    const icon = L.divIcon({ className: "", iconSize: [s, s], html: `<div class="mk ${x.o.h ? "h" : ""} ${x.slug === gewaehlt ? "gewaehlt" : ""}" data-slug="${esc(x.slug)}">${rtIcon(hauptRichtung(x.l), Math.round(s * .52))}</div>` });
     const m = L.marker([x.o.lat, x.o.lon], { icon, title: x.o.n, n, zIndexOffset: x.o.h ? 1000 : 0 });
     m.on("click", ev => { L.DomEvent.stopPropagation(ev); zeigeOrtKarte(x.slug); });
     m.addTo(x.o.h ? herzLayer : markerLayer);
@@ -882,7 +913,7 @@ function karteZeichnen(mitGeo) {
 const X_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 function filterBlatt() {
   merkeBlatt("filter", () => filterBlatt());
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Filter</div><h2>Was willst du sehen?</h2>
+  sheetAuf(`<div class="sh" style="padding-top:0"><h2>Filter</h2>
     <div id="fi-rest"></div></div>`);
   fiRest();
 }
@@ -911,12 +942,12 @@ function sucheScroll() { if ($("#su-feld")) SU.scroll = $(".sheet-body").scrollT
 function sucheTreffer() {
   const host = $("#su-treffer"); if (!host) return;
   const woerter = klein(SU.q).split(/\s+/).filter(Boolean);
-  if (!woerter.length || SU.q.trim().length < 2) { host.innerHTML = `<p class="su-info">Sucht in allen Terminen ab heute, egal welcher Filter an ist.</p>`; return; }
+  if (!woerter.length || SU.q.trim().length < 2) { host.innerHTML = ""; return; }
   const ab = [HEUTE, isoVon(new Date())].sort().at(-1), schon = new Set();
   const treffer = D.events.filter(e => e.d >= ab && woerter.every(w => e.s.includes(w))
     && (!e.l || (!schon.has(dauerKey(e)) && schon.add(dauerKey(e))))).sort(nachZeit);
   const n = treffer.length;
-  host.innerHTML = `<p class="su-info">${n ? `${n} Treffer${n > SU_MAX ? `, die ersten ${SU_MAX}` : ""}` : "Nichts gefunden."}</p>
+  host.innerHTML = `<p class="su-info">${n ? `${n}${n > SU_MAX ? ` · die ersten ${SU_MAX}` : ""}` : "Nichts gefunden."}</p>
     <div class="sh-liste">${treffer.slice(0, SU_MAX).map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}${e.l ? " · läuft mehrere Tage" : ""}</span></span></button>`).join("")}</div>`;
 }
 function fiRest() {
@@ -930,19 +961,20 @@ function fiRest() {
     if (passt(e, "zeit")) nZeit[istAbend(e) ? "abend" : "tag"]++;
     if (passt(e)) treffer++;
   });
-  const chip = t => `<button class="fc" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${esc(t.n)}<em>${nRt[t.k] || 0}</em></button>`;
-  const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="fi-chips">${liste.map(chip).join("")}</div></div>`;
-  host.innerHTML = `<div class="fi-teil"><h3>Tageszeit</h3><div class="fi-chips">${[["tag", "Tagsüber", `vor ${TZ_GRENZE}`], ["abend", "Abends", `ab ${TZ_GRENZE}`]].map(([k, l, z]) => `<button class="fc" data-fzeit="${k}" aria-pressed="${F.zeit === k}">${l} · ${z}<em>${nZeit[k]}</em></button>`).join("")}</div></div>
-    <div class="fi-teil"><h3>Orte</h3><div class="seg">${[["alle", "Alle"], ["meine", "♥ Meine"], ["neu", "Neue"]].map(([k, l]) => `<button data-forte="${k}" aria-pressed="${F.orte === k}">${l}<em>${nOrte[k]}</em></button>`).join("")}</div>
-      <button class="schalter" data-orteliste><span>♥ Orte auswählen<small>Gruppen wie „Solider Anfang“ oder einzelne Orte</small></span></button></div>
+  const kachel = (t, name) => `<button class="rk" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${rtIcon(t.k, 22)}<span>${esc(name || t.n)} <em>${nRt[t.k] || 0}</em></span></button>`;
+  const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="rt-raster">${liste.join("")}</div></div>`;
+  const seg = (attr, wahl, liste) => `<div class="seg">${liste.map(([k, l, z]) => `<button data-${attr}="${k}" aria-pressed="${wahl === k}">${l}<em>${z}</em></button>`).join("")}</div>`;
+  host.innerHTML = `<div class="fi-teil"><div class="fi-kopf"><h3>Orte</h3><button class="fi-link" data-orteliste>♥ Orte auswählen</button></div>
+      ${seg("forte", F.orte, [["alle", "Alle", nOrte.alle], ["meine", "♥ Meine", nOrte.meine], ["neu", "Neue", nOrte.neu]])}</div>
+    <div class="fi-teil"><h3>Tageszeit</h3>
+      ${seg("fzeit", F.zeit || "immer", [["immer", "Immer", "ganzer Tag"], ["tag", "Tagsüber", `vor ${TZ_GRENZE}`], ["abend", "Abends", `ab ${TZ_GRENZE}`]])}</div>
     <div class="fi-teil"><h3>Deine Richtungen</h3>
-      ${RB.filter(b => b.sub).map(b => gruppe(b.n, [{ k: b.k, n: "Alles" }].concat(b.sub))).join("")}
-      ${gruppe("Weitere", RB.filter(b => !b.sub))}
-      <button class="schalter" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen zeigen<small>Sonst kommen sie nur nach vorne</small></span><i></i></button></div>
-    <div class="fi-teil"><h3>Dauerausstellungen</h3><div class="fi-chips"><button class="fc" data-fdauer aria-pressed="${dauerAn()}">Dauerausstellungen zeigen<em>${nDauer}</em></button></div>
-      <p class="fi-info">Ausstellungen, die viele Tage laufen, stehen je einmal am ersten Tag. Mit der Richtung Ausstellungen sind sie automatisch an.</p></div>
-    <p class="fi-info">Sortiert wird immer: deine Orte zuerst, dann deine Richtungen, dann Termine mit Bild und Beschreibung, in mehreren Kalendern genannt, abends. Was in keine Richtung passt und Umland rutschen nach unten. Herzen setzt du unter „Orte auswählen“. Alles bleibt in diesem Browser gespeichert.</p>
-    <div class="fi-fuss"><button class="knopf primaer" data-fzu>${treffer} ${treffer === 1 ? "Termin" : "Termine"} zeigen</button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`;
+      ${RB.filter(b => b.sub).map(b => gruppe(b.n, [kachel(b, "Alles")].concat(b.sub.map(t => kachel(t))))).join("")}
+      ${gruppe("Weitere", RB.filter(b => !b.sub).map(t => kachel(t)))}</div>
+    <div class="fi-teil">
+      <button class="schalter" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen</span><i></i></button>
+      <button class="schalter" data-fdauer aria-pressed="${dauerAn()}"><span>Dauerausstellungen <em>${nDauer}</em></span><i></i></button></div>
+    <div class="fi-fuss"><button class="knopf primaer" data-fzu>Zeigen <b>${treffer}</b></button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`;
 }
 function filterZeile() {
   const teile = [];
@@ -952,7 +984,7 @@ function filterZeile() {
   if (F.zeit) teile.push(F.zeit === "abend" ? `Abends ab ${TZ_GRENZE}` : `Tagsüber vor ${TZ_GRENZE}`);
   const z = $("#aktiv-filter"), n = teile.length ? D.events.filter(e => sichtbar(e) && passt(e)).length : 0;
   z.hidden = !teile.length;
-  z.innerHTML = teile.length ? `<button class="af-text" data-filter>${teile.join(" · ")} · <b>${n} ${n === 1 ? "Termin" : "Termine"}</b></button><button class="af-zu" data-freset aria-label="Filter zurücksetzen">${X_ICON}</button>` : "";
+  z.innerHTML = teile.length ? `<button class="af-text" data-filter>${teile.join(" · ")} · <b>${n}</b></button><button class="af-zu" data-freset aria-label="Filter zurücksetzen">${X_ICON}</button>` : "";
   const k = $(".filterknopf"), i = k.querySelector("i");
   k.dataset.an = teile.length ? "1" : "0"; i.hidden = !teile.length; i.textContent = teile.length;
 }
@@ -997,7 +1029,7 @@ document.addEventListener("click", e => {
   }
   if ("fdauer" in ds) { F.dauer = !dauerAn(); return filterGeaendert(); }
   if ("fnur" in ds) { F.nur = !F.nur; return filterGeaendert(); }
-  if (ds.fzeit) { F.zeit = F.zeit === ds.fzeit ? null : ds.fzeit; return filterGeaendert(); }
+  if (ds.fzeit) { F.zeit = ds.fzeit === "immer" || F.zeit === ds.fzeit ? null : ds.fzeit; return filterGeaendert(); }
   if ("orteliste" in ds) return orteListe();
   if (ds.gruppe) { gruppeUmschalten(ds.gruppe); return olRest(); }
   if (ds.herzliste) { herzUmschalten(ds.herzliste); return olRest(); }
@@ -1020,7 +1052,6 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (
 /* ---------- Start ---------- */
 herzenAnwenden();
 orteKnopf();
-$("#stand").textContent = `Stand ${D.stand.replace(/\.\d{4},/, ".,")} · ${D.events.length} Termine`;
 renderTage();
 filterZeile();
 </script>
