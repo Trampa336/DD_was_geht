@@ -257,15 +257,15 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Kategorie passt oder `sonstiges` ist. Sport = Mitmachen, ohne Senioren-, Familien-
   und Zuschauersport (auch am Ortsnamen erkannt). Neue Stichworte immer mit Test.
 - **Zeitstrahl-Leiste** links (seit 2026-09-29 fertig): Alle Tage mit Terminen stehen als kleine,
-  blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben und
-  hinter der Reiter-Leiste blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
+  blasse Skala (Wochentag + Tag) auf der Leiste, der aktuelle Tag groß in der Mitte; oben (erst unter dem
+  Lesezeichen-Knopf, seit 2026-10-02) und am unteren Rand blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
   Monatswechsel als feine Linie mit Monatskürzel (sonst kein Monat auf der Leiste). Tipp auf ein kleines Datum springt hin, Tipp
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
   Das große Datum steht immer fest bei 1/3 der Höhe (`mitte`, CSS `--mitte`). Über „Heute“ zeigt die Leiste die 3
   vergangenen Tage grau und ohne Termine (`VORBEI`, data-k negativ, nicht antippbar), damit oben keine
   leere Fläche bleibt (Davids Wahl 2026-10-02; verworfen: vergangene Termine laden, Datum wandern lassen).
-  Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
-  40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.
+  Beim Scrollen folgt die Skala ohne Nachlauf, das große Datum läuft ab 30 % des Tages
+  sanft zum nächsten mit (seit 2026-10-02 weniger magnetisch, vorher erst auf den letzten 40 %). Vibration nur 2 ms und höchstens alle 90 ms.
   Sprünge setzen den Tag ganz nach oben; beim Scrollen gilt ein Tag als aktuell, sobald seine
   Überschrift die Lesekante oben erreicht (`LESE` = 60 px), nicht die Mitte der Leiste.
 - **Zurück-Knopf** (seit 2026-09-30): Jede geöffnete Ebene legt einen Eintrag im Browser-Verlauf
@@ -279,13 +279,19 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   ab `WISCH_ZU` = 100 px oder schnellem Wisch zu, sonst federt es zurück. Geschlossen wird über `sheetZu`
   (Zurück-Verlauf). Klebende Fußleisten im Blatt (`.fi-fuss`) brauchen `bottom: -20px` als Ausgleich
   für den Innenabstand der Karte.
-- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ sind seit 2026-10-02
-  eine schmale schwebende Pille (40 px hoch, 12 px über dem Rand), mittig über der Terminspalte, im Reiter
-  Karte mittig; Farben wie vorher (aktiv helle Schrift, Akzent-Symbol, leicht hinterlegt). Die Zeitleiste
-  geht bis ganz nach unten. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
+- **Feed ↔ Karte** (seit 2026-10-02, Davids Wunsch, ersetzt die Reiter-Pille unten): Im Feed nach links
+  wischen öffnet die Karte (`tabWischen`; die Seite folgt dem Finger, ab `WISCH_TAB` = 90 px oder schnellem
+  Wisch um, sonst federt sie zurück; `#tab-was` hat `touch-action: pan-y`). Dazu ein kleiner, dezenter
+  Karten-Knopf unten rechts (`.karte-knopf`), auf der Karte nicht zu sehen (Davids Wahl). Zurück zum Feed:
+  Zurück-Knopf/-Geste (die Karte ist eine Ebene im Verlauf), Escape oder Wisch vom linken Rand
+  (`.rand-zurueck`, 22 px, nur Touch), weil Wischen sonst die Karte verschiebt. Am PC ohne Wischen nur
+  Zurück/Escape. Die neue Seite gleitet von der Seite herein (`.rein-r`/`.rein-l`).
+- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Zeitleiste geht bis ganz nach unten. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
   Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der
-  Terminspalte, nicht über der Zeitleiste. Beim Runterscrollen gleitet sie weg, beim Hochscrollen
-  kommt sie zurück (`obenPruefen`, erst nach `OBEN_SCHWELLE` = 28 px in eine Richtung). Ganz oben
+  Terminspalte, nicht über der Zeitleiste. Sie folgt dem Scrollen 1:1 wie die Adressleiste in
+  Chrome (`obenPruefen`, `--oy`, seit 2026-10-02): runter schiebt sie weg, hoch holt sie erst nach `OBEN_TOT` = 14 px
+  zurück (Fingerzucken), steht die Seite 160 ms still, rastet sie ganz ein oder aus. Vorher ganz da / ganz weg
+  nach 28 px, das sprang bei langsamem Scrollen hin und her (Davids Video 02.10.). Ganz oben
   und im Reiter Karte ist sie immer da, Hintergrund bekommt sie erst, wenn sie klebt. Sprünge über
   Zeitleiste und Kalender blenden sie nicht ein oder aus (`obenRuhe`); ist sie sichtbar, landet
   der Tag unter ihr, und die Lesekante der Zeitleiste rückt um ihre Höhe nach unten (`obenH`).
@@ -303,7 +309,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   je Termin-ID `u` mit Datum, Ort, Titel). Ändert ein Neubau die ID (z. B. neue Uhrzeit), findet der Termin über
   Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
   (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Knopf oben links fest über der
-  Zeitleiste (mit Zahl) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
+  Zeitleiste (mit Zahl, seit 2026-10-02 kräftiger: 22 px, Strich 2,6) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
   Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links.
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):

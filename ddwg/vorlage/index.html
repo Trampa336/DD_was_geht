@@ -64,34 +64,44 @@ main { flex: 1; }
 .kopf h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
 .kopf h1 b { color: var(--accent); font-weight: inherit; }
 
-/* ---------- Reiter unten ---------- */
-/* Liegt rechts neben der Zeitleiste (die geht bis zum unteren Rand), deckend, oben links rund */
-/* Reiter: schmale schwebende Pille, mittig über der Terminspalte (seit 2026-10-02, Davids Wunsch).
-   Farben wie vorher: aktiv helle Schrift mit Akzent-Symbol, sonst blass. */
-.reiter { position: fixed; z-index: 30; bottom: calc(12px + env(safe-area-inset-bottom)); left: calc(50% + var(--rail) / 2); transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 6px 20px var(--shade); transition: left .15s; }
-#app[data-tab="karte"] .reiter { left: 50%; }
-.reiter button { display: flex; align-items: center; justify-content: center; gap: 7px; height: 32px; padding: 0 16px; border-radius: 999px; color: var(--faint); font-weight: 650; font-size: 13px; transition: color .2s, background-color .2s; }
-.reiter button[aria-selected=true] { color: var(--ink); background: var(--surface2); }
-.reiter button[aria-selected=true] svg { color: var(--accent); }
-#tab-karte { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }  /* Platz unter der Pille */
+/* ---------- Feed und Karte: Wischen statt Reiter-Pille (seit 2026-10-02, Davids Wunsch) ----------
+   Im Feed nach links wischen öffnet die Karte, ebenso der kleine Knopf unten rechts (auf der Karte nicht zu sehen).
+   Zurück: Zurück-Knopf/-Geste, Escape oder Wisch vom linken Rand (.rand-zurueck); sonst verschiebt Wischen die Karte. */
+#tab-was { touch-action: pan-y pinch-zoom; }  /* waagerechte Wische bekommt das Skript, senkrecht scrollt der Browser */
+#app.wischt.w-was :is(.kopf, .oben, #tab-was, .rail, .lz-oben, .karte-knopf),
+#app.wischt.w-karte :is(.kopf, .oben, #tab-karte) { translate: var(--wx, 0px) 0; }
+#app.wischt.federt :is(.kopf, .oben, #tab-was, #tab-karte, .rail, .lz-oben, .karte-knopf) { transition: translate .19s ease-out; }
+@keyframes reinR { from { translate: 48px 0; opacity: 0; } }
+@keyframes reinL { from { translate: -48px 0; opacity: 0; } }
+.rein-r { animation: reinR .24s ease-out; }
+.rein-l { animation: reinL .24s ease-out; }
+.karte-knopf { position: fixed; z-index: 30; right: max(14px, calc(50vw - 246px)); bottom: calc(16px + env(safe-area-inset-bottom)); width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: var(--soft); background: color-mix(in srgb, var(--bg) 78%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line); box-shadow: 0 4px 14px var(--shade); transition: color .2s; }
+.karte-knopf:active { color: var(--accent); }
+#app[data-tab="karte"] .karte-knopf { display: none; }
+.rand-zurueck { display: none; position: fixed; z-index: 700; top: 0; bottom: 0; left: max(0px, calc(50vw - 260px)); width: 22px; touch-action: none; }
+@media (pointer: coarse) { #app[data-tab="karte"] .rand-zurueck { display: block; } }
+@media (prefers-reduced-motion: reduce) { .rein-r, .rein-l { animation: none; } }
+#tab-karte { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 
 /* ---------- Leiste oben: Suchleiste + Filter, nur über der Terminspalte ----------
    Beim Runterscrollen gleitet sie weg, beim Hochscrollen kommt sie zurück (obenPruefen). */
-.oben { position: sticky; top: 0; z-index: 20; margin-left: var(--rail); padding: 8px 12px 16px 8px; isolation: isolate; transition: transform .38s cubic-bezier(.22,.8,.26,1), opacity .3s ease, margin .15s; will-change: transform; }
+.oben { position: sticky; top: 0; z-index: 20; margin-left: var(--rail); padding: 8px 12px 16px 8px; isolation: isolate; transition: margin .15s; will-change: transform; transform: translateY(var(--oy, 0px)); }
 /* Hintergrund erst, wenn die Leiste oben klebt; ganz oben bleibt der Schimmer frei */
 .oben::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, var(--bg) 0, var(--bg) calc(100% - 16px), transparent); opacity: 0; transition: opacity .25s ease; pointer-events: none; }
 .oben.klebt::before { opacity: 1; }
-.oben.weg { transform: translateY(calc(-100% - 2px)); opacity: 0; pointer-events: none; }
+/* Folgt dem Scrollen 1:1 (--oy, seit 2026-10-02), nach dem Scrollen rastet sie weich ganz ein oder aus (.gleitet) */
+.oben.gleitet { transition: transform .25s cubic-bezier(.22,.8,.26,1), margin .15s; }
+.oben.weg { pointer-events: none; }
 #app[data-tab="karte"] .oben { margin-left: 0; padding-left: 12px; }
 .oben-zeile { display: flex; gap: 8px; }
 .suchleiste { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--faint); font-size: 14.5px; }
 .suchleiste span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media (prefers-reduced-motion: reduce) { .oben { transition: opacity .2s; } .oben.weg { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .oben.gleitet { transition: margin .15s; } }
 
 /* ---------- Zeitstrahl links (nur im Reiter "Was geht") ---------- */
 .rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none;
-  /* Skala blendet oben und am unteren Rand weich aus (die Reiter liegen rechts daneben) */
-  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 50px - env(safe-area-inset-bottom)), transparent calc(100% - 6px - env(safe-area-inset-bottom)));
+  /* Skala blendet oben (erst unter dem Lesezeichen-Knopf, Davids Wunsch 02.10.) und am unteren Rand weich aus */
+  --maske: linear-gradient(to bottom, transparent 0 56px, #000 84px, #000 calc(100% - 50px - env(safe-area-inset-bottom)), transparent calc(100% - 6px - env(safe-area-inset-bottom)));
   -webkit-mask-image: var(--maske); mask-image: var(--maske); }
 #app[data-tab="karte"] .rail { display: none; }
 .rail.greift .tl-datum.aktiv span { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px var(--shade); }
@@ -358,8 +368,8 @@ button.kt { background: var(--surface2); }
 /* ---------- Lesezeichen (seit 2026-10-02, Davids Wunsch) ----------
    Knopf oben links fest über der Zeitleiste öffnet die Liste; gemerkt wird im Termin-Blatt neben dem Titel.
    Bewusst ohne Akzentfarbe: gemerkt = helle Schrift, sonst blass. */
-.lz-oben { position: fixed; z-index: 25; top: 19px; left: max(0px, calc(50vw - 260px)); width: var(--rail); height: 34px; display: grid; place-items: center; color: var(--faint); transition: color .2s; }
-.lz-oben[data-an="1"] { color: var(--soft); }
+.lz-oben { position: fixed; z-index: 25; top: 19px; left: max(0px, calc(50vw - 260px)); width: var(--rail); height: 34px; display: grid; place-items: center; color: var(--soft); transition: color .2s; }
+.lz-oben[data-an="1"] { color: var(--ink); }  /* kräftiger und besser zu sehen (Davids Wunsch 02.10.) */
 #app[data-tab="karte"] .lz-oben { display: none; }
 .lz-oben i { position: absolute; top: -3px; right: 2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; background: var(--surface2); border: 1px solid var(--line); color: var(--ink); font: 700 9.5px/13px var(--f); font-style: normal; text-align: center; }
 .lz-oben i[hidden] { display: none; }
@@ -378,7 +388,7 @@ button.kt { background: var(--surface2); }
 </head>
 <body>
 <div id="app" data-tab="was">
-  <button class="lz-oben" data-lzliste aria-label="Lesezeichen"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><i hidden></i></button>
+  <button class="lz-oben" data-lzliste aria-label="Lesezeichen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><i hidden></i></button>
   <header class="kopf"><h1>DD <b>was</b> geht</h1><button class="theme-knopf" data-themes aria-label="Aussehen wählen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></button></header>
   <div class="oben" id="oben">
     <div class="oben-zeile">
@@ -400,12 +410,9 @@ button.kt { background: var(--surface2); }
       <button class="orte-knopf" id="orte-knopf" data-orteliste>Orte entdecken und Herzen setzen</button>
     </section>
   </main>
-  <nav class="reiter" role="tablist">
-    <button role="tab" data-tab="was" aria-selected="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Feed</span></button>
-    <button role="tab" data-tab="karte" aria-selected="false">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg><span>Karte</span></button>
-  </nav>
+  <button class="karte-knopf" data-tab="karte" aria-label="Karte zeigen">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z"/><path d="M9 4v14M15 6v14"/></svg></button>
+  <div class="rand-zurueck" id="rand-zurueck" aria-hidden="true"></div>
 </div>
 
 <div id="sheet" class="sheet" hidden>
@@ -803,7 +810,8 @@ let aktiv = -1;
 function zeichnen() {
   if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
-  const rest = f - k0, t = Math.max(0, (rest - 0.6) / 0.4), schub = t * t * (3 - 2 * t), lage = k0 + schub;
+  // weniger magnetisch (02.10.): läuft ab 30 % des Tages mit, halb gleichmäßig, halb weich (vorher erst ab 60 %, nur weich)
+  const rest = f - k0, t = Math.max(0, (rest - 0.3) / 0.7), schub = 0.5 * t + 0.5 * t * t * (3 - 2 * t), lage = k0 + schub;
   const unten = innerHeight - mitte;
   labels.forEach(el => {
     const k = +el.dataset.k;
@@ -820,28 +828,41 @@ function zeichnen() {
 let geplant = false;
 addEventListener("scroll", () => { if (!geplant) { geplant = true; requestAnimationFrame(() => { geplant = false; obenPruefen(); zeichnen(); }); } }, { passive: true });
 
-/* ---------- Leiste oben: beim Runterscrollen weg, beim Hochscrollen zurück ----------
-   Erst nach OBEN_SCHWELLE px in eine Richtung, damit sie nicht zappelt. Ganz oben und im Reiter
-   Karte immer sichtbar. Sprünge über Zeitleiste und Kalender (obenRuhe) zählen nicht. */
-const oben = $("#oben"), kopf = $(".kopf"), OBEN_SCHWELLE = 28;  // kopf: die klebende Leiste kennt ihre Ruhelage nicht
-let obenWeg = false, obenLetzt = scrollY, obenSumme = 0, obenAuto = 0;
-const obenH = () => obenWeg || S.tab !== "was" ? 0 : oben.offsetHeight;
+/* ---------- Leiste oben: folgt dem Scrollen (seit 2026-10-02, wie die Adressleiste in Chrome) ----------
+   Runter schiebt sie Pixel für Pixel weg, hoch holt sie zurück, aber erst nach OBEN_TOT px (Fingerzucken soll
+   sie nicht hervorholen). Steht die Seite still, rastet sie ganz ein oder ganz aus. Ganz oben und im Reiter
+   Karte immer sichtbar. Sprünge über Zeitleiste und Kalender (obenRuhe) zählen nicht. Vorher kannte sie nur
+   ganz da / ganz weg und blendete bei kleinem Zurückzucken komplett ein (Davids Video 02.10.). */
+const oben = $("#oben"), kopf = $(".kopf"), OBEN_TOT = 14;  // kopf: die klebende Leiste kennt ihre Ruhelage nicht
+let obenWeg = false, obenLetzt = scrollY, obenHoch = 0, obenAuto = 0, obenV = 0, obenRast = 0;
+const obenVoll = () => oben.offsetHeight + 2;
+const obenH = () => S.tab !== "was" ? 0 : Math.max(0, oben.offsetHeight - obenV);  // sichtbarer Teil
 function obenRuhe(ms) { obenAuto = Math.max(obenAuto, Date.now() + ms); }
-function obenSetzen(weg) {
-  if (weg === obenWeg) return;
-  obenWeg = weg; oben.classList.toggle("weg", weg); obenSumme = 0;
+function obenZeigen(v, weich) {
+  const voll = obenVoll();
+  v = Math.max(0, Math.min(voll, v));
+  if (v === obenV) return;
+  obenV = v; obenWeg = v >= voll - 1;
+  oben.classList.toggle("gleitet", !!weich);
+  oben.classList.toggle("weg", obenWeg);
+  oben.style.setProperty("--oy", `${-v}px`);
 }
+function obenSetzen(weg) { obenHoch = 0; obenZeigen(weg ? obenVoll() : 0, true); }
+function obenEinrasten() { if (obenV > 0 && !obenWeg) obenSetzen(obenV > obenVoll() / 2); }
 function obenPruefen() {
   const y = scrollY, d = y - obenLetzt, max = document.documentElement.scrollHeight - innerHeight;
   obenLetzt = y;
   oben.classList.toggle("klebt", y > kopf.offsetHeight - 2);
-  if (S.tab !== "was" || y <= kopf.offsetHeight + 4) { obenSumme = 0; return obenSetzen(false); }
-  if (griff || Date.now() < obenAuto || y < 0 || y > max) { obenSumme = 0; return; }  // Zeitleiste, Sprung, Gummiband
+  clearTimeout(obenRast);
+  if (S.tab !== "was" || y <= kopf.offsetHeight + 4) return obenSetzen(false);
+  if (griff || Date.now() < obenAuto || y < 0 || y > max) { obenHoch = 0; return; }  // Zeitleiste, Sprung, Gummiband
   if (!d) return;
-  if (Math.sign(d) !== Math.sign(obenSumme)) obenSumme = 0;
-  obenSumme += d;
-  if (obenSumme > OBEN_SCHWELLE) obenSetzen(true);
-  else if (obenSumme < -OBEN_SCHWELLE) obenSetzen(false);
+  if (d > 0) { obenHoch = 0; obenZeigen(obenV + d); }
+  else {
+    obenHoch -= d;
+    if (obenHoch > OBEN_TOT) obenZeigen(obenV - Math.min(-d, obenHoch - OBEN_TOT));
+  }
+  obenRast = setTimeout(obenEinrasten, 160);
 }
 addEventListener("resize", messen);
 
@@ -947,6 +968,49 @@ function wischenEinrichten() {
   };
   b.addEventListener("touchend", ende);
   b.addEventListener("touchcancel", ende);
+}
+/* ---------- Wischen zwischen Feed und Karte (seit 2026-10-02, ersetzt die Reiter-Pille) ----------
+   Im Feed nach links wischen öffnet die Karte; auf der Karte führt ein Wisch vom linken Rand zurück (dort
+   verschiebt Wischen sonst die Karte). Die Seite folgt dem Finger; ab WISCH_TAB px oder schnellem Wisch
+   schaltet sie um, sonst federt sie zurück. Umgeschaltet wird über setTab, also mit Zurück-Verlauf. */
+const WISCH_TAB = 90;
+function tabWischen(flaeche, vz, teil, fertig) {
+  const app = $("#app");
+  let x0 = null, y0 = 0, t0 = 0, dx = 0, aktiv = false, uhr = 0;
+  flaeche.addEventListener("touchstart", e => {
+    x0 = null;
+    if (e.touches.length !== 1 || !$("#sheet").hidden || griff) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; aktiv = false;
+  }, { passive: true });
+  flaeche.addEventListener("touchmove", e => {
+    if (x0 === null) return;
+    const nx = e.touches[0].clientX - x0, ny = e.touches[0].clientY - y0;
+    if (!aktiv) {
+      if (Math.abs(nx) < 10 && Math.abs(ny) < 10) return;
+      if (nx * vz <= 0 || Math.abs(ny) * 1.3 > Math.abs(nx)) { x0 = null; return; }  // senkrecht oder falsche Richtung
+      aktiv = true; clearTimeout(uhr); app.classList.remove("federt"); app.classList.add("wischt", teil);
+    }
+    dx = Math.max(0, nx * vz);
+    app.style.setProperty("--wx", `${vz * dx}px`);
+  }, { passive: true });
+  const ende = () => {
+    if (x0 === null) return;
+    x0 = null;
+    if (!aktiv) return;
+    aktiv = false;
+    const schnell = dx > 40 && dx / Math.max(1, Date.now() - t0) > .5, tab0 = S.tab;
+    app.classList.add("federt");
+    if (dx > WISCH_TAB || schnell) {
+      app.style.setProperty("--wx", `${vz * innerWidth}px`);
+      // setTabIntern räumt auf; falls nicht umgeschaltet wurde, hier nach kurzer Zeit
+      uhr = setTimeout(() => { fertig(); uhr = setTimeout(() => { if (S.tab === tab0) { app.classList.remove("wischt", "federt", teil); app.style.removeProperty("--wx"); } }, 600); }, 190);
+    } else {
+      app.style.setProperty("--wx", "0px");
+      uhr = setTimeout(() => app.classList.remove("wischt", "federt", teil), 220);
+    }
+  };
+  flaeche.addEventListener("touchend", ende);
+  flaeche.addEventListener("touchcancel", ende);
 }
 function sheetZuIntern() { $("#sheet").hidden = true; document.body.style.overflow = ""; }
 // ✕, Tippen daneben, Escape: im Verlauf zurück, damit keine toten Zurück-Schritte entstehen
@@ -1253,10 +1317,15 @@ function setTab(t) {
   setTabIntern(t);
 }
 function setTabIntern(t) {
+  const vorher = S.tab, app = $("#app");
   S.tab = t;
-  $("#app").dataset.tab = t;
-  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  app.dataset.tab = t;
+  app.classList.remove("wischt", "federt", "w-was", "w-karte"); app.style.removeProperty("--wx");
   $("#tab-was").hidden = t !== "was"; $("#tab-karte").hidden = t !== "karte";
+  if (vorher !== t) {  // die neue Seite gleitet von der Seite herein, aus der sie kommt
+    const sek = $(t === "karte" ? "#tab-karte" : "#tab-was");
+    sek.classList.remove("rein-r", "rein-l"); void sek.offsetWidth; sek.classList.add(t === "karte" ? "rein-r" : "rein-l");
+  }
   if (t === "karte") renderEntdecken();
   else messen();  // Zeitstrahl neu vermessen: Layout kann sich verändert haben
   obenRuhe(300); obenSetzen(false);
@@ -1297,7 +1366,7 @@ document.addEventListener("click", e => {
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
   if (ds.aufkarte) { const slug = ds.aufkarte, o = D.orte[slug]; sheetZu(() => { setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(slug); }); }
 });
-document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); else if (S.tab === "karte") setTab("was"); });
 
 /* ---------- Start ---------- */
 herzenAnwenden();
@@ -1306,6 +1375,8 @@ renderTage();
 filterZeile();
 lzOben();
 wischenEinrichten();
+tabWischen($("#tab-was"), -1, "w-was", () => setTab("karte"));
+tabWischen($("#rand-zurueck"), 1, "w-karte", () => setTab("was"));
 </script>
 <script>
 // Service Worker nur online (https/http) registrieren, nicht beim lokalen file://-Oeffnen.
