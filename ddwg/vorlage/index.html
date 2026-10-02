@@ -387,9 +387,12 @@ button.kt { background: var(--surface2); }
 .lz-knopf[aria-pressed=true] { color: var(--ink); }
 .sh h2 em { font-style: normal; font-weight: 400; font-size: 14px; color: var(--faint); margin-left: 8px; }
 /* Links im Termin-Blatt: untereinander, klein und dezent (Davids Wunsch 02.10.) */
-.sh-links.leise { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 6px; }  /* direkt unter der Ortsbox (Davids Wunsch 02.10.) */
-.link-leise { display: inline-flex; align-items: center; gap: 5px; padding: 5px 0; font-size: 13px; font-weight: 600; color: var(--soft); text-decoration: none; }
-.link-leise svg { opacity: .7; }
+/* Quelle / Seite vom Ort als schmale Fußzeile der Ortsbox, gleicher Grund und gleiche Ecken (Davids Wunsch 02.10.) */
+.sh-ort.mit-fuss { border-radius: var(--r-s) var(--r-s) 0 0; }
+.sh-links.leise { flex-wrap: nowrap; gap: 0; margin-top: 1px; border-radius: 0 0 var(--r-s) var(--r-s); background: var(--surface2); overflow: hidden; }
+.link-leise { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 8px; font-size: 12.5px; font-weight: 600; color: var(--soft); text-decoration: none; }
+.link-leise + .link-leise { border-left: 1px solid var(--bg); }
+.link-leise svg { opacity: .7; width: 11px; height: 11px; }
 </style>
 </head>
 <body>
@@ -1085,8 +1088,8 @@ function zeigeEvent(i) {
   sheetAuf(`<div class="sh-bild">${medium(e)}</div><div class="sh">
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
     <div class="sh-titel"><h2>${esc(e.ti)}</h2>${lzKnopf(e)}</div>
-    <button class="sh-ort" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
-    <div class="sh-links leise">${e.url ? `<a class="link-leise" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle${PFEIL_RAUS}</a>` : ""}${o.w ? `<a class="link-leise" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes${PFEIL_RAUS}</a>` : ""}</div>
+    <button class="sh-ort${e.url || o.w ? " mit-fuss" : ""}" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
+    ${e.url || o.w ? `<div class="sh-links leise">${e.url ? `<a class="link-leise" href="${esc(e.url)}" target="_blank" rel="noopener">Quelle${PFEIL_RAUS}</a>` : ""}${o.w ? `<a class="link-leise" href="${esc(o.w)}" target="_blank" rel="noopener">Seite vom Ort${PFEIL_RAUS}</a>` : ""}</div>` : ""}
     <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}</div>
     ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
     ${auchHier(e)}
