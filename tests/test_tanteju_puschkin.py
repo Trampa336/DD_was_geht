@@ -77,3 +77,14 @@ def test_puschkin():
     assert d["description"] is None and d["url"] == "https://www.clubpuschkin.de/events/dahabflex/"
     enkay = ev["ENKAY | Zwischen den Stühlen Tour 2026"]
     assert enkay["venue"] == "Tante JU" and enkay["time"] == "18:00"
+
+
+def test_tour_im_musikclub_ist_keine_fuehrung():
+    from ddwg import normalize
+    titel = "HGich.T Live + Acid Aftershow | 30 Jahre Tour"
+    assert normalize.classify_category(None, titel, "Puschkin") != "fuehrungen"
+    assert normalize.classify_category(None, titel, "Club Puschkin") != "fuehrungen"
+    assert normalize.classify_category(None, "Irgendwas Tour", "Tante JU Liveclub") != "fuehrungen"
+    assert normalize.classify_category(None, "Irgendwas Tour", "Tante JU") != "fuehrungen"
+    # Gegenprobe: an einem beliebigen Ort bleibt eine Tour ohne Jahr eine Führung.
+    assert normalize.classify_category(None, "Elbschlösser Tour", "Schloss Albrechtsberg") == "fuehrungen"

@@ -166,10 +166,14 @@ _TOUR_MUSIC_VENUE_RE = re.compile(
     # chemiefabrik/beatpol ohne "-dresden" (2026-09-27): die Quellen schreiben
     # die Orte nur "Chemiefabrik" und "Beatpol", die alte Form traf nie.
     r"(?:^|-)chemiefabrik(?:-|$)|theater-am-wettiner-platz|(?:^|-)beatpol(?:-|$)"
-    r"|dixiebahnhof-dresden|tante-ju-liveclub"
+    r"|dixiebahnhof-dresden"
     # Ostpol (2026-09-27): reiner Konzert-/Clubort, "Heckspoiler - Bock auf
     # Stress Tour" landete sonst in fuehrungen.
     r"|(?:^|-)ostpol(?:-|$)"
+    # Puschkin und Tante JU (2026-10-02): eigene Quellen mit blanken Tour-Titeln,
+    # "HGich.T Live + Acid Aftershow | 30 Jahre Tour" fiel sonst als Fuehrung raus.
+    # "tante-ju" deckt auch "tante-ju-liveclub" ab.
+    r"|(?:^|-)puschkin(?:-|$)|(?:^|-)tante-ju(?:-|$)"
 )
 
 

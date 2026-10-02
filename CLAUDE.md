@@ -129,7 +129,7 @@ Teilen nur im Freundeskreis: `noindex`, Link-Vorschau über `og:`-Tags in der Vo
 
 ## Quellen und Rang (ddwg/quellen/__init__.py, kleiner = besser)
 Seiten der Orte selbst (derlude 10, strassee 20, groovestation 30, zentralwerk 40,
-sektor 50, azconni 60, arteum 63, ostpol 65, scheune 66, chemiefabrik 67, holeoffame 68,
+sektor 50, azconni 60, tanteju 61, puschkin 62, arteum 63, ostpol 65, scheune 66, chemiefabrik 67, holeoffame 68,
 objektkleina 69) < rauze 70 < omasgegenrechts 80 < terminaldigital 85 < kulturkalender 90 < versammlungen 95 < cybersax 100.
 Davids Regel: **Venue-Seite > Rauze > Sammelkalender (terminal.digital, KK, cybersax).**
 Die Sammelkalender dienen der Vollständigkeit und dem Entdecken.
@@ -137,7 +137,12 @@ Seit 2026-10-02: **objekt klein a** über die Monatsseiten (Menü der Startseite
 „Oktober 2026“ usw., die Adressen sind unregelmäßig, darum zählt der Linktext), und das
 **Arteum** (Partykeller am Waldschlösschen, normaler Ort mit Flavour Club, kein Herz) über
 das Galerie-JSON `wix-warmup-data` auf /partys: nur Titel, Tag ohne Jahr, Uhrzeit, Bild,
-Ticket-Link, keine Beschreibung.
+Ticket-Link, keine Beschreibung. Ebenfalls seit 2026-10-02: **Tante JU** und **Puschkin** über ihre
+iCal-Feeds (`/events.ics`, WordPress-Plugin Events Manager; Puschkin nur Titel, Beginn, Link).
+Termine mit „(verlegt ins Puschkin)“ / „(hochverlegt in die Tante JU)“ im Titel landen über
+`base.verlegt()` beim neuen Ort. Abgleich 02.10. (eigene Seite gegen Live-Seite, 32 Tage): Paula war
+schon vollständig (kein Scraper nötig). Koralle, Gisela, Klub Neu, Showboxx, Kashay, Club SVS haben
+kein lesbares Programm (Koralle-Domain leitet auf eine fremde Seite um, Gisela lädt per Facebook-JS).
 terminal.digital (seit 2026-09-29, ICS-Feed, linker Kalender) liefert nur Demos,
 Konzerte, Küfa/Kneipe und Film/Theater (Davids Auswahl); offene Treffen, Beratung,
 Vorträge usw. bleiben draußen. Der Feed hat immer die nächsten 50 Termine (~3 Wochen).
@@ -173,8 +178,8 @@ Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 gepflegt nur per `python -m ddwg herz …`. Den Abgleich-Knopf in der Karte gibt es seit
 2026-10-02 nicht mehr (Davids Wunsch: überall die gleiche Bedienung).
 Davids Herz-Orte (= Gruppe „Solider Anfang“) sind seit 2026-09-30 zwölf: Sektor, Straße E,
-Der Lude, GrooveStation, AZ Conni, Ostpol, Scheune, Hole of Fame, objekt klein a (alle mit
-eigener Quelle) sowie Tante JU, Paula und Puschkin (ohne eigene Quelle). Chemiefabrik und Zentralwerk
+Der Lude, GrooveStation, AZ Conni, Ostpol, Scheune, Hole of Fame, objekt klein a, Tante JU,
+Puschkin (alle mit eigener Quelle) sowie Paula (ohne eigene Quelle, Sammelkalender reichen). Chemiefabrik und Zentralwerk
 haben weiter eigene Quellen, sind aber keine Herz-Orte mehr (Davids Entscheidung).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
