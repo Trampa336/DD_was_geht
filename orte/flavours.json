@@ -12,7 +12,7 @@
   {"key": "familie", "name": "Familie & Kinder"}
  ],
  "orte": {
-  "chemiefabrik": {"haupt": "club", "neben": [], "von": "david"},
+  "chemiefabrik": {"haupt": "indie", "neben": [], "von": "david"},
   "groovestation": {"haupt": "club", "neben": [], "von": "sonnet"},
   "zentralwerk": {"haupt": "buehne", "neben": [], "von": "david"},
   "jazzclub-tonne": {"haupt": "jazz", "neben": [], "von": "sonnet"},

@@ -171,7 +171,11 @@ Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören 
 Seit 2026-09-30 (Davids Entscheidung) kommen Herzen nur aus der **Orte-Liste** („Orte entdecken“,
 Knopf unter der Entdecken-Karte und im Filter-Blatt): Gruppen-Knöpfe `M.gr` („Solider Anfang“ =
 Herz-Orte aus orte.json, dazu je Genre eine Gruppe) plus Feinjustieren je Ort (`M.an`, `M.weg`).
-Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang“ an, keine Richtung
+Von Hand Gesetztes gilt immer vor den Gruppen. Aufbau der Liste (seit 2026-10-02, Davids Wunsch): kein
+Erklärtext, Kopf „Gruppen · Zahl“ (Herzen insgesamt, ohne Wort), darunter eine Suchzeile (`OL_Q`, gilt nur
+solange die Seite offen ist), die beim Tippen nur passende Orte **aus der Liste** zeigt (Gruppen + „Weitere
+Orte“ ab 3 Terminen, Davids Wahl). Je Zeile nur Name und grau die Zahl der Termine; feiner Strich zwischen den
+Gruppen. Herzen gibt es auch für Orte außerhalb der Liste (Herz-Knopf im Orts-Blatt). Erster Start: „Solider Anfang“ an, keine Richtung
 (= alles). Alte Browser-Stände (ohne `v: 2`) bekommen einmal „Solider Anfang“, eigene
 Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr),
@@ -190,7 +194,7 @@ raus, Stichwort Eislaufen = Sport), Orte-Liste mit „Solider Anfang“ und Tage
 Offen: welche Orte genau in „Solider Anfang“ gehören (= `herz` in orte.json, mit David besprechen).
 Hole of Fame und C. Rockefeller Center bleiben „museum“ (Kunstateliers, Davids Entscheidung).
 Seit 2026-09-30 haben alle Herz-Orte einen Flavour (Straße E und Sektor club, Der Lude
-indie = Bar). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
+indie = Bar; Chemiefabrik seit 2026-10-02 indie statt club, Davids Wunsch). Ohne Flavour bekam z. B. Laibach in der Reithalle gar keine Richtung.
 **Netz:** Die Netzfreigabe von Cowork sperrt die Seiten der Orte, kulturkalender-dresden.de,
 terminal.digital, dresden.de, omasgegenrechts-dresden.de und nominatim (Stand 2026-09-29). Seiten dann im Browser (Claude in Chrome)
 ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.

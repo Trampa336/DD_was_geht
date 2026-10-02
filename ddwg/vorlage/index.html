@@ -169,12 +169,16 @@ img.medium.da { opacity: 1; }
 .orte-knopf { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 24px); margin: 10px 12px 0; padding: 13px 14px; border-radius: var(--r-s); background: var(--surface2); border: 1px solid var(--line); font-weight: 650; font-size: 14.5px; color: var(--ink); }
 .orte-knopf b { color: var(--heart); font-weight: 700; }
 /* Orte-Liste: Gruppen-Knöpfe oben, darunter je Gruppe die Orte mit Herz-Knopf */
-.ol-gruppe { margin-top: 18px; }
+.ol-gruppe { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); }  /* feiner Strich zwischen den Gruppen */
 .ol-gruppe h3 { margin: 0 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
 .ol-zeile { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
-.ol-name { display: block; min-width: 0; padding: 9px 2px; text-align: left; }
-.ol-name b { display: block; font-weight: 650; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ol-name span { display: block; font-size: 12px; color: var(--soft); }
+.ol-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 11px 2px; text-align: left; }
+.ol-name b { min-width: 0; font-weight: 650; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ol-name span { flex: none; font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.ol-gruppe:first-child, .ol-gruppe.ol-treffer { border-top: 0; padding-top: 0; margin-top: 8px; }
+.ol-zeile:last-child { border-bottom: 0; }  /* sonst stehen zwei Linien über der nächsten Gruppe */
+#ol-feld { scroll-margin-top: 64px; }
+#ol-rest.sucht { min-height: 75vh; }  /* Blatt bleibt groß, das Suchfeld kann über die Tastatur rutschen */
 .ol-herz { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--faint); font-size: 18px; line-height: 1; }
 .ol-herz[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
 .mk { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 2px solid var(--bg); font: 700 11px var(--f); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
@@ -545,26 +549,42 @@ const rtName = e => {
 function orteListe() {
   merkeBlatt("orteliste", () => orteListe());
   sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Deine Orte</div><h2>Orte entdecken</h2>
-    <p class="sh-text">Ein Herz holt die Termine eines Orts nach oben. Die Knöpfe wählen ganze Gruppen, darunter stellst du einzelne Orte ein. Was du selbst an- oder abwählst, bleibt so. Alles gilt nur in diesem Browser.</p>
+    <div id="ol-gruppen"></div>
+    <input class="fi-suche" id="ol-feld" type="search" placeholder="Ort suchen" enterkeyhint="search" autocomplete="off" aria-label="Ort suchen">
     <div id="ol-rest"></div></div>`);
+  // Suchzeile: zeigt beim Tippen sofort passende Orte aus der Liste. Gilt nur, solange die Seite offen ist.
+  const inp = $("#ol-feld");
+  inp.value = OL_Q;
+  inp.addEventListener("input", () => { OL_Q = inp.value; olRest(); });
+  inp.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); } });
+  inp.addEventListener("focus", () => { $("#ol-rest").classList.add("sucht"); setTimeout(() => inp.scrollIntoView({ block: "start", behavior: "smooth" }), 250); });
   olRest();
 }
+let OL_Q = "";
 function olRest() {
-  const host = $("#ol-rest"); if (!host || $("#sheet").hidden) return;
+  const host = $("#ol-rest"), kopf = $("#ol-gruppen"); if (!host || !kopf || $("#sheet").hidden) return;
   herzenAnwenden();
   const proOrt = {};
   D.events.forEach(e => { if (e.o && !e.l) (proOrt[e.o] ||= []).push(e); });
   Object.values(proOrt).forEach(l => l.sort(nachZeit));
   const zeile = s => { const o = D.orte[s], l = proOrt[s] || [];
-    return `<div class="ol-zeile"><button class="ol-name" data-ort="${esc(s)}"><b>${esc(o.n)}</b><span>${l.length ? `${l.length} ${l.length === 1 ? "Termin" : "Termine"} · ab ${esc(kurzDatum(l[0].d))}` : "gerade keine Termine"}</span></button>
+    return `<div class="ol-zeile"><button class="ol-name" data-ort="${esc(s)}"><b>${esc(o.n)}</b><span>${l.length}</span></button>
       <button class="ol-herz" data-herzliste="${esc(s)}" aria-pressed="${!!o.h}" aria-label="Herz für ${esc(o.n)}">♥</button></div>`; };
   const nachMenge = (a, b) => (proOrt[b]?.length || 0) - (proOrt[a]?.length || 0);
   const inGruppe = new Set(GRUPPEN.flatMap(g => g.orte));
   const weitere = Object.keys(proOrt).filter(s => D.orte[s] && !inGruppe.has(s) && proOrt[s].length >= 3).sort(nachMenge).slice(0, 40);
   const nHerz = Object.values(D.orte).filter(o => o.h).length;
-  host.innerHTML = `<div class="fi-teil"><h3>Gruppen · ${nHerz} ${nHerz === 1 ? "Herz" : "Herzen"}</h3><div class="fi-chips">${GRUPPEN.map(g =>
-      `<button class="fc" data-gruppe="${esc(g.k)}" aria-pressed="${M.gr.includes(g.k)}">${esc(g.n)}<em>${g.orte.length}</em></button>`).join("")}</div></div>
-    ${GRUPPEN.map(g => `<div class="ol-gruppe"><h3>${esc(g.n)}</h3>${g.orte.filter(s => D.orte[s]).sort(nachMenge).map(zeile).join("")}</div>`).join("")}
+  kopf.innerHTML = `<div class="fi-teil"><h3>Gruppen · ${nHerz}</h3><div class="fi-chips">${GRUPPEN.map(g =>
+      `<button class="fc" data-gruppe="${esc(g.k)}" aria-pressed="${M.gr.includes(g.k)}">${esc(g.n)}<em>${g.orte.length}</em></button>`).join("")}</div></div>`;
+  const woerter = klein(OL_Q).split(/\s+/).filter(Boolean);
+  host.classList.toggle("sucht", woerter.length > 0 || document.activeElement?.id === "ol-feld");
+  if (woerter.length) {  // Suche: nur Orte, die auch in der Liste stehen (Davids Wahl 02.10.), Name enthält alle Wörter
+    const inListe = [...new Set(GRUPPEN.flatMap(g => g.orte).concat(weitere))];
+    const t = inListe.filter(s => D.orte[s] && woerter.every(w => klein(D.orte[s].n).includes(w))).sort(nachMenge);
+    host.innerHTML = t.length ? `<div class="ol-gruppe ol-treffer">${t.slice(0, 60).map(zeile).join("")}</div>` : `<p class="su-info">Nichts gefunden.</p>`;
+    return;
+  }
+  host.innerHTML = `${GRUPPEN.map(g => `<div class="ol-gruppe"><h3>${esc(g.n)}</h3>${g.orte.filter(s => D.orte[s]).sort(nachMenge).map(zeile).join("")}</div>`).join("")}
     ${weitere.length ? `<div class="ol-gruppe"><h3>Weitere Orte mit Terminen</h3>${weitere.map(zeile).join("")}</div>` : ""}`;
 }
 function orteKnopf() {
