@@ -181,9 +181,9 @@ Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr),
 gepflegt nur per `python -m ddwg herz …`. Den Abgleich-Knopf in der Karte gibt es seit
 2026-10-02 nicht mehr (Davids Wunsch: überall die gleiche Bedienung).
-Davids Herz-Orte (= Gruppe „Solider Anfang“) sind seit 2026-09-30 zwölf: Sektor, Straße E,
+Davids Herz-Orte (= Gruppe „Solider Anfang“) sind seit 2026-10-02 dreizehn: Sektor, Straße E,
 Der Lude, GrooveStation, AZ Conni, Ostpol, Scheune, Hole of Fame, objekt klein a, Tante JU,
-Puschkin (alle mit eigener Quelle) sowie Paula (ohne eigene Quelle, Sammelkalender reichen). Chemiefabrik und Zentralwerk
+Puschkin (alle mit eigener Quelle) sowie Paula und seit 2026-10-02 das Deutsche Hygiene-Museum (beide ohne eigene Quelle, Sammelkalender reichen). Chemiefabrik und Zentralwerk
 haben weiter eigene Quellen, sind aber keine Herz-Orte mehr (Davids Entscheidung).
 Neue Herz-Orte ohne eigene Quelle zeigt `python -m ddwg status` zusammen mit orte.json.
 **Nächster sinnvoller Schritt:** siehe Roadmap im Leitstand, Phase „Als Nächstes“.
