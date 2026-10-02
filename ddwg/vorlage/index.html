@@ -2,7 +2,9 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>/* Kein Seitenzoom (Davids Wunsch 2026-10-02). iOS ignoriert user-scalable=no, darum hier die Zwei-Finger-Geste abfangen.
+   Die Karte zoomt trotzdem: Leaflet rechnet Zwei-Finger-Gesten selbst aus Touch-Events. */document.addEventListener("gesturestart",function(e){e.preventDefault()})</script>
 <meta name="theme-color" content="#17191a">
 <script>/* Theme vor dem ersten Zeichnen setzen, sonst blitzt kurz das Standard-Theme auf */try{var t=localStorage.getItem("ddwg-theme");if(t&&/^[a-z]+$/.test(t))document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
@@ -47,6 +49,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
+html { touch-action: pan-x pan-y; }  /* kein Seitenzoom (auch kein Doppeltipp-Zoom); die Karte setzt eigene Gesten */
 body { font: 15px/1.4 var(--f); -webkit-font-smoothing: antialiased; min-height: 100vh; }
 body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(85% 45% at 35% 22%, var(--glow), transparent 72%); }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
@@ -67,7 +70,7 @@ main { flex: 1; }
 /* ---------- Feed und Karte: Wischen statt Reiter-Pille (seit 2026-10-02, Davids Wunsch) ----------
    Im Feed nach links wischen öffnet die Karte, ebenso der kleine Knopf unten rechts (auf der Karte nicht zu sehen).
    Zurück: Zurück-Knopf/-Geste, Escape oder Wisch nach rechts vom linken Rand (.rand-zurueck) bzw. außerhalb der Karte. */
-#tab-was { touch-action: pan-y pinch-zoom; }  /* waagerechte Wische bekommt das Skript, senkrecht scrollt der Browser */
+#tab-was { touch-action: pan-y; }  /* waagerechte Wische bekommt das Skript, senkrecht scrollt der Browser */
 #app.wischt.w-was :is(.kopf, .oben, #tab-was, .rail, .karte-knopf),
 #app.wischt.w-karte :is(.kopf, .oben, #tab-karte) { translate: var(--wx, 0px) 0; }
 #app.wischt.federt :is(.kopf, .oben, #tab-was, #tab-karte, .rail, .karte-knopf) { transition: translate .19s ease-out; }
