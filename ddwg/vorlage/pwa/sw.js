@@ -5,7 +5,7 @@
 //
 // CACHE-Namen hochzaehlen, wenn sich die Liste der ASSETS aendert, sonst
 // bleiben alte Dateien haengen.
-const CACHE = "ddwg-v2";
+const CACHE = "ddwg-v3";  // v3: alte Caches voller fremder Bilder werden gelöscht
 const ASSETS = ["./", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./favicon-64.png"];
 
 self.addEventListener("install", (event) => {
@@ -24,7 +24,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  // Nur eigene Dateien: fremde Bilder und Kartenkacheln würden den Cache endlos füllen
+  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request)
       .then((res) => {

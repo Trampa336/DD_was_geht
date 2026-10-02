@@ -98,7 +98,10 @@ Branch `gh-pages`. Adresse: `https://trampa336.github.io/DD_was_geht/`.
 die Seite nur aus der Datenbank vom letzten Lauf neu (`python -m ddwg build`, ~2 min) und
 veröffentlicht sie. Das gilt für Oberfläche und orte.json/flavours.json. Pushes, die nur
 `*.md`, `docs/` oder `tests/` ändern, lösen nichts aus. Fehlt die Datenbank im Cache, scrapt
-auch der Push-Lauf voll. Täglicher Lauf und „Run workflow“ scrapen immer frisch. Einmalig
+auch der Push-Lauf voll, ebenso wenn der letzte Scrape über 20 h her ist (ein Push verdrängt
+einen wartenden Tageslauf). Täglicher Lauf (03:17 UTC, krumme Minute gegen Verspätung) und
+„Run workflow“ scrapen immer frisch. Unter 200 Events endet `scrape`/`build` mit Fehler
+(`MINDEST_EVENTS`), dann bleibt die alte Seite stehen. Einmalig
 noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
 „Pages“ die Quelle auf Branch `gh-pages` (Ordner `/`) stellen.
 Der Workflow behaelt `cache/events.db` per `actions/cache` von Lauf zu Lauf, damit
@@ -117,7 +120,10 @@ online kommen immer frische Termine, offline der zuletzt geladene Stand. Wer
 die Liste der gecachten Dateien in `sw.js` (`ASSETS`) aendert, muss den
 `CACHE`-Namen hochzaehlen, sonst bleibt der alte Stand haengen. Die
 Entdecken-Karte braucht wegen Leaflet/markercluster von cdnjs und den
-Kartenkacheln weiterhin Internet, auch offline-installiert.
+Kartenkacheln weiterhin Internet, auch offline-installiert. Fremde Dateien (Bilder, Kacheln)
+cacht der Service Worker nicht (seit 2026-10-02, sonst wächst der Cache endlos).
+Die Seite nimmt „Heute“ vom Gerät, wenn sie älter ist, und blendet Vergangenes aus.
+Teilen nur im Freundeskreis: `noindex`, Link-Vorschau über `og:`-Tags in der Vorlage.
 
 ## Quellen und Rang (ddwg/quellen/__init__.py, kleiner = besser)
 Seiten der Orte selbst (derlude 10, strassee 20, groovestation 30, zentralwerk 40,
@@ -156,8 +162,9 @@ Herz-Orte aus orte.json, dazu je Genre eine Gruppe) plus Feinjustieren je Ort (`
 Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang“ an, Richtung Club
 (nur Sortierung). Alte Browser-Stände (ohne `v: 2`) bekommen einmal „Solider Anfang“, eigene
 Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
-`"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr);
-„Herzen nach orte.json“ klein in der Karte gleicht sie per `python -m ddwg herz …` ab.
+`"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr),
+gepflegt nur per `python -m ddwg herz …`. Den Abgleich-Knopf in der Karte gibt es seit
+2026-10-02 nicht mehr (Davids Wunsch: überall die gleiche Bedienung).
 Davids Herz-Orte (= Gruppe „Solider Anfang“) sind seit 2026-09-30 zwölf: Sektor, Straße E,
 Der Lude, GrooveStation, AZ Conni, Ostpol, Scheune, Hole of Fame (alle mit eigener Quelle) sowie
 Tante JU, Paula, objekt klein a und Puschkin (ohne eigene Quelle). Chemiefabrik und Zentralwerk

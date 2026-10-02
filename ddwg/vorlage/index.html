@@ -8,6 +8,13 @@
 <link rel="icon" href="favicon-64.png" sizes="64x64" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>DD was geht</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="Was geht in Dresden: Konzerte, Clubs, Bühne, Ausstellungen und Demos, täglich aktuell.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DD was geht">
+<meta property="og:description" content="Was geht in Dresden: Konzerte, Clubs, Bühne, Ausstellungen und Demos, täglich aktuell.">
+<meta property="og:url" content="https://trampa336.github.io/DD_was_geht/">
+<meta property="og:image" content="https://trampa336.github.io/DD_was_geht/icon-512.png">
 <style>/*__SCHRIFT__*/</style>
 <style>
 :root {
@@ -126,7 +133,6 @@ main { flex: 1; }
 .fc em { font-style: normal; opacity: .65; font-size: 11px; }
 .fc[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .fc.herzfc[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
-.fc.uebernehmen { background: var(--heart); border-color: var(--heart); color: #fff; }
 .trenner { flex: none; width: 1px; margin: 4px 2px; background: var(--line); }
 .legende { margin: 8px 16px 0; font-size: 11.5px; color: var(--faint); }
 .orte-knopf { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 24px); margin: 10px 12px 0; padding: 13px 14px; border-radius: var(--r-s); background: var(--surface2); border: 1px solid var(--line); font-weight: 650; font-size: 14.5px; color: var(--ink); }
@@ -156,11 +162,6 @@ main { flex: 1; }
 .ok-aktionen { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
 .herzknopf { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 14px; border-radius: var(--r-s); font-weight: 700; font-size: 14px; background: var(--heart); color: #fff; border: 1px solid var(--heart); }
 .herzknopf[aria-pressed=true] { background: transparent; color: var(--heart); }
-.befehl { margin: 12px 0 0; padding: 12px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); font: 13px/1.5 ui-monospace, monospace; color: var(--accent); white-space: pre-wrap; word-break: break-all; }
-.aend { margin: 12px 0 0; padding: 0; list-style: none; font-size: 13.5px; }
-.aend li { padding: 5px 0; border-top: 1px solid var(--line); }
-.aend .plus { color: var(--heart); font-weight: 700; }
-.aend .minus { color: var(--faint); text-decoration: line-through; }
 
 /* ---------- Ereignis- und Ort-Termine (in Blättern) ---------- */
 .ev { display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: start; width: 100%; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s); }
@@ -228,9 +229,6 @@ button.kt { background: var(--surface2); }
 .flw-kopf b { font-weight: 700; font-size: 15.5px; }
 .flw-kopf em { font-style: normal; font-size: 12px; color: var(--faint); white-space: nowrap; }
 .flw-bsp { font-size: 12.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.optionen { position: absolute; left: 8px; bottom: 8px; z-index: 550; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 110px); }
-.optionen:empty { display: none; }
-.optionen button { font-size: 11px; color: var(--soft); padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 78%, transparent); border: 1px solid var(--line); }
 
 /* ---------- Filter: Knopf unten, Zeile oben, Blatt ---------- */
 .oben .filterknopf { flex: 0 0 40px; height: 40px; display: grid; place-items: center; position: relative; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); color: var(--soft); }
@@ -327,7 +325,6 @@ button.kt { background: var(--surface2); }
       <div class="karte-rahmen">
         <div id="karte"></div>
         <div class="karte-oben" id="ent-filter"></div>
-        <div class="optionen" id="ent-optionen"></div>
         <div class="ort-karte" id="ort-karte" hidden></div>
       </div>
       <button class="orte-knopf" id="orte-knopf" data-orteliste>Orte entdecken und Herzen setzen</button>
@@ -354,6 +351,9 @@ button.kt { background: var(--surface2); }
 <script>
 "use strict";
 const D = DATEN, $ = s => document.querySelector(s);
+// Heute laut Gerät, wenn die Seite älter ist (der Tageslauf kommt oft erst mittags); Vergangenes fällt weg
+const HEUTE = (() => { const n = new Date(), g = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`; return g > D.heute ? g : D.heute; })();
+D.events = D.events.filter(e => e.d >= HEUTE);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], WTL = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const MON = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -440,8 +440,6 @@ function gruppenOrte(keys) {
 function herzenAnwenden() {
   const vonGr = gruppenOrte(M.gr);
   Object.entries(D.orte).forEach(([s, o]) => o.h = (vonGr.has(s) || M.an.includes(s)) && !M.weg.includes(s) ? 1 : 0);
-  const alle = Object.keys(D.orte);
-  return { an: alle.filter(s => D.orte[s].h && !D.orte[s].oj), weg: alle.filter(s => !D.orte[s].h && D.orte[s].oj) };  // Abweichung zu orte.json
 }
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("an"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("an"), 2200); }
@@ -473,18 +471,6 @@ const rtName = e => {
   const r = e.rt || [], fein = r.filter(k => !RB.some(b => b.k === k && b.sub));
   return (fein.length ? fein : r).map(k => RT_NAME[k]).join(", ") || katName(e.k);
 };
-
-function zeigeUebernehmen() {
-  const { an, weg } = herzenAnwenden();
-  const befehl = [an.length ? `python -m ddwg herz ${an.join(" ")}` : "", weg.length ? `python -m ddwg herz --weg ${weg.join(" ")}` : "", "python -m ddwg build"].filter(Boolean).join(" && ");
-  merkeBlatt("herzen", () => zeigeUebernehmen());
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Herzen übernehmen</div>
-    <h2>${an.length + weg.length} ${an.length + weg.length === 1 ? "Änderung" : "Änderungen"}</h2>
-    <p class="sh-text">Deine Herzen gelten nur in diesem Browser. Mit dem Befehl stehen sie auch in orte.json (Davids Liste im Repo). Auf der Seite ändert das nichts, andere Nutzer sehen deine Herzen nicht.</p>
-    <ul class="aend">${an.map(s => `<li class="plus">♥ ${esc(D.orte[s].n)}</li>`).join("")}${weg.map(s => `<li class="minus">${esc(D.orte[s].n)}</li>`).join("")}</ul>
-    <pre class="befehl" id="befehl">${esc(befehl)}</pre>
-    <div class="sh-links"><button class="knopf primaer" data-kopieren>Befehl kopieren</button><button class="knopf" data-verwerfen>Alle Herzen zurücksetzen</button></div></div>`);
-}
 
 /* ---------- Orte-Liste: Herzen gruppenweise wählen und einzeln feinjustieren ---------- */
 function orteListe() {
@@ -596,7 +582,6 @@ function tageBauen() {
   D.events.forEach(e => { if (sichtbar(e) && passt(e)) (perTag[e.d] ||= []).push(e); });
   TAGE = Object.keys(perTag).sort();
 }
-const HEUTE = D.heute;
 const LETZTER_ALLE = Object.keys(perTagAlle).sort().at(-1) || HEUTE;
 const TAGE_ALLE = []; for (let t = HEUTE; t <= LETZTER_ALLE; t = plus(t, 1)) TAGE_ALLE.push(t);
 const relTag = iso => iso === HEUTE ? "Heute" : iso === plus(HEUTE, 1) ? "Morgen" : WTL[parse(iso).getDay()];
@@ -897,10 +882,8 @@ function renderEntdecken() {
   const orteL = Object.keys(proOrt).map(slug => ({ slug, o: D.orte[slug], l: proOrt[slug] }));
   ENT = { orteL, proOrt };
   const mitGeo = orteL.filter(x => x.o.lat);
-  const { an, weg } = herzenAnwenden(), offen2 = an.length + weg.length;
   const Z = [["heute", "Heute"], ["morgen", "Morgen"], ["we", "Wochenende"], ["alle", `${TAGE_ALLE.length} Tage`]];
   $("#ent-filter").innerHTML = `<div class="zeile">${Z.map(([k, l]) => `<button class="fc" data-ez="${k}" aria-pressed="${S.ez === k}">${l}</button>`).join("")}</div>`;
-  $("#ent-optionen").innerHTML = offen2 ? `<button data-uebernehmen>Herzen nach orte.json (${offen2})</button>` : "";
   karteZeichnen(mitGeo);
   if (gewaehlt) zeigeOrtKarte(gewaehlt, false);
 }
@@ -1120,9 +1103,6 @@ document.addEventListener("click", e => {
   if (ds.ort !== undefined) { if (ds.ort) zeigeOrt(ds.ort); return; }
   if (ds.herz) { herzUmschalten(ds.herz); if (!$("#sheet").hidden) zeigeOrt(ds.herz); return; }
   if ("okzu" in ds) return ortKarteZu();
-  if ("uebernehmen" in ds) return zeigeUebernehmen();
-  if ("kopieren" in ds) { const t = $("#befehl").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast("Befehl kopiert")).catch(() => prompt("Zum Kopieren:", t)); return; }
-  if ("verwerfen" in ds) { M = { v: 2, start: true, fl: RT_STANDARD ? [RT_STANDARD] : [], gr: ["start"], an: [], weg: [] }; meineSpeichern(); sheetZu(); allesNeu(); return toast("Herzen zurückgesetzt"); }
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
   if (ds.aufkarte) { const slug = ds.aufkarte, o = D.orte[slug]; sheetZu(() => { setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(slug); }); }
 });
