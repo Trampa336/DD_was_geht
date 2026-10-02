@@ -93,7 +93,12 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
 ## Website (GitHub Pages)
 Seit 2026-09-26 laeuft `.github/workflows/publish.yml` taeglich (und manuell ueber
 „Run workflow“): scraped frisch und veroeffentlicht den Ordner `ausgabe/` auf dem
-Branch `gh-pages`. Adresse: `https://trampa336.github.io/DD_was_geht/`. Einmalig
+Branch `gh-pages`. Adresse: `https://trampa336.github.io/DD_was_geht/`.
+**Push = schnell live** (seit 2026-10-02): Ein Push auf `main` scrapt nicht, sondern baut
+die Seite nur aus der Datenbank vom letzten Lauf neu (`python -m ddwg build`, ~2 min) und
+veröffentlicht sie. Das gilt für Oberfläche und orte.json/flavours.json. Pushes, die nur
+`*.md`, `docs/` oder `tests/` ändern, lösen nichts aus. Fehlt die Datenbank im Cache, scrapt
+auch der Push-Lauf voll. Täglicher Lauf und „Run workflow“ scrapen immer frisch. Einmalig
 noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
 „Pages“ die Quelle auf Branch `gh-pages` (Ordner `/`) stellen.
 Der Workflow behaelt `cache/events.db` per `actions/cache` von Lauf zu Lauf, damit

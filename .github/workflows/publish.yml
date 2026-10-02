@@ -1,12 +1,21 @@
 name: Website veröffentlichen
 
 # Scraped taeglich frisch und veroeffentlicht ausgabe/ auf dem Branch gh-pages.
+# Ein Push auf main scrapt nicht, sondern baut die Seite nur aus der Datenbank
+# vom letzten Lauf neu (python -m ddwg build, ~2 min). So gehen Aenderungen an
+# Oberflaeche und orte.json gleich live. Fehlt die Datenbank, wird doch gescrapt.
 # Einmalig noetig: in den Repo-Einstellungen unter Pages die Quelle auf den
 # Branch "gh-pages" (Ordner /) stellen, siehe CLAUDE.md.
 on:
   schedule:
     - cron: "0 5 * * *"  # 05:00 UTC, ca. 6-7 Uhr in Dresden
   workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "tests/**"
 
 permissions:
   contents: write
@@ -35,13 +44,21 @@ jobs:
       # Detailseiten neuer Termine. Gespeichert wird am Ende des Jobs, nur wenn
       # er erfolgreich war. Fehlt der Cache, baut der Scrape alles neu auf.
       - name: Event-Datenbank vom letzten Lauf holen
+        id: db
         uses: actions/cache@v4
         with:
           path: cache/events.db
           key: events-db-${{ github.run_id }}
           restore-keys: events-db-
 
+      # Push mit vorhandener Datenbank: nur bauen. Sonst (taeglich, manuell,
+      # oder keine Datenbank da): frisch scrapen.
+      - name: Nur bauen (ohne Scrape)
+        if: github.event_name == 'push' && steps.db.outputs.cache-matched-key != ''
+        run: python -m ddwg build
+
       - name: Scrapen und ausgabe/index.html bauen
+        if: github.event_name != 'push' || steps.db.outputs.cache-matched-key == ''
         run: python -m ddwg scrape
 
       - name: Auf gh-pages veroeffentlichen
