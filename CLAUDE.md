@@ -258,9 +258,10 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   ab `WISCH_ZU` = 100 px oder schnellem Wisch zu, sonst federt es zurück. Geschlossen wird über `sheetZu`
   (Zurück-Verlauf). Klebende Fußleisten im Blatt (`.fi-fuss`) brauchen `bottom: -20px` als Ausgleich
   für den Innenabstand der Karte.
-- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ liegen fest am
-  unteren Rand, seit 2026-10-02 nur rechts neben der Zeitleiste (die geht bis ganz nach unten),
-  deckend, mit runder Ecke oben links; im Reiter Karte über die volle Breite. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
+- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ sind seit 2026-10-02
+  eine schmale schwebende Pille (40 px hoch, 12 px über dem Rand), mittig über der Terminspalte, im Reiter
+  Karte mittig; Farben wie vorher (aktiv helle Schrift, Akzent-Symbol, leicht hinterlegt). Die Zeitleiste
+  geht bis ganz nach unten. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
   Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der
   Terminspalte, nicht über der Zeitleiste. Beim Runterscrollen gleitet sie weg, beim Hochscrollen
   kommt sie zurück (`obenPruefen`, erst nach `OBEN_SCHWELLE` = 28 px in eine Richtung). Ganz oben

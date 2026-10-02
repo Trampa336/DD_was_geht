@@ -66,13 +66,14 @@ main { flex: 1; }
 
 /* ---------- Reiter unten ---------- */
 /* Liegt rechts neben der Zeitleiste (die geht bis zum unteren Rand), deckend, oben links rund */
-.reiter { order: 99; position: sticky; bottom: 0; z-index: 30; display: flex; margin: 14px 0 0 var(--rail); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-top-left-radius: var(--r); transition: margin .15s; }
-#app[data-tab="karte"] .reiter { margin-left: 0; border-left: 0; border-top-left-radius: 0; }
-.reiter button { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; color: var(--faint); font-weight: 650; font-size: 13.5px; transition: color .2s; }
-.reiter button::before { content: ""; position: absolute; top: -1px; left: 50%; width: 28px; height: 2px; margin-left: -14px; border-radius: 0 0 2px 2px; background: var(--accent); opacity: 0; transition: opacity .2s; }
-.reiter button[aria-selected=true] { color: var(--ink); }
-.reiter button[aria-selected=true]::before { opacity: 1; }
+/* Reiter: schmale schwebende Pille, mittig über der Terminspalte (seit 2026-10-02, Davids Wunsch).
+   Farben wie vorher: aktiv helle Schrift mit Akzent-Symbol, sonst blass. */
+.reiter { position: fixed; z-index: 30; bottom: calc(12px + env(safe-area-inset-bottom)); left: calc(50% + var(--rail) / 2); transform: translateX(-50%); display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 6px 20px var(--shade); transition: left .15s; }
+#app[data-tab="karte"] .reiter { left: 50%; }
+.reiter button { display: flex; align-items: center; justify-content: center; gap: 7px; height: 32px; padding: 0 16px; border-radius: 999px; color: var(--faint); font-weight: 650; font-size: 13px; transition: color .2s, background-color .2s; }
+.reiter button[aria-selected=true] { color: var(--ink); background: var(--surface2); }
 .reiter button[aria-selected=true] svg { color: var(--accent); }
+#tab-karte { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }  /* Platz unter der Pille */
 
 /* ---------- Leiste oben: Suchleiste + Filter, nur über der Terminspalte ----------
    Beim Runterscrollen gleitet sie weg, beim Hochscrollen kommt sie zurück (obenPruefen). */
