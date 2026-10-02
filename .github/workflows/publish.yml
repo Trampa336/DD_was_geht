@@ -44,7 +44,6 @@ jobs:
       # Detailseiten neuer Termine. Gespeichert wird am Ende des Jobs, nur wenn
       # er erfolgreich war. Fehlt der Cache, baut der Scrape alles neu auf.
       - name: Event-Datenbank vom letzten Lauf holen
-        id: db
         uses: actions/cache@v4
         with:
           path: cache/events.db
@@ -53,13 +52,14 @@ jobs:
 
       # Push mit vorhandener Datenbank: nur bauen. Sonst (taeglich, manuell,
       # oder keine Datenbank da): frisch scrapen.
-      - name: Nur bauen (ohne Scrape)
-        if: github.event_name == 'push' && steps.db.outputs.cache-matched-key != ''
-        run: python -m ddwg build
-
-      - name: Scrapen und ausgabe/index.html bauen
-        if: github.event_name != 'push' || steps.db.outputs.cache-matched-key == ''
-        run: python -m ddwg scrape
+      - name: Bauen bzw. scrapen
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ -s cache/events.db ]; then
+            echo "Push mit Datenbank vom letzten Lauf: nur bauen, kein Scrape."
+            python -m ddwg build
+          else
+            python -m ddwg scrape
+          fi
 
       - name: Auf gh-pages veroeffentlichen
         uses: peaceiris/actions-gh-pages@v3
