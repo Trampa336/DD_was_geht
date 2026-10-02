@@ -693,13 +693,19 @@ function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden 
   labels = [...rail.querySelectorAll(".tl-datum")];
   aktiv = -1;
 }
-// mitte: Höhe des großen Datums auf der Leiste. LESE: Lesekante oben – ein Tag gilt als aktuell,
+// mitte: Ruhelage des großen Datums (40 % der Höhe). Ganz oben steht es neben der ersten Tagesüberschrift,
+// wandert beim Runterscrollen im gleichen Maß nach unten und bleibt ab der Mitte stehen (Davids Wunsch 02.10.2026,
+// sonst bleibt über "Heute" eine leere Fläche). mAkt = aktuelle Höhe des großen Datums.
+// LESE: Lesekante oben – ein Tag gilt als aktuell,
 // sobald seine Überschrift hier ankommt; Sprünge setzen den Tag ganz nach oben (nicht auf die Mitte).
 const LESE = 60;
-let tops = [], mitte = 0;
+let tops = [], mitte = 0, mAkt = 0, mStart = 0;
+const M_MIN = 72;  // nicht in die Ausblendung oben (60 px) rutschen
 function messen() {
   tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
   tops.push(document.querySelector("#tage").getBoundingClientRect().bottom + scrollY);
+  const k1 = document.querySelector(".tag .tag-kopf");
+  mStart = k1 ? (b => b.top + scrollY + b.height / 2)(k1.getBoundingClientRect()) : M_MIN;  // Höhe der ersten Überschrift bei scrollY 0
   mitte = innerHeight * 0.40;
   zeichnen();
 }
@@ -714,12 +720,13 @@ function zeichnen() {
   if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
   const rest = f - k0, t = Math.max(0, (rest - 0.6) / 0.4), schub = t * t * (3 - 2 * t), lage = k0 + schub;
-  const unten = innerHeight - mitte;
+  mAkt = Math.max(M_MIN, Math.min(mitte, mStart + Math.max(0, scrollY)));
+  const versatz = mAkt - mitte, unten = innerHeight - mAkt;
   labels.forEach((el, k) => {
     const d = k - lage, a = Math.abs(d), y = Math.sign(d) * (Math.min(a, 1) * NAH + Math.max(0, a - 1) * FERN);
     ys[k] = y;
-    el.style.transform = `translateY(${y.toFixed(1)}px)`;
-    el.style.opacity = y < -mitte - 30 || y > unten + 30 ? 0 : 1;
+    el.style.transform = `translateY(${(y + versatz).toFixed(1)}px)`;
+    el.style.opacity = y < -mAkt - 30 || y > unten + 30 ? 0 : 1;
   });
   if (k0 !== aktiv) {
     aktiv = k0;
@@ -782,7 +789,7 @@ const loslassen = () => { griff = null; rail.classList.remove("greift"); };
 rail.addEventListener("pointerup", e => {
   const g = griff && e.pointerId === griff.id && !griff.bewegt ? griff : null;
   loslassen(); if (!g) return;
-  const rel = g.y - mitte;
+  const rel = g.y - mAkt;
   if (Math.abs(rel) < 32) return zeigeKalender();
   let k = -1, abst = FERN / 2;
   ys.forEach((y, i) => { if (i !== aktiv && Math.abs(y - rel) < abst) { abst = Math.abs(y - rel); k = i; } });
