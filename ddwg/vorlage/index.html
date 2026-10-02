@@ -25,7 +25,7 @@
   --f:'TeX Gyre Heros', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --glow:rgba(212,101,42,.22); --tiles: invert(1) hue-rotate(180deg) saturate(.45) brightness(.85) contrast(1.05);
   --shade:rgba(0,0,0,.45); --dim:rgba(0,0,0,.6);
-  --r:14px; --r-s:10px; --rail:46px; --mitte:40vh;
+  --r:14px; --r-s:10px; --rail:46px; --mitte:33.333vh;
 }
 /* Themes (seit 2026-10-02): nur Farben, Wahl über den kleinen Knopf neben dem Titel, gemerkt als ddwg-theme.
    Ohne data-theme gilt Industriegelände (oben). Neue Themes brauchen auch einen Eintrag in THEMES im Skript. */
@@ -99,6 +99,8 @@ main { flex: 1; }
 .tl-datum span { display: flex; flex-direction: column; align-items: center; padding: 3px 0; min-width: 34px; border-radius: 8px; line-height: 1.05; }
 .tl-datum:not(.aktiv) span > * { opacity: .5; }
 .tl-datum.we:not(.aktiv) span > * { opacity: .9; }  /* Wochenende etwas kräftiger */
+.tl-datum.vorbei span > *, .tl-datum.vorbei.we span > * { opacity: .25; }  /* vergangene Tage: nur Skala, ohne Termine */
+.tl-datum.vorbei { pointer-events: none; }
 /* feiner Punkt zwischen zwei Tagen, so bleibt die Leiste als Achse sichtbar */
 .tl-datum::after { content: ""; position: absolute; top: 5px; left: 50%; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: var(--faint); opacity: .6; }
 .tl-datum.aktiv::after, .tl-datum.mw::after, .tl-datum:first-child::after { display: none; }
@@ -668,26 +670,29 @@ const rail = $("#rail");
 const kurzName = k => TAGE[k] === HEUTE ? "Heute" : WT[parse(TAGE[k]).getDay()];
 const NAH = 52, FERN = 40;  // Abstand großes Datum → Nachbar, dann je Tag auf der Skala (px)
 let labels = [], ys = [];
+// Über "Heute" stehen die VORBEI letzten Tage grau und ohne Termine (data-k negativ), damit das große
+// Datum fest in der Mitte bleiben kann und darüber keine leere Fläche ist (Davids Wahl 02.10.2026).
+const VORBEI = 3;
 function railBauen() {  // nach jedem Filterwechsel neu: nur Tage mit passenden Terminen
-  rail.innerHTML = TAGE.map((iso, k) => { const d = parse(iso), mw = k > 0 && parse(TAGE[k - 1]).getMonth() !== d.getMonth();
+  const vorher = [];
+  for (let k = -VORBEI; k < 0; k++) {
+    const iso = plus(HEUTE, k), d = parse(iso), mw = k > -VORBEI && parse(plus(HEUTE, k - 1)).getMonth() !== d.getMonth();
+    vorher.push(`<div class="tl-datum vorbei${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${WT[d.getDay()]}</small><b>${d.getDate()}</b></span></div>`);
+  }
+  rail.innerHTML = vorher.join("") + TAGE.map((iso, k) => { const d = parse(iso), mw = parse(k > 0 ? TAGE[k - 1] : plus(HEUTE, -1)).getMonth() !== d.getMonth();
     return `<div class="tl-datum${istWE(iso) ? " we" : ""}${mw ? " mw" : ""}" data-k="${k}"${mw ? ` data-mon="${MON[d.getMonth()]}"` : ""}><span><small>${kurzName(k)}</small><b>${d.getDate()}</b></span></div>`; }).join("");
   labels = [...rail.querySelectorAll(".tl-datum")];
   aktiv = -1;
 }
-// mitte: Ruhelage des großen Datums (40 % der Höhe). Ganz oben steht es neben der ersten Tagesüberschrift,
-// wandert beim Runterscrollen im gleichen Maß nach unten und bleibt ab der Mitte stehen (Davids Wunsch 02.10.2026,
-// sonst bleibt über "Heute" eine leere Fläche). mAkt = aktuelle Höhe des großen Datums.
+// mitte: Höhe des großen Datums, fest bei 1/3 der Höhe (Davids Wahl; darüber stehen die vergangenen Tage grau, VORBEI).
 // LESE: Lesekante oben – ein Tag gilt als aktuell,
 // sobald seine Überschrift hier ankommt; Sprünge setzen den Tag ganz nach oben (nicht auf die Mitte).
 const LESE = 60;
-let tops = [], mitte = 0, mAkt = 0, mStart = 0;
-const M_MIN = 72;  // nicht in die Ausblendung oben (60 px) rutschen
+let tops = [], mitte = 0;
 function messen() {
   tops = [...document.querySelectorAll(".tag")].map(s => s.getBoundingClientRect().top + scrollY);
   tops.push(document.querySelector("#tage").getBoundingClientRect().bottom + scrollY);
-  const k1 = document.querySelector(".tag .tag-kopf");
-  mStart = k1 ? (b => b.top + scrollY + b.height / 2)(k1.getBoundingClientRect()) : M_MIN;  // Höhe der ersten Überschrift bei scrollY 0
-  mitte = innerHeight * 0.40;
+  mitte = innerHeight / 3;  // muss zu --mitte im CSS passen
   zeichnen();
 }
 function position() {
@@ -701,17 +706,17 @@ function zeichnen() {
   if (!TAGE.length) return;
   const f = position(), k0 = Math.min(TAGE.length - 1, Math.floor(f + 0.0001));
   const rest = f - k0, t = Math.max(0, (rest - 0.6) / 0.4), schub = t * t * (3 - 2 * t), lage = k0 + schub;
-  mAkt = Math.max(M_MIN, Math.min(mitte, mStart + Math.max(0, scrollY)));
-  const versatz = mAkt - mitte, unten = innerHeight - mAkt;
-  labels.forEach((el, k) => {
+  const unten = innerHeight - mitte;
+  labels.forEach(el => {
+    const k = +el.dataset.k;
     const d = k - lage, a = Math.abs(d), y = Math.sign(d) * (Math.min(a, 1) * NAH + Math.max(0, a - 1) * FERN);
     ys[k] = y;
-    el.style.transform = `translateY(${(y + versatz).toFixed(1)}px)`;
-    el.style.opacity = y < -mAkt - 30 || y > unten + 30 ? 0 : 1;
+    el.style.transform = `translateY(${y.toFixed(1)}px)`;
+    el.style.opacity = y < -mitte - 30 || y > unten + 30 ? 0 : 1;
   });
   if (k0 !== aktiv) {
     aktiv = k0;
-    labels.forEach((el, k) => el.classList.toggle("aktiv", k === k0));
+    labels.forEach(el => el.classList.toggle("aktiv", +el.dataset.k === k0));
   }
 }
 let geplant = false;
@@ -770,7 +775,7 @@ const loslassen = () => { griff = null; rail.classList.remove("greift"); };
 rail.addEventListener("pointerup", e => {
   const g = griff && e.pointerId === griff.id && !griff.bewegt ? griff : null;
   loslassen(); if (!g) return;
-  const rel = g.y - mAkt;
+  const rel = g.y - mitte;
   if (Math.abs(rel) < 32) return zeigeKalender();
   let k = -1, abst = FERN / 2;
   ys.forEach((y, i) => { if (i !== aktiv && Math.abs(y - rel) < abst) { abst = Math.abs(y - rel); k = i; } });

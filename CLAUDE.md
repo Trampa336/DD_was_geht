@@ -240,9 +240,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   hinter der Reiter-Leiste blendet sie aus. Wochenende (Fr–So) sandfarben und kräftiger,
   Monatswechsel als feine Linie mit Monatskürzel (sonst kein Monat auf der Leiste). Tipp auf ein kleines Datum springt hin, Tipp
   aufs große öffnet den Kalender, Wischen folgt dem Finger (ein Tag je 40 px, `FERN`).
-  Ganz oben steht das große Datum neben der ersten Tagesüberschrift (keine leere Fläche über „Heute“),
-  wandert beim Runterscrollen im gleichen Maß nach unten und bleibt ab 40 % der Höhe (`mitte`) stehen
-  (`mAkt`, `mStart`; seit 2026-10-02, Davids Wunsch).
+  Das große Datum steht immer fest bei 1/3 der Höhe (`mitte`, CSS `--mitte`). Über „Heute“ zeigt die Leiste die 3
+  vergangenen Tage grau und ohne Termine (`VORBEI`, data-k negativ, nicht antippbar), damit oben keine
+  leere Fläche bleibt (Davids Wahl 2026-10-02; verworfen: vergangene Termine laden, Datum wandern lassen).
   Beim Scrollen folgt die Skala ohne Nachlauf, der nächste Tag rastet weich auf den letzten
   40 % des Tages ein. Vibration nur 2 ms und höchstens alle 90 ms.
   Sprünge setzen den Tag ganz nach oben; beim Scrollen gilt ein Tag als aktuell, sobald seine
