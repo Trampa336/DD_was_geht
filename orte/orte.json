@@ -3893,7 +3893,8 @@
  "katy-s-garage": {
   "name": "Katy's Garage",
   "aliase": [
-   "Katy's Garage"
+   "Katy's Garage",
+   "Katys Garage"
   ],
   "region": "dresden",
   "art": "club",
@@ -3901,17 +3902,6 @@
   "beschreibung": "Der Club mit Biergarten, Grill und Außentresen besticht durch Livekonzerte und Neustadtflair.",
   "adresse": "Alaunstraße 48 01099 Dresden",
   "telefon": "0351 65 67 701",
-  "lat": 51.0667534,
-  "lon": 13.7518056,
-  "geo_quelle": "nominatim"
- },
- "katys-garage": {
-  "name": "Katys Garage",
-  "aliase": [
-   "Katys Garage"
-  ],
-  "region": "dresden",
-  "adresse": "Alaunstraße 48, 01099 Dresden",
   "lat": 51.0667534,
   "lon": 13.7518056,
   "geo_quelle": "nominatim"
