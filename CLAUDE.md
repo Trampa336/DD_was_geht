@@ -346,7 +346,14 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   in den Repo-Einstellungen unter Actions → General „Allow GitHub Actions to create
   and approve pull requests“ an sein.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
-  (bis 150 min Toleranz bei gleichem Ort und Titel). Festival-Sammeleinträge von
+  (bis 150 min Toleranz bei gleichem Ort und Titel; seit 2026-10-02 auch bei Wortüberdeckung
+  ab 0,6, wenn eine Zeile von der Seite des Hauses kommt). Seit 2026-10-02 legt `dedup` auch
+  zwei Zeilen DERSELBEN Quelle zusammen, wenn Ort, Tag und Uhrzeit gleich sind, alle Wörter des
+  kürzeren Titels im längeren stehen und die Zahlen gleich sind (der Kulturkalender führt
+  manche Termine doppelt; „Studio*Freispiel #1/#2“ bleibt getrennt). Gemessen: auf der
+  Live-Seite rund 20 echte Doppelungen von 2.398, lokal 6 neue Zusammenlegungen, alle richtig.
+  Offen: gleiche Uhrzeit, aber verschiedene Titel aus zwei Quellen („farbwerkDisco (farbwerk
+  e.V.)“ / „farbwerkDisco – Inklusive Disco-Reihe“) und kaputte Zeichen im KK („Mis?yrming“). Festival-Sammeleinträge von
   cybersax können einzelne Programmpunkte an sich ziehen.
 - Tag springen: Ein kurzer Tipp aufs große Datum in der Leiste öffnet einen Kalender
   (`zeigeKalender` in der Vorlage), Wischen bleibt. Tage ohne Termine sind grau. Man muss

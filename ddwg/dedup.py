@@ -13,9 +13,10 @@ Zwei Grundregeln, die Fehltreffer verhindern:
 1. **Nur quellenübergreifend.** Zwei Einträge *derselben* Quelle sind nie eine
    Doppelung - eine Führung, die am selben Tag um 11:00 und um 15:00 startet,
    ist zweimal derselbe Titel am selben Ort und trotzdem zweimal ein Event.
-   Genau eine Ausnahme, siehe _festival_groups(): die Zeilen eines Line-ups,
-   die derselbe Scraper unter einem gemeinsamen Veranstaltungsnamen geliefert
-   hat.
+   Zwei Ausnahmen: die Zeilen eines Line-ups, die derselbe Scraper unter einem
+   gemeinsamen Veranstaltungsnamen geliefert hat (_festival_groups()), und
+   derselbe Termin, den eine Quelle zur selben Uhrzeit doppelt führt
+   (_self_duplicates(), seit 2026-10-02).
 2. **Uhrzeit als Gegenprobe.** Liegen zwei Startzeiten mehr als
    MAX_TIME_DELTA_MINUTES auseinander, sind es verschiedene Termine - auch bei
    identischem Titel. Ausnahme: bei gleichem Ort und praktisch deckungsgleichem
@@ -251,6 +252,21 @@ def _neither_is_umbrella(event_a, event_b, scores):
     return not (_is_umbrella(event_a) or _is_umbrella(event_b))
 
 
+# Quellen, die die Seite eines einzelnen Hauses sind (Eintrag "ort" in
+# ddwg/quellen). Ihre Uhrzeit ist die des Hauses, die Sammelkalender nennen oft
+# den Einlass oder einen anderen Programmteil.
+_HAUS_QUELLEN = frozenset(quellen.eigene_quelle_je_ort().values())
+
+
+def _one_is_house_source(event_a, event_b, scores):
+    """Seit 2026-10-02: Am selben Ort darf ein mittelmaessig passender Titel das
+    weite Zeitfenster nutzen, wenn eine der beiden Zeilen von der Seite des
+    Hauses selbst kommt. Real im Puschkin: "SkullCrusher | Benefiz | Metal hilft
+    Kids" 18:00 (Hausseite) und "20 Jahre Skullcrusher Benefiz" 16:00 (rauze),
+    Wort-Ueberdeckung 0.67, 120 Minuten Abstand - stand doppelt da."""
+    return event_a.get("source") in _HAUS_QUELLEN or event_b.get("source") in _HAUS_QUELLEN
+
+
 def _two_words_and_both_times(event_a, event_b, scores):
     """Ein einzelnes enthaltenes Wort ist ohne Ort zu wenig ("Sommerfest" steckt
     in "Sommerfest der Feuerwehr"). Verlangt werden deshalb mindestens zwei
@@ -272,6 +288,13 @@ _RULES = (
           min_overlap=STRONG_TITLE_OVERLAP, min_ratio=STRONG_TITLE_RATIO,
           max_delta=MAX_TIME_DELTA_STRONG_MINUTES,
           score_from=_BOTH_MEASURES, reason="ort+titel", extra=None),
+    # Gleicher Ort, eine Zeile von der Seite des Hauses, Titel mit guter
+    # Wort-Ueberdeckung: weites Zeitfenster (siehe _one_is_house_source).
+    _Rule(venue=_SAME_VENUE,
+          min_overlap=SAME_VENUE_MIN_OVERLAP, min_ratio=None,
+          max_delta=MAX_TIME_DELTA_STRONG_MINUTES,
+          score_from=_OVERLAP_ONLY, reason="ort+titel+hausseite",
+          extra=_one_is_house_source),
     # Gleicher Ort, schwächerer Titel: eines der beiden Maße genügt, das enge
     # Zeitfenster bleibt aber die Gegenprobe (Grundregel 2).
     _Rule(venue=_SAME_VENUE,
@@ -402,6 +425,54 @@ def _festival_groups(events):
         head, rest = umbrellas[0], umbrellas[1:]
         result[head["uid"]] = [e["uid"] for e in rest + others]
     return result
+
+
+# --- Derselbe Termin doppelt in einer Quelle ---------------------------------
+# Zweite Ausnahme von Grundregel 1 (seit 2026-10-02). Der Kulturkalender fuehrt
+# manche Termine zweimal, zur selben Uhrzeit mit leicht anderem Titel: "LEFTOVERS"
+# und "Leftovers" (Tante JU), "Ohrwurm & Friends" und "Ohrwurm & Friends
+# Figurentheater-Konzert", "Ehrenamtsboerse" und "Dresdner Ehrenamtsboerse 2026".
+# Gemessen auf der Live-Seite (2.398 Termine): rund 11 solche Paare.
+#
+# Bewusst eng, weil echte Mehrfachtermine viel haeufiger sind (Fuehrung um 11 und
+# um 14 Uhr, Matinee und Abendvorstellung): verlangt werden gleiche Quelle, gleicher
+# Tag, gleicher Ort, GLEICHE Uhrzeit (beide bekannt, nicht 00:00), saemtliche
+# Woerter des kuerzeren Titels im laengeren und dieselben Zahlen in beiden Titeln.
+# Die Zahlen sind die Gegenprobe fuer "Studio*Freispiel #1" und "#2" um 20 Uhr im
+# Kleinen Haus: gleiche Woerter, aber zwei verschiedene Stuecke.
+_ZAHLEN_RE = re.compile(r"\d+")
+
+
+def _self_duplicate(event_a, event_b):
+    if event_a["source"] != event_b["source"] or event_a["date"] != event_b["date"]:
+        return False
+    zeit = event_a.get("time")
+    if not zeit or zeit == "00:00" or zeit != event_b.get("time"):
+        return False
+    key_a = _venue_key(event_a.get("venue"))
+    if not key_a or key_a != _venue_key(event_b.get("venue")):
+        return False
+    if _is_umbrella(event_a) or _is_umbrella(event_b):
+        return False
+    titel_a, titel_b = event_a.get("title") or "", event_b.get("title") or ""
+    if set(_ZAHLEN_RE.findall(titel_a)) != set(_ZAHLEN_RE.findall(titel_b)):
+        return False
+    scores = _title_scores(titel_a, titel_b)
+    return scores.words >= 1 and scores.overlap >= 1.0
+
+
+def _self_duplicates(events):
+    """[(uid_a, uid_b), ...] - Paare, die eine Quelle doppelt fuehrt."""
+    paare = []
+    for day_events in _by_date(events).values():
+        for index, event_a in enumerate(day_events):
+            for event_b in day_events[index + 1:]:
+                if _self_duplicate(event_a, event_b):
+                    paare.append((event_a["uid"], event_b["uid"]))
+    return paare
+
+
+MATCH_REASON_SELF = "quelle-doppelt"
 
 
 def _source_rank(source):
@@ -546,6 +617,13 @@ def _grouped(events):
     for _umbrella, _neg, uid_a, uid_b, result in pairs:
         if groups.merge(uid_a, uid_b):
             evidence[frozenset((uid_a, uid_b))] = result
+
+    # Zweite Ausnahme von Grundregel 1: derselbe Termin doppelt in einer Quelle
+    # (siehe _self_duplicates). Erst nach den echten Paaren, damit beide Zeilen
+    # schon ihre Partner aus anderen Quellen haben.
+    for uid_a, uid_b in _self_duplicates(events):
+        if groups.merge(uid_a, uid_b, force=True):
+            evidence[frozenset((uid_a, uid_b))] = (1.0, MATCH_REASON_SELF)
 
     # Die Ausnahme von Grundregel 1: Zeilen desselben Line-ups an ihren
     # Sammel-Eintrag hängen (siehe _festival_groups).
