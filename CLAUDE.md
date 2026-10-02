@@ -240,7 +240,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   (`.herz-b`), kein Etikett, kein roter Rahmen (Davids Wunsch).
 - **Grundprinzip (Davids Entscheidung): sortieren statt verstecken.** Je Tag werden die
   8 passendsten Termine Kacheln, der Rest kompakte Zeilen darunter. Relevanz
-  (`relevanz()` in der Vorlage): Herz-Ort +100, eigene Richtung +40, Bild +10,
+  (`relevanz()` in der Vorlage): Lesezeichen +200, Herz-Ort +100, eigene Richtung +40, Bild +10,
   Beschreibung +5, mehrere Quellen +8, ab 18 Uhr +5, keine Richtung −10, Umland −10.
 - **Richtungen** verschmelzen Flavours und Kategorien (`ddwg/richtungen.py`, Tests in
   `tests/test_richtungen.py`): Musik (Club, Rock & Metal, Punk/Indie & Bars, Jazz, Klassik;
@@ -294,6 +294,13 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   als eigene Zeilen über den Terminen; Tipp öffnet das Orts-Blatt.
 - **Auch hier** (seit 2026-10-02): Das Termin-Blatt zeigt unten die nächsten 4 Termine am selben Ort
   (`auchHier`), bei mehr einen Knopf „Alle … Termine“ zum Orts-Blatt.
+- **Lesezeichen** (seit 2026-10-02, Davids Wunsch; eine Funktion statt „Anpinnen“ und „Favorisieren“):
+  Knopf rechts neben dem Titel im Termin-Blatt merkt den Termin, gespeichert im Browser (`ddwg-lesezeichen`,
+  je Termin-ID `u` mit Datum, Ort, Titel). Ändert ein Neubau die ID (z. B. neue Uhrzeit), findet der Termin über
+  Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
+  (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Knopf oben links fest über der
+  Zeitleiste (mit Zahl) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
+  Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links.
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
   Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der

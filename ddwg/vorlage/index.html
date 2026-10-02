@@ -348,10 +348,30 @@ button.kt { background: var(--surface2); }
 .rz i { display: block; font-style: normal; font-size: 11.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mehr-zeile { display: block; width: 100%; padding: 10px 2px; color: var(--accent); font-weight: 650; font-size: 13px; }
 .nichts { padding: 48px 10px; text-align: center; color: var(--soft); }
+/* ---------- Lesezeichen (seit 2026-10-02, Davids Wunsch) ----------
+   Knopf oben links fest über der Zeitleiste öffnet die Liste; gemerkt wird im Termin-Blatt neben dem Titel.
+   Bewusst ohne Akzentfarbe: gemerkt = helle Schrift, sonst blass. */
+.lz-oben { position: fixed; z-index: 25; top: 19px; left: max(0px, calc(50vw - 260px)); width: var(--rail); height: 34px; display: grid; place-items: center; color: var(--faint); transition: color .2s; }
+.lz-oben[data-an="1"] { color: var(--soft); }
+#app[data-tab="karte"] .lz-oben { display: none; }
+.lz-oben i { position: absolute; top: -3px; right: 2px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; background: var(--surface2); border: 1px solid var(--line); color: var(--ink); font: 700 9.5px/13px var(--f); font-style: normal; text-align: center; }
+.lz-oben i[hidden] { display: none; }
+.lz-b { position: absolute; top: 0; left: 10px; width: 13px; height: 19px; color: var(--ink); filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)); pointer-events: none; }
+.lz-b svg { display: block; width: 100%; height: 100%; }
+.sh-titel { display: flex; align-items: flex-start; gap: 8px; }
+.sh-titel h2 { flex: 1; min-width: 0; }
+.lz-knopf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 -10px 0 0; border-radius: 50%; color: var(--faint); transition: color .2s; }
+.lz-knopf[aria-pressed=true] { color: var(--ink); }
+.sh h2 em { font-style: normal; font-weight: 400; font-size: 14px; color: var(--faint); margin-left: 8px; }
+/* Links im Termin-Blatt: untereinander, klein und dezent (Davids Wunsch 02.10.) */
+.sh-links.leise { flex-direction: column; align-items: flex-start; gap: 0; margin-top: 10px; }
+.link-leise { display: inline-flex; align-items: center; gap: 5px; padding: 5px 0; font-size: 13px; font-weight: 600; color: var(--soft); text-decoration: none; }
+.link-leise svg { opacity: .7; }
 </style>
 </head>
 <body>
 <div id="app" data-tab="was">
+  <button class="lz-oben" data-lzliste aria-label="Lesezeichen"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><i hidden></i></button>
   <header class="kopf"><h1>DD <b>was</b> geht</h1><button class="theme-knopf" data-themes aria-label="Aussehen wählen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></button></header>
   <div class="oben" id="oben">
     <div class="oben-zeile">
@@ -421,6 +441,12 @@ const RT_ICON = {
 };
 const rtIcon = (k, g = 20) => RT_ICON[k] ? `<svg width="${g}" height="${g}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RT_ICON[k]}</svg>` : "";
 const HAKEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+// Lesezeichen (Lucide „bookmark“), leer und gefüllt; dazu das Bändchen an der Kachel und der Pfeil für Links
+const LZ_PFAD = '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>';
+const LZ_LEER = `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LZ_PFAD}</svg>`;
+const LZ_VOLL = `<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LZ_PFAD}</svg>`;
+const LZ_BAND = '<svg viewBox="0 0 13 19" aria-hidden="true"><path d="M0 0h13v19l-6.5-4.6L0 19z" fill="currentColor"/></svg>';
+const PFEIL_RAUS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
 const ICON_R = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
 const parse = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
 const isoVon = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
@@ -599,6 +625,48 @@ function passt(e, ohne) {
   return true;
 }
 
+/* ---------- Lesezeichen (seit 2026-10-02): Termine merken, gehören dem Browser wie die Herzen ----------
+   Je Termin-ID (u) mit Datum, Ort und Titel gespeichert. Ändert ein Neubau Uhrzeit und damit die ID,
+   findet der Termin über Datum + Ort + Titel zurück. Vergangenes fällt beim Laden raus. */
+const LZ_KEY = "ddwg-lesezeichen";
+const PER_U = new Map(D.events.map(e => [e.u, e]));
+const lzSchluessel = (d, o, ti) => d + "|" + (o || "") + "|" + klein(ti);
+const lzEintrag = e => ({ d: e.d, o: e.o || e.or || "", ti: e.ti });
+let LZ = (() => {
+  let roh = {};
+  try { roh = JSON.parse(localStorage.getItem(LZ_KEY))?.u || {}; } catch (e) {}
+  const ersatz = new Map(D.events.map(e => [lzSchluessel(e.d, e.o || e.or, e.ti), e])), neu = {};
+  for (const [u, x] of Object.entries(roh)) {
+    if (!x || !x.d || x.d < HEUTE) continue;
+    const e = PER_U.get(u) || ersatz.get(lzSchluessel(x.d, x.o, x.ti));
+    neu[e ? e.u : u] = e ? lzEintrag(e) : x;  // ohne Treffer behalten, vielleicht kommt er im nächsten Lauf wieder
+  }
+  return neu;
+})();
+function lzSpeichern() { try { localStorage.setItem(LZ_KEY, JSON.stringify({ v: 1, u: LZ })); } catch (e) {} }
+lzSpeichern();
+const lzHat = e => !!LZ[e.u];
+const lzListe = () => Object.keys(LZ).map(u => PER_U.get(u)).filter(Boolean).sort(nachZeit);
+const lzKnopf = e => `<button class="lz-knopf" data-lz="${e.i}" aria-pressed="${lzHat(e)}" aria-label="${lzHat(e) ? "Lesezeichen entfernen" : "Merken"}">${lzHat(e) ? LZ_VOLL : LZ_LEER}</button>`;
+function lzOben() {
+  const n = lzListe().length, k = $(".lz-oben"), i = k.querySelector("i");
+  k.dataset.an = n ? "1" : "0"; i.hidden = !n; i.textContent = n;
+}
+function lzUmschalten(idx, knopf) {
+  const e = D.events[idx];
+  if (lzHat(e)) delete LZ[e.u]; else LZ[e.u] = lzEintrag(e);
+  lzSpeichern();
+  if (knopf) knopf.outerHTML = lzKnopf(e);
+  toast(lzHat(e) ? "Gemerkt" : "Lesezeichen entfernt");
+  e.rel = relevanz(e); renderTage(); lzOben();
+}
+function lesezeichenBlatt() {
+  merkeBlatt("lesezeichen", () => lesezeichenBlatt());
+  const l = lzListe();
+  sheetAuf(`<div class="sh su" style="padding-top:0"><h2>Lesezeichen${l.length ? `<em>${l.length}</em>` : ""}</h2>
+    ${l.length ? `<div class="sh-liste">${l.map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</span></span></button>`).join("")}</div>` : '<p class="su-info">Noch nichts gemerkt.</p>'}</div>`);
+}
+
 /* ---------- Relevanz: Wichtiges steht oben, weniger Passendes rutscht nach unten ----------
    Deine Orte zuerst, dann deine Richtungen. Danach zählt, ob es Bild und Beschreibung gibt,
    ob mehrere Kalender den Termin nennen und ob er abends ist. Was in keine Richtung passt
@@ -606,6 +674,7 @@ function passt(e, ohne) {
 let MEINE_RT = new Set();
 function relevanz(e) {
   let p = 0;
+  if (lzHat(e)) p += 200;  // Gemerktes steht im Tag ganz vorne
   if (ort(e).h) p += 100;
   if ((e.rt || []).some(k => MEINE_RT.has(k))) p += 40;
   if (e.img) p += 10;
@@ -652,7 +721,7 @@ function medium(e) {
   return `<div class="medium poster p${p}">${esc(text)}</div>`;
 }
 window.bildFehler = img => { const d = document.createElement("div"); d.className = `medium poster p${img.dataset.p}`; d.textContent = img.dataset.t; img.replaceWith(d); };
-const kachel = e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b" aria-label="Dein Ort">${HERZ}</span>` : ""}
+const kachel = e => `<button class="gk ${ort(e).h ? "herz" : ""}" data-ev="${e.i}">${medium(e)}${ort(e).h ? `<span class="herz-b" aria-label="Dein Ort">${HERZ}</span>` : ""}${lzHat(e) ? `<span class="lz-b" aria-label="Gemerkt">${LZ_BAND}</span>` : ""}
   <span class="gk-txt"><span class="gk-zeit">${esc(e.t || "")}</span><span class="gk-titel">${esc(e.ti)}</span><span class="gk-ort ${ort(e).h ? "h" : ""}">${esc(ort(e).n || e.or || "")}</span></span></button>`;
 const zeile = e => `<button class="rz" data-ev="${e.i}"><span class="gk-zeit">${esc(e.t || "–")}</span><span><b>${esc(e.ti)}</b><i>${esc(ortName(e))} · ${esc(rtName(e))}</i></span></button>`;
 
@@ -900,11 +969,11 @@ function zeigeEvent(i) {
   merkeBlatt("ev" + i, () => zeigeEvent(i));
   sheetAuf(`<div class="sh-bild">${medium(e)}</div><div class="sh">
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
-    <h2>${esc(e.ti)}</h2>
+    <div class="sh-titel"><h2>${esc(e.ti)}</h2>${lzKnopf(e)}</div>
     <button class="sh-ort" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
     <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
     ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
-    <div class="sh-links">${e.url ? `<a class="knopf primaer" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle</a>` : ""}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}</div>
+    <div class="sh-links leise">${e.url ? `<a class="link-leise" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle${PFEIL_RAUS}</a>` : ""}${o.w ? `<a class="link-leise" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes${PFEIL_RAUS}</a>` : ""}</div>
     ${auchHier(e)}
     <div class="sh-q">Quellen: ${esc(q)}</div></div>`);
 }
@@ -1181,6 +1250,8 @@ document.addEventListener("click", e => {
   if ("themes" in ds) return themeBlatt();
   if (ds.themewahl) { themeSetzen(ds.themewahl); return themeRest(); }
   if ("suche" in ds) return sucheBlatt();
+  if ("lzliste" in ds) return lesezeichenBlatt();
+  if (ds.lz !== undefined) return lzUmschalten(+ds.lz, el);
   if (ds.forte) { F.orte = ds.forte; return filterGeaendert(); }
   if (ds.rt) {
     // Wer Ausstellungen/Kultur an- oder abwählt, bekommt die Dauerausstellungen wieder automatisch
@@ -1210,6 +1281,7 @@ herzenAnwenden();
 orteKnopf();
 renderTage();
 filterZeile();
+lzOben();
 wischenEinrichten();
 </script>
 <script>
