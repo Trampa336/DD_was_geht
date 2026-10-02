@@ -178,6 +178,9 @@ img.medium.da { opacity: 1; }
 .ol-gruppe:first-child, .ol-gruppe.ol-treffer { border-top: 0; padding-top: 0; margin-top: 8px; }
 .ol-zeile:last-child { border-bottom: 0; }  /* sonst stehen zwei Linien über der nächsten Gruppe */
 #ol-feld { scroll-margin-top: 64px; }
+.sh.ol { margin-top: -40px; }  /* Überschrift ganz oben neben dem ✕ (Davids Wunsch 02.10.) */
+.ol-gr { flex-direction: column; gap: 5px; }  /* Gruppen untereinander, flach */
+.ol-gr .fc { padding: 5px 12px; }
 #ol-rest.sucht { min-height: 75vh; }  /* Blatt bleibt groß, das Suchfeld kann über die Tastatur rutschen */
 .ol-herz { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--faint); font-size: 18px; line-height: 1; }
 .ol-herz[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
@@ -548,7 +551,7 @@ const rtName = e => {
 /* ---------- Orte-Liste: Herzen gruppenweise wählen und einzeln feinjustieren ---------- */
 function orteListe() {
   merkeBlatt("orteliste", () => orteListe());
-  sheetAuf(`<div class="sh" style="padding-top:0"><div class="sh-datum">Deine Orte</div><h2>Orte entdecken</h2>
+  sheetAuf(`<div class="sh ol" style="padding-top:0"><div class="sh-datum">Deine Orte</div><h2>Orte entdecken</h2>
     <div id="ol-gruppen"></div>
     <input class="fi-suche" id="ol-feld" type="search" placeholder="Ort suchen" enterkeyhint="search" autocomplete="off" aria-label="Ort suchen">
     <div id="ol-rest"></div></div>`);
@@ -574,7 +577,7 @@ function olRest() {
   const inGruppe = new Set(GRUPPEN.flatMap(g => g.orte));
   const weitere = Object.keys(proOrt).filter(s => D.orte[s] && !inGruppe.has(s) && proOrt[s].length >= 3).sort(nachMenge).slice(0, 40);
   const nHerz = Object.values(D.orte).filter(o => o.h).length;
-  kopf.innerHTML = `<div class="fi-teil"><h3>Gruppen · ${nHerz}</h3><div class="fi-chips">${GRUPPEN.map(g =>
+  kopf.innerHTML = `<div class="fi-teil"><h3>Gruppen · ${nHerz}</h3><div class="fi-chips ol-gr">${GRUPPEN.map(g =>
       `<button class="fc" data-gruppe="${esc(g.k)}" aria-pressed="${M.gr.includes(g.k)}">${esc(g.n)}<em>${g.orte.length}</em></button>`).join("")}</div></div>`;
   const woerter = klein(OL_Q).split(/\s+/).filter(Boolean);
   host.classList.toggle("sucht", woerter.length > 0 || document.activeElement?.id === "ol-feld");

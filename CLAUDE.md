@@ -171,8 +171,8 @@ Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören 
 Seit 2026-09-30 (Davids Entscheidung) kommen Herzen nur aus der **Orte-Liste** („Orte entdecken“,
 Knopf unter der Entdecken-Karte und im Filter-Blatt): Gruppen-Knöpfe `M.gr` („Solider Anfang“ =
 Herz-Orte aus orte.json, dazu je Genre eine Gruppe) plus Feinjustieren je Ort (`M.an`, `M.weg`).
-Von Hand Gesetztes gilt immer vor den Gruppen. Aufbau der Liste (seit 2026-10-02, Davids Wunsch): kein
-Erklärtext, Kopf „Gruppen · Zahl“ (Herzen insgesamt, ohne Wort), darunter eine Suchzeile (`OL_Q`, gilt nur
+Von Hand Gesetztes gilt immer vor den Gruppen. Aufbau der Liste (seit 2026-10-02, Davids Wunsch): Überschrift ganz oben neben dem ✕, kein
+Erklärtext, Gruppen-Pillen untereinander und flach, Kopf „Gruppen · Zahl“ (Herzen insgesamt, ohne Wort), darunter eine Suchzeile (`OL_Q`, gilt nur
 solange die Seite offen ist), die beim Tippen nur passende Orte **aus der Liste** zeigt (Gruppen + „Weitere
 Orte“ ab 3 Terminen, Davids Wahl). Je Zeile nur Name und grau die Zahl der Termine; feiner Strich zwischen den
 Gruppen. Herzen gibt es auch für Orte außerhalb der Liste (Herz-Knopf im Orts-Blatt). Erster Start: „Solider Anfang“ an, keine Richtung
