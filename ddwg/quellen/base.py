@@ -256,3 +256,23 @@ def srcset_waehlen(srcset, mind_breite=500):
 
 def make_soup(html):
     return BeautifulSoup(html, HTML_PARSER)
+
+
+# --- Verlegte Termine -------------------------------------------------------
+# Tante JU und Puschkin führen Termine, die ins andere Haus umgezogen sind, mit
+# Hinweis im Titel weiter: "Dominik Hartz (verlegt ins Puschkin)", "ENKAY |
+# Zwischen den Stühlen Tour 2026 (hochverlegt in die Tante JU)". Der Termin
+# gehört dann zum neuen Ort, sonst steht er an zwei Orten (gesehen 02.10.2026).
+_VERLEGT_RE = re.compile(
+    r"\s*[(\[]\s*(?:hoch|runter)?verlegt\s+(?:in\s+die|in\s+den|in\s+das|ins|nach)\s+([^)\]]+)[)\]]\s*",
+    re.IGNORECASE,
+)
+
+
+def verlegt(titel):
+    """(Titel ohne Verlegungs-Hinweis, neuer Ort oder None)."""
+    m = _VERLEGT_RE.search(titel or "")
+    if not m:
+        return titel, None
+    rest = (titel[:m.start()] + " " + titel[m.end():]).strip()
+    return " ".join(rest.split()), m.group(1).strip()

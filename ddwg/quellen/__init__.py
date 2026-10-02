@@ -82,6 +82,16 @@ QUELLEN = {
     # Seit 2026-10-02 (Davids Wunsch), kein Herz-Ort. Wix-Galerie ohne
     # Beschreibungen, siehe arteum.py.
     "arteum": {"name": "Arteum", "rang": 63, "ort": "arteum"},
+    # Herz-Orte, eigene Quelle seit 2026-10-02: iCal-Feeds (WordPress-Plugin
+    # Events Manager), siehe tanteju.py und puschkin.py.
+    "tanteju": {
+        "name": "Tante JU", "rang": 61, "ort": "tante-ju",
+        "venue_key": "tante-ju", "alias": ["tante-ju-dresden", "tante-ju-liveclub"],
+    },
+    "puschkin": {
+        "name": "Puschkin", "rang": 62, "ort": "puschkin",
+        "venue_key": "puschkin", "alias": ["puschkin-club", "blauer-salon-puschkin", "club-puschkin"],
+    },
 }
 
 # Ortsnamen von Haeusern ohne eigene Quelle, die die Aggregatoren
@@ -90,8 +100,6 @@ EXTRA_VENUE_ALIASES = {
     "chemiefabrik": ["chemo", "chemiefabrik-dresden"],
     "beatpol": ["beatpol-ehemals-starclub", "starclub"],
     "kraftwerk-mitte": ["kraftwerk-mitte-dresden"],
-    "tante-ju": ["tante-ju-dresden"],
-    "puschkin": ["puschkin-club", "blauer-salon-puschkin"],
     # CyberSAX schreibt "Kafe Zeitlos", andere Quellen "Cafe Zeitlos".
     "cafe-zeitlos": ["kafe-zeitlos"],
     "cafe-saite": ["kafe-saite"],
