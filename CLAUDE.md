@@ -248,8 +248,10 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
   Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der
   Überschrift), Tageszeit als Umschalter (Immer / Tagsüber / Abends), Deine Richtungen als
-  Toggle-Liste (je Zeile Icon, Name, Zahl grau, Kippschalter; Tippen merkt und holt nach vorne),
-  dann zwei Kippschalter „Nur meine Richtungen“ und „Dauerausstellungen“. Die Umschalter haben
+  schlanke Liste (je Zeile ca. 40 px: Icon, Name, Zahl grau, rechts ein dezentes Häkchen; Tippen
+  merkt und holt nach vorne), dann zwei kleine Schalter „Nur meine Richtungen“ und
+  „Dauerausstellungen“. Häkchen für die Mehrfachauswahl, Schalter nur für Einstellungen (übliche
+  Regel, z. B. Material Design; Davids Wahl 02.10.). Listen haben denselben Rahmen wie die Umschalter. Die Umschalter haben
   eine gleitende Fläche (`--i`), die Schalter gleiten auch: `sanftNeu` zeichnet das Blatt neu und
   setzt Elemente mit gleichem `data-k` kurz auf den alten Zustand, damit CSS animiert.
   Unten „Zeigen“ mit Zahl. **Zahlen ohne Wort** (seit 2026-10-02): Suche, Filter-Zeile und

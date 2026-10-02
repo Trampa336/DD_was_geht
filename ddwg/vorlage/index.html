@@ -254,20 +254,26 @@ button.kt { background: var(--surface2); }
 .seg button { position: relative; padding: 8px 4px; border-radius: 8px; text-align: center; font-weight: 650; font-size: 13.5px; color: var(--soft); transition: color .25s; }
 .seg button em { display: block; font-style: normal; font-weight: 400; font-size: 11px; opacity: .75; }
 .seg button[aria-pressed=true] { color: var(--on-accent); }
-/* Toggle-Liste: Zeilen mit Icon, Name, Zahl grau, Kippschalter rechts */
-.tl { border-radius: var(--r-s); background: var(--surface2); overflow: hidden; }
-.tz { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 12px; font-weight: 650; font-size: 14px; color: var(--ink); }
+/* Toggle-Liste: schlanke Zeilen (Icon, Name, Zahl grau), rechts ein dezentes Häkchen.
+   Häkchen für die Mehrfachauswahl der Richtungen, kleine Schalter nur für die zwei Einstellungen. */
+.tl { border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.tz { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 6px 12px; font-weight: 500; font-size: 13.5px; color: var(--soft); transition: color .2s; }
 .tz + .tz { border-top: 1px solid var(--line); }
-.tz svg { color: var(--soft); transition: color .25s; }
-.tz[aria-pressed=true] svg { color: var(--accent); }
-.tz em { font-style: normal; font-weight: 400; color: var(--faint); }
+.tz svg { color: var(--faint); transition: color .2s; }
+.tz em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--faint); }
+.tz[aria-pressed=true] { color: var(--ink); font-weight: 650; }
+.tz[aria-pressed=true] > svg { color: var(--accent); }
 .tz:disabled { opacity: .45; }
 .tz > span:first-child { grid-column: 1 / 3; }
-.tz i { position: relative; width: 40px; height: 24px; border-radius: 999px; background: var(--line); transition: background .25s; }
-.tz i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--soft); transition: transform .28s cubic-bezier(.3, .8, .25, 1), background .25s; }
-.tz[aria-pressed=true] i { background: var(--accent); }
-.tz[aria-pressed=true] i::after { transform: translateX(16px); background: var(--on-accent); }
-@media (prefers-reduced-motion: reduce) { .seg::before, .seg button, .tz i, .tz i::after, .tz svg { transition: none; } }
+.ck { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--line); transition: border-color .2s, background .2s; }
+.ck svg { color: var(--on-accent); opacity: 0; transform: scale(.4); transition: opacity .2s, transform .25s cubic-bezier(.3, 1.4, .5, 1); }
+.tz[aria-pressed=true] .ck { border-color: var(--accent); background: var(--accent); }
+.tz[aria-pressed=true] .ck svg { opacity: 1; transform: none; }
+.tz i { position: relative; width: 32px; height: 18px; border-radius: 999px; background: var(--line); transition: background .25s; }
+.tz i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--faint); transition: transform .28s cubic-bezier(.3, .8, .25, 1), background .25s; }
+.tz[aria-pressed=true] i { background: color-mix(in srgb, var(--accent) 70%, var(--line)); }
+.tz[aria-pressed=true] i::after { transform: translateX(14px); background: var(--on-accent); }
+@media (prefers-reduced-motion: reduce) { .seg::before, .seg button, .tz, .tz i, .tz i::after, .tz svg, .ck, .ck svg { transition: none; } }
 .fi-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .fi-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .fi-link { margin-bottom: 8px; font-size: 13px; font-weight: 650; color: var(--heart); }
@@ -278,8 +284,8 @@ button.kt { background: var(--surface2); }
 .fi-info { margin: 16px 0 0; font-size: 12px; line-height: 1.45; color: var(--faint); }
 .fi-fuss { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 16px -18px 0; padding: 12px 18px 4px; background: var(--surface); border-top: 1px solid var(--line); }
 .fi-fuss .knopf:disabled { opacity: .45; }
-.rt-gruppe { display: grid; gap: 6px; margin-bottom: 12px; }
-.rt-kopf { font-size: 13px; font-weight: 700; color: var(--ink); }
+.rt-gruppe { display: grid; gap: 6px; margin-bottom: 14px; }
+.rt-kopf { font-size: 12.5px; font-weight: 650; color: var(--soft); }
 .schalter { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: var(--r-s); background: var(--surface2); font-weight: 650; font-size: 14px; }
 .schalter small { display: block; font-weight: 400; font-size: 11.5px; color: var(--faint); }
 .schalter i { flex: none; position: relative; width: 40px; height: 24px; border-radius: 999px; background: var(--line); transition: background .15s; }
@@ -367,6 +373,7 @@ const RT_ICON = {
   sport: '<path d="M11 7a16 16 20 0 1 10.98 4.362"/><path d="M12 12a13 13 0 0 1-8.66 5"/><path d="M16.83 13.634a16 16 0 0 1-9.267 7.328"/><path d="M20.66 17A13 13 0 0 0 12 12a13 13 0 0 1 0-10"/><path d="M8.17 15.366a16 16 0 0 1-1.713-11.69"/><circle cx="12" cy="12" r="10"/>',
 };
 const rtIcon = (k, g = 20) => RT_ICON[k] ? `<svg width="${g}" height="${g}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RT_ICON[k]}</svg>` : "";
+const HAKEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_R = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
 const parse = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
 const isoVon = dt => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
@@ -971,7 +978,7 @@ function fiRest() {
     if (passt(e)) treffer++;
   });
   // data-k: fester Schlüssel je Element, damit sanftNeu Zustandswechsel animieren kann
-  const zeile = (t, name) => `<button class="tz" data-k="rt-${esc(t.k)}" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${rtIcon(t.k, 20)}<span>${esc(name || t.n)} <em>${nRt[t.k] || 0}</em></span><i></i></button>`;
+  const zeile = (t, name) => `<button class="tz" data-k="rt-${esc(t.k)}" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${rtIcon(t.k, 18)}<span>${esc(name || t.n)} <em>${nRt[t.k] || 0}</em></span><b class="ck">${HAKEN}</b></button>`;
   const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="tl">${liste.join("")}</div></div>`;
   const seg = (attr, wahl, liste) => `<div class="seg" data-k="seg-${attr}" style="--i:${Math.max(0, liste.findIndex(([k]) => k === wahl))}">${liste.map(([k, l, z]) => `<button data-k="${attr}-${k}" data-${attr}="${k}" aria-pressed="${wahl === k}">${l}<em>${z}</em></button>`).join("")}</div>`;
   sanftNeu(host, `<div class="fi-teil"><div class="fi-kopf"><h3>Orte</h3><button class="fi-link" data-orteliste>♥ Orte auswählen</button></div>
