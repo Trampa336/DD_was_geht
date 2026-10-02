@@ -29,19 +29,19 @@
 }
 /* Themes (seit 2026-10-02): nur Farben, Wahl über den kleinen Knopf neben dem Titel, gemerkt als ddwg-theme.
    Ohne data-theme gilt Industriegelände (oben). Neue Themes brauchen auch einen Eintrag in THEMES im Skript. */
-:root[data-theme="elbe"] { /* Elbe bei Nacht */
+:root[data-theme="elbe"] { /* Blaues Wunder */
   --bg:#0f1720; --surface:#16212c; --surface2:#1c2935; --ink:#e2e9ee; --soft:#93a4b1; --faint:#728495;
   --line:#24323f; --accent:#2bb3b1; --on-accent:#0f1720; --accent2:#8cc2ec; --heart:#ef5b6b; --glow:rgba(43,179,177,.18);
 }
-:root[data-theme="neon"] { /* Neon */
+:root[data-theme="neon"] { /* Neustadt */
   --bg:#0b0a10; --surface:#14121c; --surface2:#1b1826; --ink:#ece8f5; --soft:#a59fb8; --faint:#7f7893;
   --line:#252131; --accent:#ff3d8f; --on-accent:#0b0a10; --accent2:#36e3ff; --heart:#ff4d6d; --glow:rgba(255,46,136,.20);
 }
-:root[data-theme="platte"] { /* Plattenbau */
+:root[data-theme="platte"] { /* Platte */
   --bg:#1a1c1e; --surface:#222528; --surface2:#2a2d31; --ink:#e6e7e8; --soft:#a0a4a8; --faint:#80848a;
   --line:#303439; --accent:#f2c230; --on-accent:#1a1c1e; --accent2:#a9bccb; --heart:#e5484d; --glow:rgba(242,194,48,.12);
 }
-:root[data-theme="wald"] { /* Wald */
+:root[data-theme="wald"] { /* Heide */
   --bg:#111a15; --surface:#17231c; --surface2:#1d2b22; --ink:#e3ebe2; --soft:#9cae9f; --faint:#7a8d7d;
   --line:#23332a; --accent:#93c25e; --on-accent:#111a15; --accent2:#dca15a; --heart:#e2574c; --glow:rgba(110,160,80,.18);
 }
@@ -1017,7 +1017,7 @@ function karteZeichnen(mitGeo) {
 /* ---------- Filter-Blatt, Filter-Zeile oben, Zahl am Knopf ---------- */
 const X_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 /* ---------- Aussehen: Themes, nur Farben (seit 2026-10-02) ---------- */
-const THEMES = [{"k":"industrie","n":"Industriegelände","bg":"#17191a","a":"#d4652a","a2":"#e3b56a","s":"#1e2123"},{"k":"elbe","n":"Elbe bei Nacht","bg":"#0f1720","a":"#2bb3b1","a2":"#8cc2ec","s":"#16212c"},{"k":"neon","n":"Neon","bg":"#0b0a10","a":"#ff3d8f","a2":"#36e3ff","s":"#14121c"},{"k":"platte","n":"Plattenbau","bg":"#1a1c1e","a":"#f2c230","a2":"#a9bccb","s":"#222528"},{"k":"wald","n":"Wald","bg":"#111a15","a":"#93c25e","a2":"#dca15a","s":"#17231c"}];
+const THEMES = [{"k":"industrie","n":"Industriegelände","bg":"#17191a","a":"#d4652a","a2":"#e3b56a","s":"#1e2123"},{"k":"elbe","n":"Blaues Wunder","bg":"#0f1720","a":"#2bb3b1","a2":"#8cc2ec","s":"#16212c"},{"k":"neon","n":"Neustadt","bg":"#0b0a10","a":"#ff3d8f","a2":"#36e3ff","s":"#14121c"},{"k":"platte","n":"Platte","bg":"#1a1c1e","a":"#f2c230","a2":"#a9bccb","s":"#222528"},{"k":"wald","n":"Heide","bg":"#111a15","a":"#93c25e","a2":"#dca15a","s":"#17231c"}];
 const THEME_KEY = "ddwg-theme";
 function themeAktuell() { return document.documentElement.dataset.theme || THEMES[0].k; }
 function themeSetzen(k) {

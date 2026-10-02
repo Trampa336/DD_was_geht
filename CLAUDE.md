@@ -209,8 +209,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Zeitstrahl-Galerie (Reiter „Feed“) und Entdecken-Karte mit Leaflet + markercluster
   von cdnjs (Reiter „Karte“; im Code weiter `was` und `karte`). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
   wird beim Bauen eingebettet. Entwürfe liegen unter `docs/ui-entwuerfe/` (gitignored).
-- **Themes** (seit 2026-10-02, Davids Wunsch): 5 dunkle Farbsätze, Industriegelände (Standard), Elbe bei
-  Nacht, Neon, Plattenbau, Wald (Davids Auswahl aus 10 Entwürfen; Kellerbar, Nachtviolett, Mitternacht und die
+- **Themes** (seit 2026-10-02, Davids Wunsch): 5 dunkle Farbsätze, Industriegelände (Standard), Blaues
+  Wunder, Neustadt, Platte, Heide (Namen von David; intern elbe, neon, platte, wald) (Davids Auswahl aus 10 Entwürfen; Kellerbar, Nachtviolett, Mitternacht und die
   hellen Papier und Salbei sind raus). Nur Farben über die CSS-Variablen in `:root[data-theme=…]`, dazu `--glow`
   (Schimmer oben), `--tiles` (Kartenfilter), `--shade`, `--dim`. Einziger Zugang: kleiner Paletten-Knopf rechts
   neben dem Titel „DD was geht“ (`themeBlatt`), gemerkt als `ddwg-theme`; ein kleines Skript im Kopf setzt das
