@@ -30,7 +30,7 @@ def test_doppelt_haengt_beide_gruppen_zusammen():
     assert gruppen(
         ev("k1", "kulturkalender", "LEFTOVERS", "Tante JU"),
         ev("t", "tanteju", "Leftovers", "Tante JU"),
-        ev("k2", "kulturkalender", "Leftovers", "Tante JU"),
+        ev("k2", "kulturkalender", "Leftovers Stadion Tour 2026", "Tante JU"),
         ev("c", "cybersax", "Leftovers", "Tante JU"),
     ) == [["c", "k1", "k2", "t"]]
 
@@ -87,3 +87,11 @@ def test_hausseite_reihe_mit_anderem_gast_bleibt_getrennt():
         ev("h", "sektor", "MODUS: Akua", "Sektor Evolution", "23:00"),
         ev("r", "rauze", "MODUS: Anetha", "Sektor Evolution", "21:00"),
     ) == [["h"], ["r"]]
+
+
+def test_jahreszahl_ist_keine_nummer():
+    from ddwg.dedup import _ZAHLEN_RE
+    assert _ZAHLEN_RE.findall("Leftovers Stadion Tour 2026") == []
+    assert _ZAHLEN_RE.findall("Studio*Freispiel #2") == ["2"]
+    assert _ZAHLEN_RE.findall("30 Jahre HGich.T") == ["30"]
+    assert _ZAHLEN_RE.findall("Raum 20255") == ["20255"]

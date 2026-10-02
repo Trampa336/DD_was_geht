@@ -440,7 +440,9 @@ def _festival_groups(events):
 # Woerter des kuerzeren Titels im laengeren und dieselben Zahlen in beiden Titeln.
 # Die Zahlen sind die Gegenprobe fuer "Studio*Freispiel #1" und "#2" um 20 Uhr im
 # Kleinen Haus: gleiche Woerter, aber zwei verschiedene Stuecke.
-_ZAHLEN_RE = re.compile(r"\d+")
+# Jahreszahlen zaehlen nicht: "Leftovers" und "Leftovers Stadion Tour 2026" (KK,
+# Tante JU 25.10.) sind derselbe Termin.
+_ZAHLEN_RE = re.compile(r"(?<!\d)(?!(?:19|20)\d\d(?!\d))\d+")
 
 
 def _self_duplicate(event_a, event_b):
