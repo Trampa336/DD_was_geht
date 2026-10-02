@@ -248,13 +248,15 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
   Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der
   Überschrift), Tageszeit als Umschalter (Immer / Tagsüber / Abends), Deine Richtungen als
-  gleich breite Kacheln (3 je Zeile, Icon über dem Namen, Zahl grau dahinter; Tippen merkt und
-  holt nach vorne), dann zwei Kippschalter „Nur meine Richtungen“ und „Dauerausstellungen“.
+  Toggle-Liste (je Zeile Icon, Name, Zahl grau, Kippschalter; Tippen merkt und holt nach vorne),
+  dann zwei Kippschalter „Nur meine Richtungen“ und „Dauerausstellungen“. Die Umschalter haben
+  eine gleitende Fläche (`--i`), die Schalter gleiten auch: `sanftNeu` zeichnet das Blatt neu und
+  setzt Elemente mit gleichem `data-k` kurz auf den alten Zustand, damit CSS animiert.
   Unten „Zeigen“ mit Zahl. **Zahlen ohne Wort** (seit 2026-10-02): Suche, Filter-Zeile und
   Tageskopf zeigen nur die Zahl, nicht „198 Treffer“/„Termine“. Der Kopf zeigt keinen Stand mehr.
   **Icons je Richtung** (`RT_ICON` in der Vorlage, Linien-Icons aus Lucide, ISC-Lizenz, inline):
   im Filter und auf der Karte. Ein Ort-Punkt der Karte zeigt das Icon seiner häufigsten Richtung
-  im Zeitraum (`hauptRichtung`, feinste zuerst) statt der Zahl, Herz-Orte rot; Sammelpunkte
+  im Zeitraum (`hauptRichtung`, feinste zuerst) statt der Zahl, Herz-Orte dunkel mit rotem Ring; Sammelpunkte
   behalten die Zahl. Neue Richtung = neues Icon in `RT_ICON`, sonst bleibt der Punkt leer.
   **Tageszeit** (seit 2026-09-30): „Tagsüber“ / „Abends“; die Grenze (`TZ_GRENZE`) legt die Seite beim Laden auf die halbe Stunde,
   die die sichtbaren Termine am ehesten hälftig teilt (30.09.: 19:00, 1.067 von 2.011 ab dann).

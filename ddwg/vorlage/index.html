@@ -141,7 +141,7 @@ main { flex: 1; }
 .ol-herz { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--faint); font-size: 18px; line-height: 1; }
 .ol-herz[aria-pressed=true] { background: var(--heart); border-color: var(--heart); color: #fff; }
 .mk { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 2px solid var(--bg); font: 700 11px var(--f); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent); }
-.mk.h { background: var(--heart); color: #fff; border: 3px solid var(--ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--heart) 35%, transparent); }
+.mk.h { background: var(--surface); color: var(--heart); border: 2px solid var(--heart); box-shadow: 0 0 0 4px color-mix(in srgb, var(--heart) 18%, transparent); }  /* Herz-Ort: dunkel, roter Ring (Davids Wunsch 02.10.) */
 .mk.cl { background: var(--surface); color: var(--accent); border: 2px solid var(--accent); font-size: 12px; box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent); }
 .mk.gewaehlt { outline: 3px solid var(--ink); outline-offset: 3px; }
 .ort-karte { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 600; max-height: 60%; overflow: auto; padding: 12px 12px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 12px 40px rgba(0,0,0,.55); animation: hoch .2s ease-out; }
@@ -248,20 +248,29 @@ button.kt { background: var(--surface2); }
 .fi-suche { width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 16px var(--f); }
 .fi-teil { margin-top: 18px; }
 .fi-teil h3 { margin: 0 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); }
-.seg button { padding: 8px 4px; border-radius: 8px; text-align: center; font-weight: 650; font-size: 13.5px; color: var(--soft); }
+/* Slider: eine Fläche gleitet zur gewählten Spalte (--i = 0, 1, 2) */
+.seg { --i: 0; position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); }
+.seg::before { content: ""; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3); border-radius: 8px; background: var(--accent); transform: translateX(calc(var(--i) * (100% + 4px))); transition: transform .32s cubic-bezier(.3, .8, .25, 1); }
+.seg button { position: relative; padding: 8px 4px; border-radius: 8px; text-align: center; font-weight: 650; font-size: 13.5px; color: var(--soft); transition: color .25s; }
 .seg button em { display: block; font-style: normal; font-weight: 400; font-size: 11px; opacity: .75; }
-.seg button[aria-pressed=true] { background: var(--accent); color: var(--on-accent); }
+.seg button[aria-pressed=true] { color: var(--on-accent); }
+/* Toggle-Liste: Zeilen mit Icon, Name, Zahl grau, Kippschalter rechts */
+.tl { border-radius: var(--r-s); background: var(--surface2); overflow: hidden; }
+.tz { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 12px; font-weight: 650; font-size: 14px; color: var(--ink); }
+.tz + .tz { border-top: 1px solid var(--line); }
+.tz svg { color: var(--soft); transition: color .25s; }
+.tz[aria-pressed=true] svg { color: var(--accent); }
+.tz em { font-style: normal; font-weight: 400; color: var(--faint); }
+.tz:disabled { opacity: .45; }
+.tz > span:first-child { grid-column: 1 / 3; }
+.tz i { position: relative; width: 40px; height: 24px; border-radius: 999px; background: var(--line); transition: background .25s; }
+.tz i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--soft); transition: transform .28s cubic-bezier(.3, .8, .25, 1), background .25s; }
+.tz[aria-pressed=true] i { background: var(--accent); }
+.tz[aria-pressed=true] i::after { transform: translateX(16px); background: var(--on-accent); }
+@media (prefers-reduced-motion: reduce) { .seg::before, .seg button, .tz i, .tz i::after, .tz svg { transition: none; } }
 .fi-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .fi-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .fi-link { margin-bottom: 8px; font-size: 13px; font-weight: 650; color: var(--heart); }
-/* Richtungen: gleich breite Kacheln, Icon über dem Namen, Zahl grau dahinter */
-.rt-raster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.rk { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; padding: 10px 6px; border-radius: var(--r-s); background: var(--bg); border: 1px solid var(--line); text-align: center; font-size: 12.5px; font-weight: 650; line-height: 1.2; color: var(--soft); }
-.rk svg { color: var(--accent); }
-.rk em { font-style: normal; font-weight: 400; color: var(--faint); }
-.rk[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.rk[aria-pressed=true] svg, .rk[aria-pressed=true] em { color: var(--on-accent); }
 .schalter em { font-style: normal; font-weight: 400; color: var(--faint); }
 .knopf b { font-weight: 700; opacity: .7; }
 .fi-richtung { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 12px; border-radius: var(--r-s); background: var(--surface2); font-size: 13px; color: var(--soft); }
@@ -961,20 +970,38 @@ function fiRest() {
     if (passt(e, "zeit")) nZeit[istAbend(e) ? "abend" : "tag"]++;
     if (passt(e)) treffer++;
   });
-  const kachel = (t, name) => `<button class="rk" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${rtIcon(t.k, 22)}<span>${esc(name || t.n)} <em>${nRt[t.k] || 0}</em></span></button>`;
-  const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="rt-raster">${liste.join("")}</div></div>`;
-  const seg = (attr, wahl, liste) => `<div class="seg">${liste.map(([k, l, z]) => `<button data-${attr}="${k}" aria-pressed="${wahl === k}">${l}<em>${z}</em></button>`).join("")}</div>`;
-  host.innerHTML = `<div class="fi-teil"><div class="fi-kopf"><h3>Orte</h3><button class="fi-link" data-orteliste>♥ Orte auswählen</button></div>
+  // data-k: fester Schlüssel je Element, damit sanftNeu Zustandswechsel animieren kann
+  const zeile = (t, name) => `<button class="tz" data-k="rt-${esc(t.k)}" data-rt="${esc(t.k)}" aria-pressed="${M.fl.includes(t.k)}">${rtIcon(t.k, 20)}<span>${esc(name || t.n)} <em>${nRt[t.k] || 0}</em></span><i></i></button>`;
+  const gruppe = (kopf, liste) => `<div class="rt-gruppe"><span class="rt-kopf">${esc(kopf)}</span><div class="tl">${liste.join("")}</div></div>`;
+  const seg = (attr, wahl, liste) => `<div class="seg" data-k="seg-${attr}" style="--i:${Math.max(0, liste.findIndex(([k]) => k === wahl))}">${liste.map(([k, l, z]) => `<button data-k="${attr}-${k}" data-${attr}="${k}" aria-pressed="${wahl === k}">${l}<em>${z}</em></button>`).join("")}</div>`;
+  sanftNeu(host, `<div class="fi-teil"><div class="fi-kopf"><h3>Orte</h3><button class="fi-link" data-orteliste>♥ Orte auswählen</button></div>
       ${seg("forte", F.orte, [["alle", "Alle", nOrte.alle], ["meine", "♥ Meine", nOrte.meine], ["neu", "Neue", nOrte.neu]])}</div>
     <div class="fi-teil"><h3>Tageszeit</h3>
       ${seg("fzeit", F.zeit || "immer", [["immer", "Immer", "ganzer Tag"], ["tag", "Tagsüber", `vor ${TZ_GRENZE}`], ["abend", "Abends", `ab ${TZ_GRENZE}`]])}</div>
     <div class="fi-teil"><h3>Deine Richtungen</h3>
-      ${RB.filter(b => b.sub).map(b => gruppe(b.n, [kachel(b, "Alles")].concat(b.sub.map(t => kachel(t))))).join("")}
-      ${gruppe("Weitere", RB.filter(b => !b.sub).map(t => kachel(t)))}</div>
-    <div class="fi-teil">
-      <button class="schalter" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen</span><i></i></button>
-      <button class="schalter" data-fdauer aria-pressed="${dauerAn()}"><span>Dauerausstellungen <em>${nDauer}</em></span><i></i></button></div>
-    <div class="fi-fuss"><button class="knopf primaer" data-fzu>Zeigen <b>${treffer}</b></button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`;
+      ${RB.filter(b => b.sub).map(b => gruppe(b.n, [zeile(b, "Alles")].concat(b.sub.map(t => zeile(t))))).join("")}
+      ${gruppe("Weitere", RB.filter(b => !b.sub).map(t => zeile(t)))}</div>
+    <div class="fi-teil"><div class="tl">
+      <button class="tz" data-k="fnur" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen</span><i></i></button>
+      <button class="tz" data-k="fdauer" data-fdauer aria-pressed="${dauerAn()}"><span>Dauerausstellungen <em>${nDauer}</em></span><i></i></button></div></div>
+    <div class="fi-fuss"><button class="knopf primaer" data-fzu>Zeigen <b>${treffer}</b></button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`);
+}
+/* Blatt neu zeichnen, aber Wechsel flüssig zeigen: Elemente mit gleichem data-k bekommen kurz
+   den alten Zustand (aria-pressed, --i für den Slider) und gleiten dann per CSS in den neuen. */
+function sanftNeu(host, html) {
+  const zust = el => [el.getAttribute("aria-pressed"), el.style.getPropertyValue("--i")];
+  const setze = (el, [p, i]) => { if (p !== null) el.setAttribute("aria-pressed", p); if (i) el.style.setProperty("--i", i); };
+  const alt = {};
+  host.querySelectorAll("[data-k]").forEach(el => alt[el.dataset.k] = zust(el));
+  host.innerHTML = html;
+  const wechsel = [];
+  host.querySelectorAll("[data-k]").forEach(el => {
+    const a = alt[el.dataset.k], n = zust(el);
+    if (a && (a[0] !== n[0] || a[1] !== n[1])) { setze(el, a); wechsel.push([el, n]); }
+  });
+  if (!wechsel.length) return;
+  host.offsetWidth;  // alten Zustand einmal zeichnen lassen, sonst springt es
+  wechsel.forEach(([el, n]) => setze(el, n));
 }
 function filterZeile() {
   const teile = [];
