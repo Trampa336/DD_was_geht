@@ -159,8 +159,8 @@ Herzen gibt es **nur für Orte**, nicht für einzelne Events. **Herzen gehören 
 Seit 2026-09-30 (Davids Entscheidung) kommen Herzen nur aus der **Orte-Liste** („Orte entdecken“,
 Knopf unter der Entdecken-Karte und im Filter-Blatt): Gruppen-Knöpfe `M.gr` („Solider Anfang“ =
 Herz-Orte aus orte.json, dazu je Genre eine Gruppe) plus Feinjustieren je Ort (`M.an`, `M.weg`).
-Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang“ an, Richtung Club
-(nur Sortierung). Alte Browser-Stände (ohne `v: 2`) bekommen einmal „Solider Anfang“, eigene
+Von Hand Gesetztes gilt immer vor den Gruppen. Erster Start: „Solider Anfang“ an, keine Richtung
+(= alles). Alte Browser-Stände (ohne `v: 2`) bekommen einmal „Solider Anfang“, eigene
 Herzen und Abwahlen bleiben. Richtungen setzen keine Herzen mehr.
 `"herz": true` in orte.json ist Davids Liste (steuert seit 2026-09-29 keinen Abruf mehr),
 gepflegt nur per `python -m ddwg herz …`. Den Abgleich-Knopf in der Karte gibt es seit
@@ -248,8 +248,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   ab `WISCH_ZU` = 100 px oder schnellem Wisch zu, sonst federt es zurück. Geschlossen wird über `sheetZu`
   (Zurück-Verlauf). Klebende Fußleisten im Blatt (`.fi-fuss`) brauchen `bottom: -20px` als Ausgleich
   für den Innenabstand der Karte.
-- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ liegen fest und
-  dezent am unteren Rand (kein Schweben). Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
+- **Leisten** (seit 2026-09-30, Davids Wunsch): Die Reiter „Feed“ und „Karte“ liegen fest am
+  unteren Rand, seit 2026-10-02 nur rechts neben der Zeitleiste (die geht bis ganz nach unten),
+  deckend, mit runder Ecke oben links; im Reiter Karte über die volle Breite. Oben liegt die **Leiste** (`#oben`) mit Suchleiste und
   Filter-Knopf rechts daneben, darunter die Zeile mit dem aktiven Filter. Sie liegt nur über der
   Terminspalte, nicht über der Zeitleiste. Beim Runterscrollen gleitet sie weg, beim Hochscrollen
   kommt sie zurück (`obenPruefen`, erst nach `OBEN_SCHWELLE` = 28 px in eine Richtung). Ganz oben
@@ -261,14 +262,19 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   höchstens 100). Sucht in allen Terminen, **unabhängig vom Filter**; jedes Wort muss in
   Titel, Ort oder Beschreibung stehen, laufende Termine erscheinen einmal. Der Begriff gilt
   nur, solange die Seite offen ist (`SU` in der Vorlage). Termin → Zurück zeigt die Liste
-  an derselben Stelle.
+  an derselben Stelle. Seit 2026-10-02 stehen passende Orte (Name enthält alle Wörter, höchstens 5)
+  als eigene Zeilen über den Terminen; Tipp öffnet das Orts-Blatt.
+- **Auch hier** (seit 2026-10-02): Das Termin-Blatt zeigt unten die nächsten 4 Termine am selben Ort
+  (`auchHier`), bei mehr einen Knopf „Alle … Termine“ zum Orts-Blatt.
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):
   Orte als Umschalter (Alle / ♥ Meine / Neue, Link „♥ Orte auswählen“ rechts neben der
   Überschrift), Tageszeit als Umschalter (Immer / Tagsüber / Abends), Deine Richtungen als
-  schlanke Liste (je Zeile ca. 40 px: Icon, Name, Zahl grau, rechts ein dezentes Häkchen; Tippen
-  merkt und holt nach vorne), dann zwei kleine Schalter „Nur meine Richtungen“ und
-  „Dauerausstellungen“. Häkchen für die Mehrfachauswahl, Schalter nur für Einstellungen (übliche
+  schlanke Liste (je Zeile ca. 40 px: Icon, Name, Zahl grau, rechts ein dezentes Häkchen). **Ein Häkchen
+  filtert** (seit 2026-10-02, Davids Wunsch): mit Häkchen nur diese Richtungen, ohne Häkchen alles;
+  der Schalter „Nur meine Richtungen“ ist weg. Gewählte Richtungen sortieren zusätzlich nach vorne.
+  Alte Browser-Stände (`ddwg-meine` ohne `v: 3`) mit Schalter aus starten einmal ohne Richtung,
+  damit nicht plötzlich Termine fehlen. Darunter ein kleiner Schalter „Dauerausstellungen“. Häkchen für die Mehrfachauswahl, Schalter nur für Einstellungen (übliche
   Regel, z. B. Material Design; Davids Wahl 02.10.). Listen haben denselben Rahmen wie die Umschalter. Die Umschalter haben
   eine gleitende Fläche (`--i`), die Schalter gleiten auch: `sanftNeu` zeichnet das Blatt neu und
   setzt Elemente mit gleichem `data-k` kurz auf den alten Zustand, damit CSS animiert.

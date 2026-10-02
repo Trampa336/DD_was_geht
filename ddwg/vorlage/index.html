@@ -41,7 +41,9 @@ main { flex: 1; }
 .kopf h1 b { color: var(--accent); font-weight: inherit; }
 
 /* ---------- Reiter unten ---------- */
-.reiter { order: 99; position: sticky; bottom: 0; z-index: 30; display: flex; margin-top: 14px; padding-bottom: env(safe-area-inset-bottom); background: color-mix(in srgb, var(--bg) 96%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+/* Liegt rechts neben der Zeitleiste (die geht bis zum unteren Rand), deckend, oben links rund */
+.reiter { order: 99; position: sticky; bottom: 0; z-index: 30; display: flex; margin: 14px 0 0 var(--rail); padding-bottom: env(safe-area-inset-bottom); background: var(--bg); border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-top-left-radius: var(--r); transition: margin .15s; }
+#app[data-tab="karte"] .reiter { margin-left: 0; border-left: 0; border-top-left-radius: 0; }
 .reiter button { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; color: var(--faint); font-weight: 650; font-size: 13.5px; transition: color .2s; }
 .reiter button::before { content: ""; position: absolute; top: -1px; left: 50%; width: 28px; height: 2px; margin-left: -14px; border-radius: 0 0 2px 2px; background: var(--accent); opacity: 0; transition: opacity .2s; }
 .reiter button[aria-selected=true] { color: var(--ink); }
@@ -63,8 +65,8 @@ main { flex: 1; }
 
 /* ---------- Zeitstrahl links (nur im Reiter "Was geht") ---------- */
 .rail { position: fixed; top: 0; bottom: 0; width: var(--rail); left: max(0px, calc(50vw - 260px)); z-index: 5; touch-action: none; cursor: ns-resize; user-select: none; -webkit-user-select: none;
-  /* Skala blendet oben und über der Reiter-Leiste unten weich aus */
-  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 110px - env(safe-area-inset-bottom)), transparent calc(100% - 58px - env(safe-area-inset-bottom)));
+  /* Skala blendet oben und am unteren Rand weich aus (die Reiter liegen rechts daneben) */
+  --maske: linear-gradient(to bottom, transparent 0, #000 60px, #000 calc(100% - 50px - env(safe-area-inset-bottom)), transparent calc(100% - 6px - env(safe-area-inset-bottom)));
   -webkit-mask-image: var(--maske); mask-image: var(--maske); }
 #app[data-tab="karte"] .rail { display: none; }
 .rail.greift .tl-datum.aktiv span { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(0,0,0,.45); }
@@ -245,6 +247,10 @@ button.kt { background: var(--surface2); }
 .su-kopf { position: sticky; top: 0; z-index: 1; margin: -56px -18px 0; padding: 10px 56px 10px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .su-kopf .fi-suche { margin-top: 0; }
 .su-info { margin: 12px 0 0; font-size: 12.5px; color: var(--faint); }
+.sh-liste.su-orte .ev { grid-template-columns: 76px 1fr auto; align-items: center; }
+.sh-liste.su-orte .ev-zeit { color: var(--faint); }
+.sh-liste.su-orte svg { color: var(--faint); }
+.auch-alle { margin-top: 10px; }
 .su .sh-liste { margin-top: 6px; }
 .su .sh-liste .ev:first-child { border-top: 0; }
 .fi-suche { width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 16px var(--f); }
@@ -394,7 +400,8 @@ const kurzDatum = iso => { const d = parse(iso); return `${WT[d.getDay()]} ${Str
 const langDatum = iso => { const d = parse(iso); return `${WTL[d.getDay()]}, ${d.getDate()}. ${MON[d.getMonth()]}`; };
 
 /* ---------- Herzen und Richtungen: gehören diesem Browser ----------
-   M.fl = gewählte Richtungen ("club", "musik", "sport" …): nur für Filter und Sortierung.
+   M.fl = gewählte Richtungen ("club", "musik", "sport" …): Häkchen im Filter, zeigen nur diese
+   Termine (seit 02.10.2026, Davids Wunsch; vorher nur Sortierung plus Schalter "Nur meine Richtungen").
    M.gr = aktive Gruppen aus der Orte-Liste: "start" (Solider Anfang = Herz-Orte aus
    orte.json, o.oj) und je Genre (Flavour) eine Gruppe. M.an = selbst gesetzte Herzen,
    M.weg = selbst entfernte Herzen. Von Hand Gesetztes gilt immer vor den Gruppen.
@@ -406,7 +413,6 @@ RB.forEach(b => {
   RT_NAME[b.k] = b.n; RT_TEILE[b.k] = [b].concat(b.sub || []);
   (b.sub || []).forEach(t => { RT_NAME[t.k] = t.n; RT_TEILE[t.k] = [t]; });
 });
-const RT_STANDARD = RT_NAME[D.flavours?.standard] ? D.flavours.standard : (RB[0]?.sub?.[0]?.k || null);
 const ALT_FLAVOUR = { museum: "kunst" };           // Flavour-Schlüssel, die anders heißen als ihre Richtung
 Object.values(D.orte).forEach(o => o.oj = !!o.h);
 // Gruppen für die Orte-Liste: Solider Anfang zuerst, dann die Genres (Familie wird aussortiert)
@@ -416,11 +422,11 @@ const GR = Object.fromEntries(GRUPPEN.map(g => [g.k, g]));
 function meineLaden() {
   try {
     const x = JSON.parse(localStorage.getItem(MEIN_KEY));
-    if (x && typeof x === "object") return { v: 2, start: !!x.start, fl: (x.fl || []).map(k => ALT_FLAVOUR[k] || k).filter(k => RT_NAME[k]),
+    if (x && typeof x === "object") return { v: x.v === 3 ? 3 : 2, start: !!x.start, fl: (x.fl || []).map(k => ALT_FLAVOUR[k] || k).filter(k => RT_NAME[k]),
       gr: x.v === 2 ? (x.gr || []).filter(k => GR[k]) : ["start"],  // Übergang: alte Richtungs-Herzen weg, Solider Anfang an
       an: x.an || [], weg: x.weg || [] };
   } catch (e) {}
-  const m = { v: 2, start: false, fl: [], gr: ["start"], an: [], weg: [] };
+  const m = { v: 3, start: false, fl: [], gr: ["start"], an: [], weg: [] };
   try {  // Übergang: Herzen der alten Seite (ddwg-herzen, relativ zu orte.json) werden eigene Herzen
     const alt = JSON.parse(localStorage.getItem("ddwg-herzen"));
     if (alt) m.an = Object.keys(D.orte).filter(s => (alt.an || []).includes(s) || (D.orte[s].oj && !(alt.weg || []).includes(s)));
@@ -429,8 +435,8 @@ function meineLaden() {
 }
 function meineSpeichern() { try { localStorage.setItem(MEIN_KEY, JSON.stringify(M)); } catch (e) {} }
 let M = meineLaden();
-// Erster Start: Herzen aus "Solider Anfang", Richtung "Club & Party" gilt still. Ändern geht im Filter-Blatt.
-if (!M.start) { M.fl = RT_STANDARD ? [RT_STANDARD] : []; M.gr = ["start"]; M.start = true; meineSpeichern(); }
+// Erster Start: Herzen aus "Solider Anfang", keine Richtung (= alles). Ändern geht im Filter-Blatt.
+if (!M.start) { M.fl = []; M.gr = ["start"]; M.start = true; meineSpeichern(); }
 meineSpeichern();  // alte Stände (ohne v: 2) einmal umschreiben
 function gruppenOrte(keys) {
   const s = new Set();
@@ -454,7 +460,7 @@ function herzUmschalten(slug) {
   toast(neu ? `♥ ${o.n} ist jetzt dein Ort` : `Herz entfernt: ${o.n}`);
   allesNeu();
 }
-// Richtung an/aus: gemerkt, holt passende Termine nach vorne (setzt keine Herzen)
+// Richtung an/aus: gemerkt, zeigt nur noch passende Termine (setzt keine Herzen)
 function richtungUmschalten(k) {
   M.fl = M.fl.includes(k) ? M.fl.filter(x => x !== k) : M.fl.concat(k);
   meineSpeichern(); allesNeu();
@@ -505,7 +511,7 @@ function orteKnopf() {
 
 /* ---------- Filter: gilt in beiden Reitern und wird in diesem Browser gemerkt ---------- */
 const FILTER_KEY = "ddwg-filter";
-const FILTER_LEER = () => ({ orte: "alle", nur: false, dauer: null, zeit: null });
+const FILTER_LEER = () => ({ orte: "alle", dauer: null, zeit: null });
 function filterLaden() {
   try {
     const x = JSON.parse(localStorage.getItem(FILTER_KEY));
@@ -515,9 +521,14 @@ function filterLaden() {
 }
 let F = filterLaden();
 function filterSpeichern() { try { localStorage.setItem(FILTER_KEY, JSON.stringify(F)); } catch (e) {} }
+/* Übergang (02.10.2026): Häkchen filtern jetzt direkt. Wer vorher den Schalter "Nur meine Richtungen"
+   aus hatte, dessen Richtungen dienten nur der Sortierung; damit nicht plötzlich Termine fehlen, starten
+   sie leer (= alles). Mit Schalter an bleibt die Auswahl. */
+if (M.v !== 3) { if (!F.nur) M.fl = []; M.v = 3; meineSpeichern(); }
+delete F.nur; filterSpeichern();
 const klein = s => String(s || "").toLocaleLowerCase("de");
 D.events.forEach((e, i) => { e.i = i; e.s = klein([e.ti, ort(e).n, e.or, e.b].join(" ")); });
-const nurAn = () => F.nur && MEINE_RT.size > 0;
+const rtAn = () => M.fl.length > 0;
 /* Dauerausstellungen: Ausstellungen, die viele Tage laufen (e.l und Richtung Kunst). In "Alle"
    ausgeblendet; der Chip im Filter-Blatt zeigt sie, je Ausstellung einmal (am ersten Tag).
    Ohne eigene Wahl (F.dauer null) sind sie an, sobald die Richtung Ausstellungen oder Kultur gewählt ist. */
@@ -528,7 +539,7 @@ D.events.forEach(e => { if (istDauer(e)) { const k = dauerKey(e); if (!DAUER_ERS
 const dauerAn = () => F.dauer !== null ? F.dauer : M.fl.includes("kunst") || M.fl.includes("kultur");
 // Kommt der Termin in Zeitstrahl und Karte? Laufende Angebote nur als Dauerausstellung und nur einmal.
 const sichtbar = e => !e.l || (dauerAn() && istDauer(e) && e.d === DAUER_ERSTER[dauerKey(e)]);
-const filterTeile = () => (F.orte !== "alle" ? 1 : 0) + (nurAn() ? 1 : 0) + (F.dauer === true ? 1 : 0) + (F.zeit ? 1 : 0);
+const filterTeile = () => (F.orte !== "alle" ? 1 : 0) + (rtAn() ? 1 : 0) + (F.dauer === true ? 1 : 0) + (F.zeit ? 1 : 0);
 /* Tageszeit: Die Grenze zwischen "Tagsüber" und "Abends" liegt auf der halben Stunde, die die
    Termine am ehesten hälftig teilt (Davids Wunsch, 30.09.2026: gemessen damals 18:30). Ohne
    Uhrzeit oder 00:00 (ganztägig) zählt als tagsüber. */
@@ -546,7 +557,7 @@ const istAbend = e => !!e.t && e.t !== "00:00" && e.t >= TZ_GRENZE;
 // ohne = Teil des Filters, der beim Zählen für die Knöpfe im Blatt nicht mitzählt
 function passt(e, ohne) {
   if (ohne !== "orte" && F.orte !== "alle" && !!ort(e).h !== (F.orte === "meine")) return false;
-  if (ohne !== "rt" && nurAn() && !(e.rt || []).some(k => MEINE_RT.has(k))) return false;
+  if (ohne !== "rt" && rtAn() && !(e.rt || []).some(k => MEINE_RT.has(k))) return false;
   if (ohne !== "zeit" && F.zeit && istAbend(e) !== (F.zeit === "abend")) return false;
   return true;
 }
@@ -845,7 +856,19 @@ function zeigeEvent(i) {
     <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}${istHerz(e) ? '<span class="chip h">Dein Ort</span>' : ""}</div>
     ${e.b ? `<p class="sh-text">${esc(e.b)}</p>` : '<p class="sh-text" style="color:var(--faint)">Keine Beschreibung in den Quellen.</p>'}
     <div class="sh-links">${e.url ? `<a class="knopf primaer" href="${esc(e.url)}" target="_blank" rel="noopener">Zur Quelle</a>` : ""}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}</div>
+    ${auchHier(e)}
     <div class="sh-q">Quellen: ${esc(q)}</div></div>`);
+}
+// Nächste Termine am selben Ort (ohne diesen), damit man vom Termin sieht, was dort sonst läuft
+function auchHier(e) {
+  if (!e.o) return "";
+  const ab = [HEUTE, isoVon(new Date())].sort().at(-1), schon = new Set([dauerKey(e)]);
+  const l = D.events.filter(x => x.o === e.o && x.i !== e.i && x.d >= ab
+    && (!x.l || (!schon.has(dauerKey(x)) && schon.add(dauerKey(x))))).sort(nachZeit);
+  if (!l.length) return "";
+  return `<h3 class="abschnitt">Auch hier<em>${l.length}</em></h3>
+    <div class="sh-liste">${l.slice(0, 4).map(x => `<button class="ev" data-ev="${x.i}"><span class="ev-zeit">${esc(kurzDatum(x.d))}<br>${esc(zeitText(x))}</span><span><b class="ev-titel">${esc(x.ti)}</b><span class="ev-meta">${esc(rtName(x))}</span></span></button>`).join("")}</div>
+    ${l.length > 4 ? `<button class="knopf auch-alle" data-ort="${esc(e.o)}">Alle ${l.length} Termine</button>` : ""}`;
 }
 function herzKnopf(slug) {
   const h = !!D.orte[slug]?.h;
@@ -991,7 +1014,11 @@ function sucheTreffer() {
   const treffer = D.events.filter(e => e.d >= ab && woerter.every(w => e.s.includes(w))
     && (!e.l || (!schon.has(dauerKey(e)) && schon.add(dauerKey(e))))).sort(nachZeit);
   const n = treffer.length;
-  host.innerHTML = `<p class="su-info">${n ? `${n}${n > SU_MAX ? ` · die ersten ${SU_MAX}` : ""}` : "Nichts gefunden."}</p>
+  // Orte, deren Name alle Wörter enthält: ein Tipp öffnet das Orts-Blatt mit allen Terminen dort
+  const orteT = Object.entries(D.orte).filter(([s, o]) => woerter.every(w => klein(o.n).includes(w)))
+    .map(([s, o]) => [s, o, D.events.filter(e => e.o === s && e.d >= ab).length]).sort((a, b) => b[2] - a[2]).slice(0, 5);
+  host.innerHTML = `${orteT.length ? `<div class="sh-liste su-orte">${orteT.map(([s, o, z]) => `<button class="ev" data-ort="${esc(s)}"><span class="ev-zeit">Ort</span><span><b class="ev-titel">${o.h ? "♥ " : ""}${esc(o.n)}</b><span class="ev-meta">${z ? `${z} ${z === 1 ? "Termin" : "Termine"}` : "gerade keine Termine"}${o.a ? " · " + esc(o.a) : ""}</span></span>${ICON_R}</button>`).join("")}</div>` : ""}
+    <p class="su-info">${n ? `${n}${n > SU_MAX ? ` · die ersten ${SU_MAX}` : ""}` : orteT.length ? "Keine Termine mit diesem Wort." : "Nichts gefunden."}</p>
     <div class="sh-liste">${treffer.slice(0, SU_MAX).map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}${e.l ? " · läuft mehrere Tage" : ""}</span></span></button>`).join("")}</div>`;
 }
 function fiRest() {
@@ -1017,7 +1044,6 @@ function fiRest() {
       ${RB.filter(b => b.sub).map(b => gruppe(b.n, [zeile(b, "Alles")].concat(b.sub.map(t => zeile(t))))).join("")}
       ${gruppe("Weitere", RB.filter(b => !b.sub).map(t => zeile(t)))}</div>
     <div class="fi-teil"><div class="tl">
-      <button class="tz" data-k="fnur" data-fnur aria-pressed="${nurAn()}"${M.fl.length ? "" : " disabled"}><span>Nur meine Richtungen</span><i></i></button>
       <button class="tz" data-k="fdauer" data-fdauer aria-pressed="${dauerAn()}"><span>Dauerausstellungen <em>${nDauer}</em></span><i></i></button></div></div>
     <div class="fi-fuss"><button class="knopf primaer" data-fzu>Zeigen <b>${treffer}</b></button><button class="knopf" data-freset${filterTeile() ? "" : " disabled"}>Zurücksetzen</button></div>`);
 }
@@ -1041,7 +1067,7 @@ function sanftNeu(host, html) {
 function filterZeile() {
   const teile = [];
   if (F.orte !== "alle") teile.push(F.orte === "meine" ? "♥ Meine Orte" : "Neue Orte");
-  if (nurAn()) teile.push("Nur meine Richtungen");
+  if (rtAn()) teile.push(M.fl.map(k => RT_NAME[k]).join(", "));
   if (F.dauer === true) teile.push("Dauerausstellungen");
   if (F.zeit) teile.push(F.zeit === "abend" ? `Abends ab ${TZ_GRENZE}` : `Tagsüber vor ${TZ_GRENZE}`);
   const z = $("#aktiv-filter"), n = teile.length ? D.events.filter(e => sichtbar(e) && passt(e)).length : 0;
@@ -1087,16 +1113,15 @@ document.addEventListener("click", e => {
   if (ds.rt) {
     // Wer Ausstellungen/Kultur an- oder abwählt, bekommt die Dauerausstellungen wieder automatisch
     if (ds.rt === "kunst" || ds.rt === "kultur") F.dauer = null;
-    richtungUmschalten(ds.rt); if (nurAn()) scrollTo({ top: 0 }); filterSpeichern(); return fiRest();
+    richtungUmschalten(ds.rt); scrollTo({ top: 0 }); filterSpeichern(); return fiRest();
   }
   if ("fdauer" in ds) { F.dauer = !dauerAn(); return filterGeaendert(); }
-  if ("fnur" in ds) { F.nur = !F.nur; return filterGeaendert(); }
   if (ds.fzeit) { F.zeit = ds.fzeit === "immer" || F.zeit === ds.fzeit ? null : ds.fzeit; return filterGeaendert(); }
   if ("orteliste" in ds) return orteListe();
   if (ds.gruppe) { gruppeUmschalten(ds.gruppe); return olRest(); }
   if (ds.herzliste) { herzUmschalten(ds.herzliste); return olRest(); }
   if ("fzu" in ds) return sheetZu();
-  if ("freset" in ds) { F = FILTER_LEER(); return filterGeaendert(); }
+  if ("freset" in ds) { F = FILTER_LEER(); M.fl = []; meineSpeichern(); relevanzVorbereiten(); return filterGeaendert(); }
   if (ds.tab) return setTab(ds.tab);
   if (ds.mehr) { offen.add(ds.mehr); renderTage(); return; }
   if (ds.ev) return zeigeEvent(+ds.ev);
