@@ -329,8 +329,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   WhatsApp/Signal die Vorschau ohne JavaScript und ohne „#“ bauen. Sie leitet auf `#t=<Termin-ID>~<Datum>~<Ort>` weiter;
   die Startseite zeigt dann das Termin-Blatt (`geteiltOeffnen`, der Hash wird danach entfernt). Ändert ein Neubau die
   ID, fehlt die Vorschau-Seite: `404.html` (aus `vorlage/pwa/`) leitet mit Datum + Ort zur Startseite, dort gilt genau
-  ein Termin am Ort an dem Tag, sonst das Orts-Blatt mit Hinweis. Der Service Worker cacht `t/` nicht. Am Handy das
-  Teilen-Menü des Systems (`navigator.share`), am PC wird der Link kopiert. Messenger merken sich Vorschauen eine Weile.
+  ein Termin am Ort an dem Tag, sonst das Orts-Blatt mit Hinweis. Der Service Worker cacht `t/` nicht. Geteilt wird ein
+  einziger Text (Davids Format): Link, Leerzeile, Veranstaltungsname, „Ort - Sa 03.10., 21:00“. Am Handy das Teilen-Menü
+  des Systems (`navigator.share`, nur `text`, sonst ordnen Messenger um), am PC wird der Text kopiert. Messenger merken sich Vorschauen eine Weile.
   Alle Blätter ohne Bild haben die Überschrift oben neben dem ✕ (Klasse `.sh.hoch`).
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):

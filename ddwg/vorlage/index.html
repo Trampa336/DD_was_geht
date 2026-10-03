@@ -1415,9 +1415,12 @@ async function teilen(i) {
   // Link auf die Vorschau-Seite t/<ID>.html (Bild, Titel, Ort in der Link-Vorschau, siehe ausgabe.vorschau_seiten);
   // hinter # Datum und Ort, damit 404.html einen veralteten Link noch zuordnen kann
   const e = D.events[i], url = SEITE + "t/" + e.u + ".html#" + [e.d, e.o || ""].map(encodeURIComponent).join("~");
-  const text = `${e.ti} · ${langDatum(e.d)}${e.t && e.t !== "00:00" ? ", " + e.t : ""} · ${ortName(e)}`;
-  if (navigator.share) { try { await navigator.share({ title: e.ti, text, url }); } catch (x) {} return; }
-  try { await navigator.clipboard.writeText(url); toast("Link kopiert"); } catch (x) { prompt("Link zum Teilen", url); }
+  // Format nach Davids Wunsch (03.10.): Link, Leerzeile, Name, „Ort - Zeit“. Alles als EIN Text, ohne url-Feld,
+  // sonst stellen Messenger Text und Link in eigener Reihenfolge zusammen.
+  const zeit = kurzDatum(e.d) + (e.t && e.t !== "00:00" ? ", " + e.t : "");
+  const text = `${url}\n\n${e.ti}\n${ortName(e)} - ${zeit}`;
+  if (navigator.share) { try { await navigator.share({ text }); } catch (x) {} return; }
+  try { await navigator.clipboard.writeText(text); toast("Kopiert"); } catch (x) { prompt("Zum Teilen", url); }
 }
 function geteiltOeffnen() {
   const m = location.hash.match(/^#t=([^~]*)~([^~]*)~?(.*)$/);
