@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>DD was geht</title>
+<script>
+// GitHub Pages zeigt diese Seite für jede fehlende Adresse. Ein geteilter Termin-Link
+// (t/<ID>.html#<Datum>~<Ort>) fehlt, wenn ein Neubau die Termin-ID geändert hat oder der
+// Termin vorbei ist: dann zur Startseite, die über Datum + Ort weitersucht (geteiltOeffnen).
+(function () {
+  var p = location.pathname, m = p.match(/^(.*\/)t\/([^\/]+)\.html$/);
+  var basis = m ? m[1] : (p.match(/^\/[^\/]+\//) || ["/"])[0];
+  var rest = location.hash.replace(/^#/, "");
+  location.replace(basis + (m ? "#t=" + m[2] + "~" + (rest || "~") : ""));
+})();
+</script></head><body><a href="./">DD was geht</a></body></html>
