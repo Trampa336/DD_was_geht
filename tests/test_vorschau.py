@@ -15,6 +15,7 @@ def test_vorschau_hat_og_angaben_und_leitet_weiter():
     assert '<meta property="og:image" content="https://example.org/bild.jpg">' in h
     assert 'location.replace("../#t=abc123~2026-10-03~ostpol")' in h
     assert 'name="robots" content="noindex"' in h
+    assert "http-equiv" not in h  # Messenger folgen meta refresh und zeigten sonst die Startseite
 
 
 def test_vorschau_bild_ersatz_und_ohne_uhrzeit():

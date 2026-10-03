@@ -186,7 +186,8 @@ def schreiben(conn=None, orte=None, pfad=None, heute=None):
 # WhatsApp, Signal & Co. bauen die Link-Vorschau aus den og:-Angaben der abgerufenen
 # Seite, ohne JavaScript und ohne den Teil hinter "#". Darum bekommt jeder Termin eine
 # winzige eigene Seite t/<ID>.html mit Titel, Datum, Ort und Bild, die sofort auf das
-# Termin-Blatt der Startseite weiterleitet. Ist ein geteilter Termin nach einem Neubau
+# Termin-Blatt der Startseite weiterleitet. Nur per JavaScript, ohne meta refresh: dem folgen die
+# Abrufdienste von WhatsApp & Co. und zeigten sonst die Vorschau der Startseite (gemerkt 03.10.). Ist ein geteilter Termin nach einem Neubau
 # weg, fängt 404.html den Link ab (vorlage/pwa/404.html).
 VORSCHAU_DIR = "t"
 _WT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -214,7 +215,6 @@ def _vorschau_html(ev, ort):
         f'<meta property="og:image" content="{e(bild)}">'
         f'<meta property="og:url" content="{e(SEITE_URL + VORSCHAU_DIR + "/" + ev["u"] + ".html")}">'
         '<meta name="twitter:card" content="summary_large_image">'
-        f'<meta http-equiv="refresh" content="0; url={e(ziel)}">'
         f'<script>location.replace({json.dumps(ziel)})</script>'
         f'</head><body><a href="{e(ziel)}">{e(ev["ti"])}</a></body></html>'
     )
