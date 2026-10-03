@@ -320,8 +320,14 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
   (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Runder Knopf in der Leiste oben
   zwischen Suche und Filter (mit Zahl; seit 2026-10-02 dort, vorher fest oben links über der Zeitleiste) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
-  Im Termin-Blatt stehen „Zur Quelle“ und „Seite des Ortes“ seitdem untereinander als kleine, blasse Links,
-  seit 2026-10-02 direkt unter der Ortsbox; die Pille „Dein Ort“ gibt es dort nicht mehr (das ♥ am Ortsnamen reicht).
+  Im Termin-Blatt hängen „Quelle ↗“ und „Seite vom Ort ↗“ (seit 2026-10-03, Davids Wunsch) als eine schmale Zeile
+  unten an der Ortsbox (gleicher Grund, gleiche Ecken, `.sh-ort.mit-fuss`); die Pille „Dein Ort“ gibt es dort nicht
+  mehr (das ♥ am Ortsnamen reicht).
+- **Teilen** (seit 2026-10-03, Davids Wunsch): Knopf links neben dem Lesezeichen im Termin-Blatt. Verschickt einen
+  Link auf DD was geht mit `#t=<Termin-ID>~<Datum>~<Ort>`; beim Öffnen zeigt die Seite das Termin-Blatt
+  (`geteiltOeffnen`, der Hash wird danach entfernt). Ändert ein Neubau die ID, gilt Datum + Ort: genau ein Termin
+  dort an dem Tag, sonst das Orts-Blatt mit Hinweis. Am Handy das Teilen-Menü des Systems (`navigator.share`), am PC
+  wird der Link kopiert.
   Alle Blätter ohne Bild haben die Überschrift oben neben dem ✕ (Klasse `.sh.hoch`).
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):

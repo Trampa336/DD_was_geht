@@ -385,6 +385,7 @@ button.kt { background: var(--surface2); }
 .sh-titel h2 { flex: 1; min-width: 0; }
 .lz-knopf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 -10px 0 0; border-radius: 50%; color: var(--faint); transition: color .2s; }
 .lz-knopf[aria-pressed=true] { color: var(--ink); }
+.teil-knopf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 -8px 0 0; border-radius: 50%; color: var(--faint); }
 .sh h2 em { font-style: normal; font-weight: 400; font-size: 14px; color: var(--faint); margin-left: 8px; }
 /* Links im Termin-Blatt: untereinander, klein und dezent (Davids Wunsch 02.10.) */
 /* Quelle / Seite vom Ort als schmale Fußzeile der Ortsbox, gleicher Grund und gleiche Ecken (Davids Wunsch 02.10.) */
@@ -467,6 +468,7 @@ const rtIcon = (k, g = 20) => RT_ICON[k] ? `<svg width="${g}" height="${g}" view
 const HAKEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 // Lesezeichen (Lucide „bookmark“), leer und gefüllt; dazu das Bändchen an der Kachel und der Pfeil für Links
 const LZ_PFAD = '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>';
+const TEIL_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>';  // Lucide share-2, ISC
 const LZ_LEER = `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LZ_PFAD}</svg>`;
 const LZ_VOLL = `<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LZ_PFAD}</svg>`;
 const LZ_BAND = '<svg viewBox="0 0 13 19" aria-hidden="true"><path d="M0 0h13v19l-6.5-4.6L0 19z" fill="currentColor"/></svg>';
@@ -1087,7 +1089,7 @@ function zeigeEvent(i) {
   merkeBlatt("ev" + i, () => zeigeEvent(i));
   sheetAuf(`<div class="sh-bild">${medium(e)}</div><div class="sh">
     <div class="sh-datum">${esc(langDatum(e.d))} · ${esc(zeitText(e))}${e.l ? " · läuft mehrere Tage" : ""}</div>
-    <div class="sh-titel"><h2>${esc(e.ti)}</h2>${lzKnopf(e)}</div>
+    <div class="sh-titel"><h2>${esc(e.ti)}</h2><button class="teil-knopf" data-teilen="${i}" aria-label="Teilen">${TEIL_ICON}</button>${lzKnopf(e)}</div>
     <button class="sh-ort${e.url || o.w ? " mit-fuss" : ""}" data-ort="${esc(e.o || "")}"><span><b>${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</b><span>${esc(o.a || e.or || "")}</span></span>${e.o ? ICON_R : ""}</button>
     ${e.url || o.w ? `<div class="sh-links leise">${e.url ? `<a class="link-leise" href="${esc(e.url)}" target="_blank" rel="noopener">Quelle${PFEIL_RAUS}</a>` : ""}${o.w ? `<a class="link-leise" href="${esc(o.w)}" target="_blank" rel="noopener">Seite vom Ort${PFEIL_RAUS}</a>` : ""}</div>` : ""}
     <div class="chips"><span class="chip">${esc(rtName(e))}</span>${e.p ? `<span class="chip">${esc(e.p)}</span>` : ""}</div>
@@ -1378,6 +1380,7 @@ document.addEventListener("click", e => {
   if ("suche" in ds) return sucheBlatt();
   if ("lzliste" in ds) return lesezeichenBlatt();
   if (ds.lz !== undefined) return lzUmschalten(+ds.lz, el);
+  if (ds.teilen !== undefined) return teilen(+ds.teilen);
   if (ds.forte) { F.orte = ds.forte; return filterGeaendert(); }
   if (ds.rt) {
     // Wer Ausstellungen/Kultur an- oder abwählt, bekommt die Dauerausstellungen wieder automatisch
@@ -1402,6 +1405,28 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); else if (S.tab === "karte") setTab("was"); });
 
+/* ---------- Teilen (seit 2026-10-03, Davids Wunsch) ----------
+   Link auf diese Seite mit #t=<Termin-ID>~<Datum>~<Ort>. Beim Öffnen zeigt die Seite das Termin-Blatt. Ändert ein
+   Neubau die ID (z. B. neue Uhrzeit), hilft Datum + Ort: genau ein Termin dort an dem Tag, sonst das Orts-Blatt.
+   Am Handy das Teilen-Menü des Systems, sonst wird der Link kopiert. */
+const SEITE = location.protocol === "file:" ? "https://trampa336.github.io/DD_was_geht/" : location.origin + location.pathname;
+async function teilen(i) {
+  const e = D.events[i], url = SEITE + "#t=" + [e.u, e.d, e.o || ""].map(encodeURIComponent).join("~");
+  const text = `${e.ti} · ${langDatum(e.d)}${e.t && e.t !== "00:00" ? ", " + e.t : ""} · ${ortName(e)}`;
+  if (navigator.share) { try { await navigator.share({ title: e.ti, text, url }); } catch (x) {} return; }
+  try { await navigator.clipboard.writeText(url); toast("Link kopiert"); } catch (x) { prompt("Link zum Teilen", url); }
+}
+function geteiltOeffnen() {
+  const m = location.hash.match(/^#t=([^~]*)~([^~]*)~?(.*)$/);
+  if (!m) return;
+  try { history.replaceState(history.state, "", location.pathname + location.search); } catch (x) {}
+  const [u, d, o] = m.slice(1).map(decodeURIComponent);
+  const e = PER_U.get(u) || (() => { const am = D.events.filter(x => x.d === d && o && x.o === o); return am.length === 1 ? am[0] : null; })();
+  if (e) return zeigeEvent(e.i);
+  if (o && D.orte[o]) { zeigeOrt(o); toast("Termin nicht mehr gefunden"); return; }
+  toast("Termin nicht mehr gefunden");
+}
+
 /* ---------- Start ---------- */
 herzenAnwenden();
 orteKnopf();
@@ -1414,6 +1439,7 @@ tabWischen($("#tab-was"), -1, "w-was", () => setTab("karte"));
 // der Karte selbst (Kopf, Suchleiste, Zeit-Knöpfe, darunter); auf der Karte und in waagerechten Leisten nicht
 tabWischen($("#app"), 1, "w-karte", () => setTab("was"),
   e => S.tab === "karte" && (!!e.target.closest(".rand-zurueck") || !e.target.closest("#karte, .zeile, .ort-karte")));
+geteiltOeffnen();
 </script>
 <script>
 // Service Worker nur online (https/http) registrieren, nicht beim lokalen file://-Oeffnen.
