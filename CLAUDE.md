@@ -115,7 +115,7 @@ Claude startet Läufe selbst (seit 2026-09-29): Der git-Token in
 (Body `{"ref":"main"}`), Status über `…/publish.yml/runs`. Token nie ausgeben.
 
 `ddwg/vorlage/pwa/` enthaelt Manifest, Service Worker (`sw.js`) und Icons.
-`ausgabe.py` kopiert sie beim Bauen neben `index.html`. Lokal per Doppelklick
+`ausgabe.py` kopiert sie beim Bauen neben `index.html`, dazu `404.html` und die Vorschau-Seiten `t/` (siehe „Teilen“). Lokal per Doppelklick
 geoeffnet (`file://`) aendert sich nichts, der Service Worker registriert sich
 nur online (http/https). Der Service Worker cacht die Seite „network-first“:
 online kommen immer frische Termine, offline der zuletzt geladene Stand. Wer
@@ -323,11 +323,14 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Im Termin-Blatt hängen „Quelle ↗“ und „Seite vom Ort ↗“ (seit 2026-10-03, Davids Wunsch) als eine schmale Zeile
   unten an der Ortsbox (gleicher Grund, gleiche Ecken, `.sh-ort.mit-fuss`); die Pille „Dein Ort“ gibt es dort nicht
   mehr (das ♥ am Ortsnamen reicht).
-- **Teilen** (seit 2026-10-03, Davids Wunsch): Knopf links neben dem Lesezeichen im Termin-Blatt. Verschickt einen
-  Link auf DD was geht mit `#t=<Termin-ID>~<Datum>~<Ort>`; beim Öffnen zeigt die Seite das Termin-Blatt
-  (`geteiltOeffnen`, der Hash wird danach entfernt). Ändert ein Neubau die ID, gilt Datum + Ort: genau ein Termin
-  dort an dem Tag, sonst das Orts-Blatt mit Hinweis. Am Handy das Teilen-Menü des Systems (`navigator.share`), am PC
-  wird der Link kopiert.
+- **Teilen** (seit 2026-10-03, Davids Wunsch): Knopf links neben dem Lesezeichen im Termin-Blatt. Verschickt
+  `t/<Termin-ID>.html#<Datum>~<Ort>`: eine winzige Vorschau-Seite je Termin (`ausgabe.vorschau_seiten`, beim Bauen
+  neu, ~1.900 Dateien à ~1 KB) mit og:-Titel, Datum + Ort und Bild (eigenes, sonst Ortsfoto, sonst App-Icon), weil
+  WhatsApp/Signal die Vorschau ohne JavaScript und ohne „#“ bauen. Sie leitet auf `#t=<Termin-ID>~<Datum>~<Ort>` weiter;
+  die Startseite zeigt dann das Termin-Blatt (`geteiltOeffnen`, der Hash wird danach entfernt). Ändert ein Neubau die
+  ID, fehlt die Vorschau-Seite: `404.html` (aus `vorlage/pwa/`) leitet mit Datum + Ort zur Startseite, dort gilt genau
+  ein Termin am Ort an dem Tag, sonst das Orts-Blatt mit Hinweis. Der Service Worker cacht `t/` nicht. Am Handy das
+  Teilen-Menü des Systems (`navigator.share`), am PC wird der Link kopiert. Messenger merken sich Vorschauen eine Weile.
   Alle Blätter ohne Bild haben die Überschrift oben neben dem ✕ (Klasse `.sh.hoch`).
 - **Filter-Knopf** oben rechts öffnet ein Blatt (seit dem Suchknopf ohne Suchfeld, aufgeräumt
   am 2026-10-02 auf Davids Wunsch: gleiche Bedienung für Gleiches, keine grauen Erklärtexte):

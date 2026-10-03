@@ -10,6 +10,7 @@ Oberflaeche baut, aendert die Vorlage - dieses Modul liefert nur die Daten
 (daten()) und fuellt sie samt Schrift ein.
 """
 import base64
+import html as htmllib
 import json
 import os
 import re
@@ -25,8 +26,10 @@ VORLAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vorlage
 PWA_DIR = os.path.join(os.path.dirname(VORLAGE_PATH), "pwa")
 # Manifest, Service Worker und Icons fuer die installierbare/offline-faehige
 # Variante (wirkt nur online ueber https, siehe ddwg/vorlage/index.html).
-PWA_DATEIEN = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-180.png", "favicon-64.png"]
+PWA_DATEIEN = ["manifest.webmanifest", "sw.js", "icon-192.png", "icon-512.png", "icon-180.png", "favicon-64.png", "404.html"]
 FLAVOURS_PATH = os.path.join(ROOT, "orte", "flavours.json")
+# Öffentliche Adresse der Seite (GitHub Pages). Link-Vorschauen brauchen absolute Adressen.
+SEITE_URL = "https://trampa336.github.io/DD_was_geht/"
 
 KATEGORIEN = {
     "musik": "Musik",
@@ -162,7 +165,8 @@ def schreiben(conn=None, orte=None, pfad=None, heute=None):
     if conn is None:
         with db.connect() as conn:
             return schreiben(conn, orte, pfad, heute)
-    payload = json.dumps(daten(conn, orte, heute), ensure_ascii=False, separators=(",", ":"))
+    d = daten(conn, orte, heute)
+    payload = json.dumps(d, ensure_ascii=False, separators=(",", ":"))
     # "</script>" im Text einer Beschreibung darf den Skriptblock nicht beenden.
     payload = payload.replace("</", "<\\/")
     with open(VORLAGE_PATH, encoding="utf-8") as fh:
@@ -174,4 +178,54 @@ def schreiben(conn=None, orte=None, pfad=None, heute=None):
         fh.write(html)
     for datei in PWA_DATEIEN:
         shutil.copyfile(os.path.join(PWA_DIR, datei), os.path.join(os.path.dirname(pfad), datei))
+    vorschau_seiten(d, os.path.dirname(pfad))
     return pfad
+
+
+# --- Vorschau-Seiten zum Teilen (seit 2026-10-03, Davids Wunsch) -------------------
+# WhatsApp, Signal & Co. bauen die Link-Vorschau aus den og:-Angaben der abgerufenen
+# Seite, ohne JavaScript und ohne den Teil hinter "#". Darum bekommt jeder Termin eine
+# winzige eigene Seite t/<ID>.html mit Titel, Datum, Ort und Bild, die sofort auf das
+# Termin-Blatt der Startseite weiterleitet. Ist ein geteilter Termin nach einem Neubau
+# weg, fängt 404.html den Link ab (vorlage/pwa/404.html).
+VORSCHAU_DIR = "t"
+_WT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+_MON = ["Jan", "Feb", "März", "Apr", "Mai", "Juni", "Juli", "Aug", "Sept", "Okt", "Nov", "Dez"]
+
+
+def _vorschau_html(ev, ort):
+    e = lambda x: htmllib.escape(x or "", quote=True)
+    tag = date.fromisoformat(ev["d"])
+    wann = f"{_WT[tag.weekday()]} {tag.day}. {_MON[tag.month - 1]}"
+    if ev.get("t") and ev["t"] != "00:00":
+        wann += ", " + ev["t"]
+    ortname = (ort or {}).get("n") or ev.get("or") or ""
+    beschreibung = " · ".join(x for x in (wann, ortname) if x)
+    bild = ev.get("img") or (ort or {}).get("c") or SEITE_URL + "icon-512.png"
+    ziel = "../#t=" + "~".join([ev["u"], ev["d"], ev.get("o") or ""])
+    return (
+        '<!doctype html><html lang="de"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<meta name="robots" content="noindex">'
+        f'<title>{e(ev["ti"])} · DD was geht</title>'
+        '<meta property="og:type" content="website"><meta property="og:site_name" content="DD was geht">'
+        f'<meta property="og:title" content="{e(ev["ti"])}">'
+        f'<meta property="og:description" content="{e(beschreibung)}">'
+        f'<meta property="og:image" content="{e(bild)}">'
+        f'<meta property="og:url" content="{e(SEITE_URL + VORSCHAU_DIR + "/" + ev["u"] + ".html")}">'
+        '<meta name="twitter:card" content="summary_large_image">'
+        f'<meta http-equiv="refresh" content="0; url={e(ziel)}">'
+        f'<script>location.replace({json.dumps(ziel)})</script>'
+        f'</head><body><a href="{e(ziel)}">{e(ev["ti"])}</a></body></html>'
+    )
+
+
+def vorschau_seiten(d, ordner):
+    """Schreibt ordner/t/<ID>.html je Termin, alte Seiten fallen vorher weg."""
+    ziel = os.path.join(ordner, VORSCHAU_DIR)
+    shutil.rmtree(ziel, ignore_errors=True)
+    os.makedirs(ziel, exist_ok=True)
+    for ev in d["events"]:
+        with open(os.path.join(ziel, ev["u"] + ".html"), "w", encoding="utf-8") as fh:
+            fh.write(_vorschau_html(ev, d["orte"].get(ev.get("o"))))
+    return len(d["events"])

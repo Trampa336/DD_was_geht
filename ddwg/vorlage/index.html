@@ -1406,12 +1406,15 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); else if (S.tab === "karte") setTab("was"); });
 
 /* ---------- Teilen (seit 2026-10-03, Davids Wunsch) ----------
-   Link auf diese Seite mit #t=<Termin-ID>~<Datum>~<Ort>. Beim Öffnen zeigt die Seite das Termin-Blatt. Ändert ein
+   Geteilt wird t/<Termin-ID>.html#<Datum>~<Ort> (seit 03.10. mit Bild in der Link-Vorschau); diese Seite leitet auf
+   #t=<Termin-ID>~<Datum>~<Ort> weiter. Beim Öffnen zeigt die Seite das Termin-Blatt. Ändert ein
    Neubau die ID (z. B. neue Uhrzeit), hilft Datum + Ort: genau ein Termin dort an dem Tag, sonst das Orts-Blatt.
    Am Handy das Teilen-Menü des Systems, sonst wird der Link kopiert. */
 const SEITE = location.protocol === "file:" ? "https://trampa336.github.io/DD_was_geht/" : location.origin + location.pathname;
 async function teilen(i) {
-  const e = D.events[i], url = SEITE + "#t=" + [e.u, e.d, e.o || ""].map(encodeURIComponent).join("~");
+  // Link auf die Vorschau-Seite t/<ID>.html (Bild, Titel, Ort in der Link-Vorschau, siehe ausgabe.vorschau_seiten);
+  // hinter # Datum und Ort, damit 404.html einen veralteten Link noch zuordnen kann
+  const e = D.events[i], url = SEITE + "t/" + e.u + ".html#" + [e.d, e.o || ""].map(encodeURIComponent).join("~");
   const text = `${e.ti} · ${langDatum(e.d)}${e.t && e.t !== "00:00" ? ", " + e.t : ""} · ${ortName(e)}`;
   if (navigator.share) { try { await navigator.share({ title: e.ti, text, url }); } catch (x) {} return; }
   try { await navigator.clipboard.writeText(url); toast("Link kopiert"); } catch (x) { prompt("Link zum Teilen", url); }
