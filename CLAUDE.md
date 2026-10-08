@@ -9,15 +9,21 @@ gemeinsame Lesezeichen, siehe „Gemeinsame Lesezeichen“). Seit 2026-09-25 wir
 noch in Claude Cowork bearbeitet (v3). Der alte Stand liegt als Tag `v2-final` in git.
 
 ## Befehle
-Der Projektordner liegt auf dem Proxmox-Server und ist eingebunden. Symlinks funktionieren
-dort nicht, deshalb liegt die Python-Umgebung mit `--copies` unter `venv/`. Keine `.venv`
-anlegen: Die alte ist an einem kaputten Symlink gescheitert und ließ sich nur direkt auf
-dem Server löschen.
-In Cowork das Löschen im Projektordner freigeben lassen, bevor gebaut oder committet
-wird: Sonst bleiben `cache/events.db-journal` und `.git/*.lock` liegen, und der nächste
-`build` scheitert mit „disk I/O error“.
+**GitHub ist die Quelle der Wahrheit** (`Trampa336/DD_was_geht`). Seit 2026-10-08 ist der lokale
+Arbeitsordner ein Klon davon auf Davids Rechner: `/home/leo/Claude/dd-was-geht` (vorher ein
+Proxmox-Share, der in Cowork zuletzt leer erschien; dort liegt nichts mehr, das gebraucht wird).
+Neu aufsetzen = `git clone https://github.com/Trampa336/DD_was_geht dd-was-geht`. `cache/events.db`
+fehlt nach dem Klonen; `python -m ddwg scrape` baut sie neu (oder für Oberflächen-Checks die Live-Seite
+vom Branch `gh-pages` als Datenquelle nehmen).
+In Cowork das Löschen im Projektordner freigeben lassen, bevor geklont, gebaut oder committet
+wird: Sonst bleiben `.git/*.lock` und `cache/events.db-journal` liegen, und git bzw. `build`
+scheitern („File exists“ / „disk I/O error“).
+**Pushen:** Der Klon hat noch keinen Zugang zum Pushen (der Token lag in der Proxmox-Kopie unter
+`.git/dd-was-geht-credentials`). Bis David einen neuen Fine-grained Token hinterlegt (Rechte: Contents
+und Actions „Read and write“, gespeichert mit `git config credential.helper "store --file=.git/dd-was-geht-credentials"`),
+committet und pusht Claude aus einer Cloud-Kopie des Repos, danach im Arbeitsordner `git pull`.
 ```
-python3 -m venv --copies venv    # einmalig, danach venv/bin/python statt python
+python3 -m venv venv             # einmalig, danach venv/bin/python statt python
 venv/bin/pip install -r requirements.txt
 python -m ddwg scrape            # alle Quellen holen, Events bauen, Ausgabe schreiben (~5–10 min)
 python -m ddwg scrape --quelle rauze sektor --ohne-details   # nur ausgewählte Quellen
@@ -29,8 +35,8 @@ python -m pytest tests           # Kerntests ohne Netz
 ```
 
 **Vorschau am Handy vor dem Push** (bei Änderungen an der Oberfläche, seit 2026-09-30):
-nach `python -m ddwg build` auf dem Proxmox-Rechner `cd ausgabe && python3 -m http.server 8000`
-starten und am Handy im selben WLAN `http://<IP des Proxmox-Rechners>:8000` öffnen. So lassen sich
+nach `python -m ddwg build` auf Davids Rechner `cd ausgabe && python3 -m http.server 8000`
+starten und am Handy im selben WLAN `http://<IP des Rechners>:8000` öffnen. So lassen sich
 Wischen, Vibration und Zurück-Knopf am echten Gerät prüfen. Der Service Worker (offline) läuft dort
 nicht, er braucht https. Claude kann den Server nicht selbst dauerhaft starten (Cowork-Befehle enden
 nach höchstens 3 min, und das Handy erreicht Claudes Shell nicht), sagt aber vor dem Push Bescheid,
@@ -114,6 +120,7 @@ Claude startet Läufe selbst (seit 2026-09-29): Der git-Token in
 `.git/dd-was-geht-credentials` hat „Actions: Read and write“. Starten per
 `git credential fill` + `POST /repos/Trampa336/DD_was_geht/actions/workflows/publish.yml/dispatches`
 (Body `{"ref":"main"}`), Status über `…/publish.yml/runs`. Token nie ausgeben.
+Seit dem Umzug (2026-10-08) fehlt dieser Token im neuen Arbeitsordner, siehe „Befehle“ → Pushen.
 
 `ddwg/vorlage/pwa/` enthaelt Manifest, Service Worker (`sw.js`) und Icons.
 `ausgabe.py` kopiert sie beim Bauen neben `index.html`, dazu `404.html` und die Vorschau-Seiten `t/` (siehe „Teilen“). Lokal per Doppelklick
