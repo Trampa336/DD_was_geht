@@ -385,6 +385,10 @@ button.kt { background: var(--surface2); }
 .sh-titel h2 { flex: 1; min-width: 0; }
 .lz-knopf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 -10px 0 0; border-radius: 50%; color: var(--faint); transition: color .2s; }
 .lz-knopf[aria-pressed=true] { color: var(--ink); }
+/* Gemeinsame Lesezeichen (seit 2026-10-08): kleine Zahl am Knopf, wie viele den Termin gemerkt haben */
+.lz-knopf { position: relative; }
+.lz-knopf i { position: absolute; top: 2px; right: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px; background: var(--line); color: var(--ink); font: 700 9.5px/15px var(--f); font-style: normal; text-align: center; }
+.lz-knopf[aria-pressed=true] i { background: var(--ink); color: var(--bg); }
 .teil-knopf { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 -8px 0 0; border-radius: 50%; color: var(--faint); }
 .sh h2 em { font-style: normal; font-weight: 400; font-size: 14px; color: var(--faint); margin-left: 8px; }
 /* Links im Termin-Blatt: untereinander, klein und dezent (Davids Wunsch 02.10.) */
@@ -689,7 +693,9 @@ function lzSpeichern() { try { localStorage.setItem(LZ_KEY, JSON.stringify({ v: 
 lzSpeichern();
 const lzHat = e => !!LZ[e.u];
 const lzListe = () => Object.keys(LZ).map(u => PER_U.get(u)).filter(Boolean).sort(nachZeit);
-const lzKnopf = e => `<button class="lz-knopf" data-lz="${e.i}" aria-pressed="${lzHat(e)}" aria-label="${lzHat(e) ? "Lesezeichen entfernen" : "Merken"}">${lzHat(e) ? LZ_VOLL : LZ_LEER}</button>`;
+// Zahl am Knopf nur, wenn auch andere den Termin gemerkt haben; sie zählt das eigene Lesezeichen mit
+const lzKnopf = e => { const n = andere(e) ? merkZahl(e) : 0;
+  return `<button class="lz-knopf" data-lz="${e.i}" aria-pressed="${lzHat(e)}" aria-label="${lzHat(e) ? "Lesezeichen entfernen" : "Merken"}${n ? `, ${n} gemerkt` : ""}">${lzHat(e) ? LZ_VOLL : LZ_LEER}${n ? `<i>${n}</i>` : ""}</button>`; };
 function lzOben() {
   const n = lzListe().length, k = $(".lz-oben"), i = k.querySelector("i");
   k.dataset.an = n ? "1" : "0"; i.hidden = !n; i.textContent = n;
@@ -697,7 +703,7 @@ function lzOben() {
 function lzUmschalten(idx, knopf) {
   const e = D.events[idx];
   if (lzHat(e)) delete LZ[e.u]; else LZ[e.u] = lzEintrag(e);
-  lzSpeichern();
+  lzSpeichern(); fzAbgleich();
   if (knopf) knopf.outerHTML = lzKnopf(e);
   toast(lzHat(e) ? "Gemerkt" : "Lesezeichen entfernt");
   e.rel = relevanz(e); renderTage(); lzOben();
@@ -709,6 +715,53 @@ function lesezeichenBlatt() {
     ${l.length ? `<div class="sh-liste">${l.map(e => `<button class="ev" data-ev="${e.i}"><span class="ev-zeit">${esc(kurzDatum(e.d))}<br>${esc(zeitText(e))}</span><span><b class="ev-titel">${esc(e.ti)}</b><span class="ev-meta">${istHerz(e) ? "♥ " : ""}${esc(ortName(e))}</span></span></button>`).join("")}</div>` : '<p class="su-info">Noch nichts gemerkt.</p>'}</div>`);
 }
 
+/* ---------- Gemeinsame Lesezeichen (seit 2026-10-08, Davids Wunsch): wie viele andere einen Termin gemerkt haben ----------
+   Ein kleiner Cloudflare-Dienst (dienst/lesezeichen.js) zählt je Termin. Leere Adresse = aus. Das eigene Lesezeichen
+   bleibt im Browser; der Dienst bekommt nur Datum|Ort|Titel und eine zufällige Geräte-Kennung, keine Namen.
+   Fehler bleiben still. Beim Start sortieren die Zahlen vom letzten Besuch, frische kommen nach (ohne Springen). */
+const GEMEINSAM = "";
+const FZ_KEY = "ddwg-freunde", FZ_GESENDET = "ddwg-freunde-gesendet", GERAET_KEY = "ddwg-geraet";
+const fzK = (d, o, ti) => lzSchluessel(d, o, ti).slice(0, 200);
+const lzK = e => fzK(e.d, e.o || e.or, e.ti);
+let FZ = (() => { try { return JSON.parse(localStorage.getItem(FZ_KEY))?.z || {}; } catch (e) { return {}; } })();
+const andere = e => (GEMEINSAM && FZ[lzK(e)]) || 0;   // andere Geräte, ohne dieses
+const merkZahl = e => andere(e) + (lzHat(e) ? 1 : 0);
+function geraet() {
+  let g = null;
+  try { g = localStorage.getItem(GERAET_KEY); } catch (e) {}
+  if (!/^[A-Za-z0-9-]{16,64}$/.test(g || "")) {
+    g = (crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9-]/g, "").slice(0, 64);
+    try { localStorage.setItem(GERAET_KEY, g); } catch (e) {}
+  }
+  return g;
+}
+// Schickt die ganze eigene Liste (ersetzt sie beim Dienst). So holt ein späterer Abgleich nach, was offline verloren ging.
+// text/plain ohne eigene Kopfzeilen, damit der Browser keine Vorab-Anfrage braucht.
+function fzAbgleich() {
+  if (!GEMEINSAM) return;
+  const l = Object.values(LZ).filter(x => x.d >= HEUTE).map(x => ({ d: x.d, k: fzK(x.d, x.o, x.ti) }));
+  const roh = JSON.stringify({ g: geraet(), l });
+  let alt = null; try { alt = localStorage.getItem(FZ_GESENDET); } catch (e) {}
+  if (roh === alt) return;
+  fetch(GEMEINSAM + "/abgleich", { method: "POST", body: roh, keepalive: true })
+    .then(r => { if (r.ok) try { localStorage.setItem(FZ_GESENDET, roh); } catch (e) {} }).catch(() => {});
+}
+function fzLaden() {
+  if (!GEMEINSAM) return;
+  fetch(GEMEINSAM + "/zahlen?g=" + encodeURIComponent(geraet()), { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null).then(z => {
+      if (!z || typeof z !== "object" || Array.isArray(z)) return;
+      const gleich = JSON.stringify(z) === JSON.stringify(FZ);
+      FZ = z;
+      try { localStorage.setItem(FZ_KEY, JSON.stringify({ z })); } catch (e) {}
+      if (gleich) return;
+      D.events.forEach(e => e.rel = relevanz(e));
+      const k = $("#sheet .lz-knopf"); if (k) k.outerHTML = lzKnopf(D.events[+k.dataset.lz]);
+      // Feed nur neu zeichnen, wenn nichts verspringen kann (ganz oben, kein Blatt offen); sonst beim nächsten Filter
+      if (window.scrollY < 40 && $("#sheet").hidden && S.tab === "was") renderTage();
+    }).catch(() => {});
+}
+
 /* ---------- Relevanz: Wichtiges steht oben, weniger Passendes rutscht nach unten ----------
    Deine Orte zuerst, dann deine Richtungen. Danach zählt, ob es Bild und Beschreibung gibt,
    ob mehrere Kalender den Termin nennen und ob er abends ist. Was in keine Richtung passt
@@ -718,6 +771,7 @@ function relevanz(e) {
   let p = 0;
   if (lzHat(e)) p += 200;  // Gemerktes steht im Tag ganz vorne
   if (ort(e).h) p += 100;
+  p += Math.min(andere(e), 3) * 10;  // von anderen gemerkt: kleiner Bonus, höchstens +30
   if ((e.rt || []).some(k => MEINE_RT.has(k))) p += 40;
   if (e.img) p += 10;
   if (e.b) p += 5;
@@ -1439,6 +1493,7 @@ orteKnopf();
 renderTage();
 filterZeile();
 lzOben();
+fzAbgleich(); fzLaden();
 wischenEinrichten();
 tabWischen($("#tab-was"), -1, "w-was", () => setTab("karte"));
 // Karte: zurück per Wisch nach rechts vom linken Rand (Streifen, den Leaflet nicht sieht) oder überall außerhalb

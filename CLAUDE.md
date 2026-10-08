@@ -4,7 +4,8 @@ Persönlicher Dresdner Veranstaltungskalender von David. Scraper holen Termine a
 Sammelkalendern und direkt von den Seiten der Orte. Daraus entsteht **eine statische
 HTML-Datei** (`ausgabe/index.html`) plus drei kleine PWA-Begleitdateien (Manifest,
 Service Worker, Icons) im selben Ordner, siehe Abschnitt „Website (GitHub Pages)“.
-Es gibt keinen eigenen Server und kein Docker. Seit 2026-09-25 wird das Projekt nur
+Es gibt keinen eigenen Server und kein Docker (einzige Ausnahme: der kleine Cloudflare-Dienst für
+gemeinsame Lesezeichen, siehe „Gemeinsame Lesezeichen“). Seit 2026-09-25 wird das Projekt nur
 noch in Claude Cowork bearbeitet (v3). Der alte Stand liegt als Tag `v2-final` in git.
 
 ## Befehle
@@ -247,7 +248,8 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   (`.herz-b`), kein Etikett, kein roter Rahmen (Davids Wunsch).
 - **Grundprinzip (Davids Entscheidung): sortieren statt verstecken.** Je Tag werden die
   8 passendsten Termine Kacheln, der Rest kompakte Zeilen darunter. Relevanz
-  (`relevanz()` in der Vorlage): Lesezeichen +200, Herz-Ort +100, eigene Richtung +40, Bild +10,
+  (`relevanz()` in der Vorlage): Lesezeichen +200, Herz-Ort +100, eigene Richtung +40,
+  von anderen gemerkt +10 je Gerät (höchstens +30, seit 2026-10-08), Bild +10,
   Beschreibung +5, mehrere Quellen +8, ab 18 Uhr +5, keine Richtung −10, Umland −10.
 - **Richtungen** verschmelzen Flavours und Kategorien (`ddwg/richtungen.py`, Tests in
   `tests/test_richtungen.py`): Musik (Club, Rock & Metal, Punk/Indie & Bars, Jazz, Klassik;
@@ -323,6 +325,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Im Termin-Blatt hängen „Quelle ↗“ und „Seite vom Ort ↗“ (seit 2026-10-03, Davids Wunsch) als eine schmale Zeile
   unten an der Ortsbox (gleicher Grund, gleiche Ecken, `.sh-ort.mit-fuss`); die Pille „Dein Ort“ gibt es dort nicht
   mehr (das ♥ am Ortsnamen reicht).
+- **Gemeinsame Lesezeichen** (seit 2026-10-08, Davids Wunsch): Hat auch jemand anderes einen Termin gemerkt,
+  zeigt der Lesezeichen-Knopf im Termin-Blatt eine kleine Zahl (alle Geräte, das eigene mitgezählt; ohne andere keine
+  Zahl). Nur eine Zahl, keine Namen, offen für alle ohne Einladung (Davids Wahl). Details unter „Gemeinsame Lesezeichen“.
 - **Teilen** (seit 2026-10-03, Davids Wunsch): Knopf links neben dem Lesezeichen im Termin-Blatt. Verschickt
   `t/<Termin-ID>.html#<Datum>~<Ort>`: eine winzige Vorschau-Seite je Termin (`ausgabe.vorschau_seiten`, beim Bauen
   neu, ~1.900 Dateien à ~1 KB) mit og:-Titel, Datum + Ort und Bild (eigenes, sonst Ortsfoto, sonst App-Icon), weil
@@ -361,6 +366,32 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   (`l` und Richtung Kunst) zeigt der Chip „Dauerausstellungen zeigen“ im Filter-Blatt, je
   Ausstellung einmal am ersten Tag. Ohne eigene Wahl (`F.dauer` null) ist er an, sobald die
   Richtung Ausstellungen oder Kultur gewählt ist; Tippen auf diese Richtung setzt die Wahl zurück.
+
+## Gemeinsame Lesezeichen (Cloudflare-Dienst, seit 2026-10-08)
+Eine statische Seite kann nichts zwischen Geräten teilen, darum gibt es einen winzigen Dienst:
+`dienst/lesezeichen.js`, ein Cloudflare Worker mit D1-Datenbank (Binding `DB`, kostenlos). D1 statt KV, weil KV
+bei fast gleichzeitigen Klicks Änderungen verlieren kann. Die Tabelle `merk` legt der Dienst selbst an.
+- **Seite → Dienst:** Konstante `GEMEINSAM` in der Vorlage (Adresse des Workers, leer = aus, dann sendet und lädt die
+  Seite nichts). Jedes Gerät hat eine zufällige Kennung (`ddwg-geraet`). Bei jedem Merken/Entfernen und beim Start schickt
+  `fzAbgleich` die **ganze** eigene Liste (`POST /abgleich`, text/plain, ersetzt die alte; nur wenn sie sich seit dem
+  letzten Erfolg geändert hat, `ddwg-freunde-gesendet`). So holt der nächste Start nach, was offline verloren ging.
+- **Dienst → Seite:** `fzLaden` holt `GET /zahlen?g=<gerät>` (heute und später, ohne das eigene Gerät) und merkt sie
+  (`ddwg-freunde`). Beim Start sortiert die Seite mit den Zahlen vom letzten Besuch; frische zeichnen den Feed nur neu, wenn
+  er ganz oben steht und kein Blatt offen ist (sonst springt die Liste).
+- **Schlüssel** wie beim Rückfall der Lesezeichen: `Datum|Ort|Titel klein`, auf 200 Zeichen gekürzt (`fzK`). Ändert die
+  Quelle den Titel, beginnt die Zählung neu. Vergangenes löscht der Dienst bei jedem Abgleich.
+- **Grenzen:** höchstens 100 Lesezeichen je Gerät, höchstens 10 Geräte je Netz (IP, nur als Hash) und Tag. Das bremst
+  Hochtreiben, schützt aber nicht vor Absicht: Wer die Adresse kennt, kann Zahlen fälschen. Für den Freundeskreis reicht das.
+- **Fehler bleiben still:** Ist der Dienst weg, läuft die Seite wie vorher, nur ohne Zahlen. Der Service Worker cacht
+  fremde Adressen nicht.
+- **Tests:** `tests/dienst_lesezeichen.test.mjs` (D1 mit node:sqlite nachgebaut), aufgerufen über
+  `tests/test_dienst_lesezeichen.py`; übersprungen ohne Node 22.5+.
+- **Einrichtung (einmalig, David):** dash.cloudflare.com → Konto anlegen. „Storage & Databases“ → D1 → Datenbank
+  `ddwg-lesezeichen` anlegen. „Workers & Pages“ → Worker `ddwg-lesezeichen` aus „Hello World“ anlegen, „Edit code“,
+  Inhalt von `dienst/lesezeichen.js` einfügen, Deploy. Im Worker unter „Bindings“ eine D1-Datenbank mit Namen `DB`
+  verbinden, Deploy. Die Adresse (`https://ddwg-lesezeichen.<konto>.workers.dev`) in `GEMEINSAM` eintragen und pushen.
+  Ändert sich `dienst/lesezeichen.js`, muss der Code dort von Hand neu eingefügt werden (kein Workflow dafür).
+- **Stand 2026-10-08:** Code und Tests fertig, `GEMEINSAM` noch leer (Dienst noch nicht eingerichtet).
 
 ## Offene Ideen
 - Führungen kommen seit 2026-09-29 gar nicht mehr auf die Seite (Davids Entscheidung):
