@@ -241,6 +241,13 @@ img.medium.da { opacity: 1; }
 img.medium.yt { clip-path: inset(12.5% 0); transform: scale(1.334); }  /* 4:3 mit Balken: Balken abschneiden, Rest füllt die Fläche (seitlich schneidet die Kachel ab) */
 .sh-bild .medium { aspect-ratio: 16/10; }
 .sh-bild .poster { font-size: 34px; }
+/* Cover im Orts-Blatt antippen = ganzes Bild ohne Zuschnitt auf dunklem Grund (seit 2026-10-09, Davids Wunsch) */
+.cover-knopf { display: block; width: 100%; cursor: zoom-in; }
+.voll { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); background: rgba(0,0,0,.94); cursor: zoom-out; animation: vollEin .2s ease-out; }
+.voll[hidden] { display: none; }
+.voll img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.voll-x { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 10px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.14); color: #fff; }
+@keyframes vollEin { from { opacity: 0; } }
 .sh { padding: 14px 18px 0; }
 .sh-datum { font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
 .sh h2 { margin: 6px 0 8px; font-size: 25px; font-weight: 700; line-height: 1.1; }
@@ -439,6 +446,7 @@ button.kt { background: var(--surface2); }
     <div id="sheet-inhalt"></div>
   </div>
 </div>
+<button id="voll" class="voll" data-vollzu aria-label="Foto schließen" hidden><img id="voll-bild" alt=""><span class="voll-x" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span></button>
 <div id="toast" role="status"></div>
 
 <script>const DATEN = /*__DATEN__*/null;</script>
@@ -1124,13 +1132,15 @@ function hinweis(text) {
 addEventListener("popstate", ev => {
   unterwegs = false;
   const tiefe = Math.max(0, Math.min(ev.state?.dd ?? 0, ebenen.length));
+  let nurFoto = false, sonst = false;  // schließt Zurück nur das Foto, bleibt das Blatt darunter unverändert (kein Neuzeichnen)
   while (ebenen.length > tiefe) {
     const e = ebenen.pop();
     if (e.art === "okarte") ortKarteZuIntern();
     if (e.art === "tab") setTabIntern("was");
+    if (e.art === "voll") { vollZuIntern(); nurFoto = true; } else sonst = true;
   }
   const oben = ebenen.at(-1);
-  if (oben?.art === "blatt") { imZurueck = true; try { oben.zeige(); } finally { imZurueck = false; } }
+  if (oben?.art === "blatt") { if (!(nurFoto && !sonst)) { imZurueck = true; try { oben.zeige(); } finally { imZurueck = false; } } }
   else if (!$("#sheet").hidden) sheetZuIntern();
   const f = dannFn; dannFn = null; if (f) f();
   if (waechter && !ev.state?.w && !(ev.state?.dd > 0)) {  // unter den Wächter: will die Seite verlassen
@@ -1176,7 +1186,9 @@ function zeigeOrt(slug) {
   const o = D.orte[slug]; if (!o) return;
   const evs = D.events.filter(e => e.o === slug).sort(nachZeit);
   merkeBlatt("ort:" + slug, () => zeigeOrt(slug));
-  sheetAuf(`<div class="sh hoch" style="padding-top:0"><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
+  // Mit Cover: Bild ganz oben wie im Termin-Blatt, Überschrift darunter; ohne Cover bleibt die Überschrift oben neben dem ✕
+  const cover = o.c ? `<div class="sh-bild"><button class="cover-knopf" data-cover="${esc(slug)}" aria-label="Foto in voller Größe">${coverBild(o)}</button></div>` : "";
+  sheetAuf(`${cover}<div class="${o.c ? "sh" : "sh hoch"}"${o.c ? "" : ' style="padding-top:0"'}><div class="sh-datum">${o.h ? "♥ Dein Ort" : esc(o.art || "Ort")}</div>
     <h2>${esc(o.n)}</h2>${o.a ? `<div class="sh-text">${esc(o.a)}</div>` : ""}
     <div class="sh-links">${herzKnopf(slug)}${o.w ? `<a class="knopf" href="${esc(o.w)}" target="_blank" rel="noopener">Seite des Ortes</a>` : ""}${o.lat ? `<button class="knopf" data-aufkarte="${esc(slug)}">Auf der Karte</button>` : ""}</div>
     <h3 class="abschnitt">Nächste Termine<em>${evs.length} in ${TAGE_ALLE.length} Tagen</em></h3>
@@ -1225,6 +1237,20 @@ function zeigeOrtKarte(slug, zentrieren = true) {
 }
 function ortKarteZu() { const i = ebenen.map(e => e.art).lastIndexOf("okarte"); if (i >= 0 && i === ebenen.length - 1) zurueckBis(i); else ortKarteZuIntern(); }
 function ortKarteZuIntern() { gewaehlt = null; $("#ort-karte").hidden = true; document.querySelectorAll(".mk.gewaehlt").forEach(m => m.classList.remove("gewaehlt")); }
+
+/* Cover im Orts-Blatt und seine Vollbild-Ansicht. Fällt das Bild aus, ersetzt es wie bei den Kacheln ein Schrift-Plakat (bildFehler),
+   das sich nicht öffnen lässt. Das Vollbild ist eine eigene Ebene im Verlauf: Zurück, ✕, Tippen und Escape schließen nur das Foto. */
+function coverBild(o) {
+  return `<img class="medium" src="${esc(o.c)}" alt="" decoding="async" onload="this.classList.add('da')" data-t="${esc(o.n)}" data-p="${hash(o.n) % 4}" onerror="bildFehler(this)">`;
+}
+function vollAuf(slug) {
+  const o = D.orte[slug]; if (!o?.c) return;
+  ebeneAuf({ art: "voll" });
+  const b = $("#voll-bild"); b.src = o.c; b.alt = o.n;
+  $("#voll").hidden = false;
+}
+function vollZuIntern() { $("#voll").hidden = true; $("#voll-bild").removeAttribute("src"); }
+function vollZu() { const i = ebenen.map(e => e.art).lastIndexOf("voll"); if (i >= 0 && i === ebenen.length - 1) zurueckBis(i); else vollZuIntern(); }
 
 /* Leaflet und das Cluster-Plugin nacheinander laden (das Plugin braucht Leaflet) */
 function ladeSkript(src) { return new Promise((ok, fehler) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = fehler; document.head.append(s); }); }
@@ -1432,6 +1458,8 @@ function setTabIntern(t) {
 document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-zu]"); if (!el) return;
   const ds = el.dataset;
+  if ("vollzu" in ds) return vollZu();
+  if (ds.cover) { if (el.querySelector("img")) vollAuf(ds.cover); return; }  // ersetzt ein Plakat das Bild, passiert nichts
   if (ds.kal !== undefined) { const k = +ds.kal; return sheetZu(() => springe(k, false)); }
   if ("zu" in ds) return sheetZu();  // ✕ und Tippen daneben
   if ("filter" in ds) return filterBlatt();
@@ -1463,7 +1491,7 @@ document.addEventListener("click", e => {
   if (ds.ez) { S.ez = ds.ez; return renderEntdecken(); }
   if (ds.aufkarte) { const slug = ds.aufkarte, o = D.orte[slug]; sheetZu(() => { setTab("karte"); if (karte) karte.setView([o.lat, o.lon], 16); zeigeOrtKarte(slug); }); }
 });
-document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); else if (S.tab === "karte") setTab("was"); });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (!$("#voll").hidden) vollZu(); else if (!$("#sheet").hidden) sheetZu(); else if (!$("#ort-karte").hidden) ortKarteZu(); else if (S.tab === "karte") setTab("was"); });
 
 /* ---------- Teilen (seit 2026-10-03, Davids Wunsch) ----------
    Geteilt wird t/<Termin-ID>.html#<Datum>~<Ort> (seit 03.10. mit Bild in der Link-Vorschau); diese Seite leitet auf

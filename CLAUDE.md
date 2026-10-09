@@ -285,7 +285,7 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Überschrift die Lesekante oben erreicht (`LESE` = 60 px), nicht die Mitte der Leiste.
 - **Zurück-Knopf** (seit 2026-09-30): Jede geöffnete Ebene legt einen Eintrag im Browser-Verlauf
   an (`ebenen` in der Vorlage): Blatt (Termin, Ort, Kalender, Suche, Filter, Herzen), Orts-Karte,
-  Reiter Entdecken. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
+  Reiter Entdecken, Vollbild-Foto eines Orts. „Zurück“ schließt die oberste; Termin → Ort → Zurück zeigt wieder den
   Termin. ✕, Tippen daneben und Escape gehen über denselben Weg (`zurueckBis`), sonst
   entstehen tote Zurück-Schritte. Sprünge in der Zeitleiste zählen nicht (Davids Entscheidung).
   **Schutz vor versehentlichem Schließen** (seit 2026-10-02, Davids Wunsch): Über dem Start-Eintrag liegt ein
@@ -326,6 +326,13 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   als eigene Zeilen über den Terminen; Tipp öffnet das Orts-Blatt.
 - **Auch hier** (seit 2026-10-02): Das Termin-Blatt zeigt unten die nächsten 4 Termine am selben Ort
   (`auchHier`), bei mehr einen Knopf „Alle … Termine“ zum Orts-Blatt.
+- **Cover im Orts-Blatt** (seit 2026-10-09, Davids Wunsch): Hat der Ort ein Cover (`c`, gemessen auf der Live-Seite 09.10.:
+  236 von 386 Orten mit Terminen = 61 %), steht es ganz oben im Orts-Blatt (wie im Termin-Blatt, Überschrift darunter);
+  ohne Cover bleibt die Überschrift oben neben dem ✕. Tippen öffnet das ganze Bild ohne Zuschnitt auf dunklem Grund
+  (`vollAuf`, Element `#voll`; so groß wie die gespeicherte Datei, meist 600–1.000 px vom Kulturkalender, kein Zoom wegen
+  „Kein Seitenzoom“). Das Foto ist eine eigene Ebene im Verlauf (`art: "voll"`): Zurück, Escape, ✕ und Tippen schließen nur
+  das Foto, das Blatt darunter wird dabei nicht neu gezeichnet (`nurFoto` in `popstate`). Fällt das Bild aus, ersetzt es ein
+  Schrift-Plakat, das sich nicht öffnen lässt.
 - **Lesezeichen** (seit 2026-10-02, Davids Wunsch; eine Funktion statt „Anpinnen“ und „Favorisieren“):
   Knopf rechts neben dem Titel im Termin-Blatt merkt den Termin, gespeichert im Browser (`ddwg-lesezeichen`,
   je Termin-ID `u` mit Datum, Ort, Titel). Ändert ein Neubau die ID (z. B. neue Uhrzeit), findet der Termin über
