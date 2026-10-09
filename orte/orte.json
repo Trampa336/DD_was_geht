@@ -145,6 +145,7 @@
    "Alte Kirche Klotzsche"
   ],
   "region": "dresden",
+  "homepage": "http://www.alte-kirche-klotzsche.de/",
   "adresse": "Altklotzsche 63a, 01109 Dresden",
   "lat": 51.1150356,
   "lon": 13.7617453,
@@ -392,6 +393,8 @@
    "Atelier des Neustadt Art Kollektiv"
   ],
   "region": "dresden",
+  "homepage": "https://neustadt-art-kollektiv.org/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/61380/responsive-images/rany-dabbagh_foto-Michael-Schmidt___thumb_1365_1365.jpg",
   "adresse": "Rudolf-Leonhard-Straße 19, 01097 Dresden",
   "lat": 51.0732784,
   "lon": 13.7482488,
@@ -2200,6 +2203,7 @@
    "Filmpalast Pirna"
   ],
   "region": "umland",
+  "cover": "https://www.kulturkalender-dresden.de/storage/57961/responsive-images/TDKT-2026___thumb_914_528.jpg",
   "adresse": "Gartenstraße 11, 01796 Pirna",
   "lat": 50.9618471,
   "lon": 13.9344842,
@@ -2235,7 +2239,13 @@
   "aliase": [
    "Fotoforum Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://fotoforumdresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/57961/responsive-images/TDKT-2026___thumb_914_528.jpg",
+  "adresse": "Neustädter Markt 12, 01097 Dresden",
+  "lat": 51.05794941301783,
+  "lon": 13.742995385634647,
+  "geo_quelle": "kk_seite"
  },
  "frauenkirche": {
   "name": "Frauenkirche Dresden",
@@ -2354,6 +2364,8 @@
    "Friedenskirche Radebeul"
   ],
   "region": "umland",
+  "homepage": "https://kirchspielradebeul.churchdesk.com/page/77/kirchenmusik",
+  "cover": "https://www.kulturkalender-dresden.de/storage/20799/responsive-images/Altk%C3%B6tzschenbroda_Friedenskirche_zu_Radebeul-02___thumb_1000_597.jpg",
   "adresse": "Altkötzschenbroda 40, 01445 Radebeul",
   "lat": 51.103906629657565,
   "lon": 13.633790289240466,
@@ -2603,6 +2615,9 @@
    "geh8 Kunstraum und Ateliers e.V."
   ],
   "region": "dresden",
+  "homepage": "http://www.geh8.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/3519/responsive-images/geh-8-kunstraum-c-kuka___thumb_800_457.jpg",
+  "beschreibung": "GEH8 ist eine gemeinnützige Gesellschaft in Dresden zur Förderung der zeitgenössischen Kunst und Kultur.",
   "adresse": "Gehestraße 8, 01127 Dresden",
   "lat": 51.0734858,
   "lon": 13.7306925,
@@ -2851,6 +2866,7 @@
    "Gutshofbühne Freital-Pesterwitz"
   ],
   "region": "umland",
+  "cover": "https://www.kulturkalender-dresden.de/storage/51998/responsive-images/Zwischenablage01___thumb_1000_573.jpg",
   "adresse": "Dorfplatz 1, 01705 Freital",
   "lat": 51.0284973,
   "lon": 13.6537279,
@@ -3729,7 +3745,13 @@
   "aliase": [
    "JOYNEXT Arena (Eishalle)"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://www.dresden.de/de/leben/sport-und-freizeit/sport/eisarena.php?pk_campaign=Shortcut&pk_kwd=joynextarena",
+  "cover": "https://www.kulturkalender-dresden.de/storage/21405/responsive-images/JOYNEXT-Arena---Logo-Nacht---Bild_wunderwaldphoto.com-%28002%29___thumb_1200_675.jpg",
+  "adresse": "Magdeburger Straße 10, 01067 Dresden",
+  "lat": 51.0621275,
+  "lon": 13.7222127,
+  "geo_quelle": "nominatim"
  },
  "juedische-gemeinde-hasenberg": {
   "name": "Jüdische Gemeinde Hasenberg",
@@ -4115,7 +4137,11 @@
   "aliase": [
    "Kirche Wachau"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Hauptstraße 66, 01454 Wachau",
+  "lat": 51.1575264,
+  "lon": 13.904544,
+  "geo_quelle": "nominatim"
  },
  "kleinbauernmuseum-reitzendorf": {
   "name": "Kleinbauernmuseum Reitzendorf",
@@ -4615,6 +4641,8 @@
    "KulturSchlosserei Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://kulturschlosserei.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/48335/responsive-images/PXL_20220504_071212459-1024x576___thumb_1024_576.jpg",
   "adresse": "Bischofsweg 31, 01099 Dresden",
   "lat": 51.0682217,
   "lon": 13.7619199,
@@ -5078,6 +5106,7 @@
    "Marktplatz Pirna"
   ],
   "region": "umland",
+  "cover": "https://www.kulturkalender-dresden.de/storage/61164/responsive-images/csm_MGG_2024_3_6035cffbbb___thumb_1280_441.jpg",
   "adresse": "Am Markt, 01796 Pirna",
   "lat": 50.9622182,
   "lon": 13.9423669,
@@ -5589,6 +5618,8 @@
   ],
   "region": "dresden",
   "herz": true,
+  "homepage": "https://objektkleina.com/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/61139/responsive-images/Resonanz-Eins___thumb_1280_960.jpg",
   "adresse": "Meschwitzstraße 9, 01099 Dresden",
   "lat": 51.0847862,
   "lon": 13.765186,
@@ -6791,7 +6822,14 @@
   "aliase": [
    "Schuberts e.V."
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://schuberts.net/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/61083/responsive-images/Kopf_Spielplan___thumb_1536_1024.jpg",
+  "beschreibung": "Schuberts ist ein Ort der Begegnung für alle Generationen, weltoffen, ohne Konsumzwang, selbstorganisiert. Zudem bietet Schuberts in den Räumen der ehemaligen Bäckerei und Cafe ein festes vom Verein gestaltetes Veranstaltungsprogramm. […]",
+  "adresse": "Königstraße 17, 01816 Bad Gottleuba-Berggießhübel",
+  "lat": 50.8505047,
+  "lon": 13.942143,
+  "geo_quelle": "nominatim"
  },
  "schulmuseum": {
   "name": "Schulmuseum Dresden",
@@ -7026,7 +7064,10 @@
   "aliase": [
    "St.-Nikolai-Kirche Constappel"
   ],
-  "region": "umland"
+  "region": "umland",
+  "homepage": "http://www.kirche-constappel.de/index.php/unsere-gemeinde/kirchen/kirche-constappel",
+  "cover": "https://www.kulturkalender-dresden.de/storage/61110/responsive-images/Musi-Andacht-10.10.26__KuKa-neu___thumb_5210_2945.jpg",
+  "adresse": "An der Kirche 3, 01665 Klipphausen OT Constappel"
  },
  "st-pauli-friedhof": {
   "name": "St.-Pauli-Friedhof",
@@ -7847,6 +7888,9 @@
    "Trinitatisfriedhof"
   ],
   "region": "dresden",
+  "homepage": "http://www.johannisfriedhof-dresden.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/14903/responsive-images/Zwischenablage01___thumb_1000_573.jpg",
+  "beschreibung": "Unsere Friedhöfe, Elias- , Trinitatis- und Johannisfriedhof zählen zu den schönsten Friedhöfen unserer Stadt. Sie sind stadtgeschichtlich, kulturhistorisch und",
   "adresse": "Fiedlerstraße 1, 01307 Dresden",
   "lat": 51.0535893,
   "lon": 13.7727861,
@@ -7970,6 +8014,8 @@
    "Veränderbar"
   ],
   "region": "dresden",
+  "homepage": "https://artderkultur.de/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/13401/responsive-images/ver%C3%A4nderbar-sb___thumb_1000_563.jpg",
   "adresse": "Görlitzer Straße 42 HH, 01099 Dresden",
   "lat": 51.0691985,
   "lon": 13.7563436,
@@ -8597,6 +8643,9 @@
    "Zoo Dresden"
   ],
   "region": "dresden",
+  "homepage": "https://www.zoo-dresden.de/neuigkeiten/veranstaltungen/",
+  "cover": "https://www.kulturkalender-dresden.de/storage/316/responsive-images/eingangzoo-dresdenfotozoodresden___thumb_689_460.jpg",
+  "beschreibung": "In unserem Zoo ist immer etwas los. Ob Vorträge, Tieraktionstage, Artenschutzaktionen oder buntes Familienfest: Bei uns warten das ganze Jahr über tierisch spannende Events auf Groß und Klein.",
   "adresse": "Tiergartenstraße 1, 01219 Dresden",
   "lat": 51.0374765,
   "lon": 13.7521248,
