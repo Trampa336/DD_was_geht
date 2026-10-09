@@ -20,6 +20,9 @@ def test_srcset_ohne_breiten_und_leer():
 def test_bild_youtube_klein_und_kk_platzhalter_weg():
     assert ausgabe._bild("https://i.ytimg.com/vi/ABC/maxresdefault.jpg") == "https://i.ytimg.com/vi/ABC/hqdefault.jpg"
     assert ausgabe._bild("https://i.ytimg.com/vi/ABC/hqdefault.jpg") == "https://i.ytimg.com/vi/ABC/hqdefault.jpg"
+    # fhddefault gibt es bei YouTube nicht (404): SadSvit bei Tante JU zeigte kein Cover (09.10.2026)
+    assert ausgabe._bild("https://i.ytimg.com/vi/y9wvR91iE5g/fhddefault.jpg") == "https://i.ytimg.com/vi/y9wvR91iE5g/hqdefault.jpg"
+    assert ausgabe._bild("https://i.ytimg.com/vi/ABC/sddefault.jpg") == "https://i.ytimg.com/vi/ABC/hqdefault.jpg"
     assert ausgabe._bild("https://www.kulturkalender-dresden.de/img/fallback.jpg") is None
     assert ausgabe._bild("javascript:alert(1)") is None
     assert ausgabe._bild("https://example.org/b.jpg") == "https://example.org/b.jpg"

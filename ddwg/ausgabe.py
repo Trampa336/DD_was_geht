@@ -60,7 +60,10 @@ def _web(url):
 
 # Allgemeines Platzhalterbild des Kulturkalenders: zählt als „kein Bild“ (dann Ortsfoto).
 KK_PLATZHALTER = "kulturkalender-dresden.de/img/fallback"
-_YT_GROSS = re.compile(r"(//i\.ytimg\.com/vi/[^/]+/)(maxresdefault|sddefault)\.jpg")
+# Jeder YouTube-Bildname außer hqdefault wird zu hqdefault. Das fängt maxresdefault und sddefault
+# (zu groß) und auch fhddefault ab: Den Namen liefert der Kulturkalender für manche Videos, bei
+# YouTube gibt es ihn nicht (404, gemessen 09.10.2026: SadSvit, Druha Rika, KOZA MOSTRA).
+_YT_GROSS = re.compile(r"(//i\.ytimg\.com/vi/[^/]+/)(?!hqdefault\.jpg)[a-z]*default\.jpg")
 
 
 def _bild(url):
