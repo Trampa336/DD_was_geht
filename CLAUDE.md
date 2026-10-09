@@ -329,9 +329,12 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Datum + Ort + Titel zurück; Vergangenes fällt beim Laden raus. Gemerkte Termine stehen im Tag ganz vorne
   (Relevanz +200) und haben ein helles Bändchen oben links an der Kachel. Runder Knopf in der Leiste oben
   zwischen Suche und Filter (mit Zahl; seit 2026-10-02 dort, vorher fest oben links über der Zeitleiste) öffnet das Blatt „Lesezeichen“ (Liste wie bei der Suche). Bewusst ohne Akzentfarbe.
-  Im Termin-Blatt hängen „Quelle ↗“ und „Seite vom Ort ↗“ (seit 2026-10-03, Davids Wunsch) als eine schmale Zeile
+  Im Termin-Blatt hängen der Quell-Link und „Seite vom Ort ↗“ (seit 2026-10-03, Davids Wunsch) als eine schmale Zeile
   unten an der Ortsbox (gleicher Grund, gleiche Ecken, `.sh-ort.mit-fuss`); die Pille „Dein Ort“ gibt es dort nicht
-  mehr (das ♥ am Ortsnamen reicht).
+  mehr (das ♥ am Ortsnamen reicht). Der Quell-Link zeigt seit 2026-10-09 (Davids Wunsch) die Domain des Ziels statt
+  „Quelle“ (`domainVon`, ohne „www.“, lange mit „…“; bei kaputtem Link bleibt „Quelle“). Gemessen auf der Live-Seite
+  (gh-pages, 09.10.): 1.781 von 2.302 Links führen zum Kulturkalender, dort steht also `kulturkalender-dresden.de`;
+  die Domain des Ortes steht nur, wenn die Seite des Ortes die Quelle ist.
 - **Gemeinsame Lesezeichen** (seit 2026-10-08, Davids Wunsch): Hat auch jemand anderes einen Termin gemerkt,
   zeigt der Lesezeichen-Knopf im Termin-Blatt eine kleine Zahl (alle Geräte, das eigene mitgezählt; ohne andere keine
   Zahl). Nur eine Zahl, keine Namen, offen für alle ohne Einladung (Davids Wahl). Details unter „Gemeinsame Lesezeichen“.
