@@ -428,6 +428,13 @@ bei fast gleichzeitigen Klicks Änderungen verlieren kann. Die Tabelle `merk` le
   geänderten orte.json. Damit der Workflow Pull Requests anlegen darf, muss einmalig
   in den Repo-Einstellungen unter Actions → General „Allow GitHub Actions to create
   and approve pull requests“ an sein.
+  **Cover-Lauf 2026-10-09** (Lauf 37980793629, Pull Request #3, bewusst offen gelassen, nicht gemerged): Von 386 Orten mit
+  Terminen haben 150 kein Cover (317 von 2.299 Terminen = 14 %). Der Lauf fand nur 15 neue Cover (14 an Orten mit Terminen =
+  35 von 2.299 Terminen = 1,5 %), dazu 13 Homepages, 5 Adressen, 4 Koordinaten, 4 Beschreibungen; nichts überschrieben.
+  Mehrere Cover sind Plakate einzelner Veranstaltungen statt Hausfotos (objekt klein a, Schuberts, ein Festival-Bild bei
+  zwei Orten). Nur 16 der 150 Orte haben überhaupt eine Homepage, darum greift das Werkzeug kaum. Lohnt sich nicht
+  für die Ansicht; nur nötig, wenn David einzelne Orte gezielt will (dann Cover von Hand in orte.json).
+  Der Log eines Laufs lässt sich aus der Cloud nicht laden (403), den Diff sieht man am Zweig `orte-ergaenzen`.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
   (bis 150 min Toleranz bei gleichem Ort und Titel; seit 2026-10-02 auch bei Wortüberdeckung
   ab 0,6, wenn eine Zeile von der Seite des Hauses kommt). Seit 2026-10-02 legt `dedup` auch
