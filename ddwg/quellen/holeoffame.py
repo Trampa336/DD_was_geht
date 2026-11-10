@@ -38,7 +38,7 @@ Datum aus der Übersicht bekannt ist.
 import logging
 import re
 import time as time_module
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urljoin
 
 from .. import normalize
@@ -155,7 +155,7 @@ def _event(t, detail=None):
         "image_url": None,
         "price_text": preis,
         "description": beschreibung,
-        "detail_fetched_at": datetime.utcnow().isoformat() if detail else None,
+        "detail_fetched_at": datetime.now(timezone.utc).isoformat() if detail else None,
     }
 
 

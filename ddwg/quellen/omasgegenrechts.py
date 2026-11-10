@@ -17,7 +17,7 @@ standen auch Demos in Erfurt oder Riesa im Kalender - übernommen wird nur
 Dresden und das Umland (geo.classify_region auf die Stadt).
 """
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import icalendar
@@ -97,7 +97,7 @@ def _parse_calendar(ics_bytes, start_day, end_day):
             "image_url": str(bild) if bild else None,
             "price_text": None,
             "description": text,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

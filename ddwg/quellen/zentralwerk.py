@@ -42,7 +42,7 @@ Evolution oder GrooveStation lohnt sich hier also kein zusätzlicher
 Detail-Request je Termin.
 """
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import icalendar
@@ -138,7 +138,7 @@ def _parse_calendar(ics_bytes, start_day, end_day):
             "image_url": None,
             "price_text": detail_fetch.price_from_text(body),
             "description": "\n\n".join(description_parts) or None,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

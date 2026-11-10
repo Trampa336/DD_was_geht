@@ -39,7 +39,7 @@ Beschreibung. Ohne Bands wird die Kopfzeile zum Titel; der Platzhalter
 import logging
 import re
 import time as time_module
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from urllib.parse import urljoin
 
 from .. import normalize
@@ -146,7 +146,7 @@ def _event(t, detail=None):
         "image_url": t["image_url"],
         "price_text": preis,
         "description": beschreibung,
-        "detail_fetched_at": datetime.utcnow().isoformat() if detail else None,
+        "detail_fetched_at": datetime.now(timezone.utc).isoformat() if detail else None,
     }
 
 

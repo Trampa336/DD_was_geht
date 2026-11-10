@@ -82,6 +82,10 @@ def scrape(tage=TAGE_VORAUS, nur=None, details=True, heute=None, orte=None, conn
                     + (" ..." if len(orte.neu) > 15 else ""))
     orte.save()
 
+    weg = db.aufraeumen(conn, heute)
+    logger.info("Aufgeräumt (älter als %d Tage): %s", db.BEHALTEN_TAGE,
+                ", ".join(f"{k} {v}" for k, v in weg.items()))
+
     anzahl = build(conn, orte, heute)
     if details:
         if details_nachladen(conn, orte, heute):

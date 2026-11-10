@@ -34,7 +34,7 @@ ein Detail-Request pro Termin im Zeitraum wie schon bei Sektor Evolution.
 import logging
 import re
 import time as time_module
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import icalendar
@@ -179,7 +179,7 @@ def _build_event(entry, image_url):
         "image_url": image_url,
         "price_text": entry["price_text"],
         "description": entry["description"],
-        "detail_fetched_at": datetime.utcnow().isoformat(),
+        "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
 

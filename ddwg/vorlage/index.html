@@ -7,6 +7,8 @@
    Die Karte zoomt trotzdem: Leaflet rechnet Zwei-Finger-Gesten selbst aus Touch-Events. */document.addEventListener("gesturestart",function(e){e.preventDefault()})</script>
 <meta name="theme-color" content="#17191a">
 <script>/* Theme vor dem ersten Zeichnen setzen, sonst blitzt kurz das Standard-Theme auf */try{var t=localStorage.getItem("ddwg-theme");if(t&&/^[a-z]+$/.test(t))document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>/* Fehlernetz (2026-11-10): Scheitert das Skript beim Start, bliebe sonst nur eine leere Seite. Nur solange der Feed leer ist. */
+window.addEventListener("error",function(e){var t=document.getElementById("tage");if(!e.message||(t&&t.children.length)||document.getElementById("fehler"))return;var p=document.createElement("div");p.id="fehler";p.className="fehler-hinweis";p.innerHTML='Die Seite konnte nicht geladen werden.<br><button type="button" onclick="location.reload()">Neu laden</button>';(document.body||document.documentElement).appendChild(p)})</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon-64.png" sizes="64x64" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -407,9 +409,12 @@ button.kt { background: var(--surface2); }
 .link-leise svg { opacity: .7; width: 11px; height: 11px; flex: none; }
 .link-leise { min-width: 0; }
 .link-leise .dom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.fehler-hinweis { position: fixed; left: 16px; right: 16px; top: 40%; z-index: 99; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 16px; text-align: center; font: 15px/1.5 var(--f); }
+.fehler-hinweis button { margin-top: 10px; padding: 8px 16px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font: inherit; font-weight: 600; }
 </style>
 </head>
 <body>
+<noscript><div class="fehler-hinweis">DD was geht braucht JavaScript. Bitte im Browser einschalten.</div></noscript>
 <div id="app" data-tab="was">
   <header class="kopf"><h1>DD <b>was</b> geht</h1><button class="theme-knopf" data-themes aria-label="Aussehen wählen"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg></button></header>
   <div class="oben" id="oben">

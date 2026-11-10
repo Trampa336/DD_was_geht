@@ -24,6 +24,7 @@ Vier Tabellen, in einer Richtung:
 """
 import os
 import sqlite3
+from datetime import timedelta
 from contextlib import contextmanager
 
 DB_PATH = os.environ.get(
@@ -191,6 +192,28 @@ def save_detail(conn, url, description, price_text, image_url, fetched_at):
                fetched_at = excluded.fetched_at""",
         (url, description, price_text, image_url, fetched_at),
     )
+
+
+# --- Aufraeumen ---------------------------------------------------------------
+
+# Bestand nur einen Monat behalten (Davids Entscheidung 2026-11-10): Die Datenbank wandert
+# per actions/cache von Lauf zu Lauf und soll nicht endlos wachsen.
+BEHALTEN_TAGE = 30
+
+
+def aufraeumen(conn, heute, tage=BEHALTEN_TAGE):
+    """Loescht, was aelter als `tage` ist: vergangene listings und events, alte Laeufe und
+    Detailseiten, auf die kein listing mehr zeigt. Gibt die Anzahl je Tabelle zurueck."""
+    grenze = (heute - timedelta(days=tage)).isoformat()
+    n = {}
+    n["listings"] = conn.execute("DELETE FROM listings WHERE date < ?", (grenze,)).rowcount
+    n["events"] = conn.execute("DELETE FROM events WHERE date < ?", (grenze,)).rowcount
+    n["scrape_runs"] = conn.execute("DELETE FROM scrape_runs WHERE started_at < ?", (grenze,)).rowcount
+    n["details"] = conn.execute(
+        """DELETE FROM details WHERE fetched_at < ?
+           AND url NOT IN (SELECT url FROM listings WHERE url IS NOT NULL)""", (grenze,)).rowcount
+    conn.commit()
+    return n
 
 
 # --- scrape_runs -------------------------------------------------------------

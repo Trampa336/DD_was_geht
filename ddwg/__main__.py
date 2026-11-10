@@ -7,12 +7,13 @@
     python -m ddwg herz --liste     alle Herz-Orte
     python -m ddwg orte <suche>     Orte suchen (slug, Name, Alias)
     python -m ddwg status           letzte Laeufe je Quelle, Bestand, neue Orte
+    python -m ddwg status --pruefen Fehler (Exit 1), wenn eine Quelle seit 7 Tagen nicht lief
 """
 import argparse
 import logging
 import sys
 from collections import Counter
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from . import ausgabe, db, doppelorte, pipeline, quellen
 from .orte import Orte
@@ -113,8 +114,41 @@ def _status_kurz():
         print(f"  {quellen.name(slug):18} {mark} {last['finished_at'][:16]}  {last['event_count'] or 0:5} Einträge{extra}")
 
 
+# Eine Quelle ohne erfolgreichen Lauf seit so vielen Tagen gilt als kaputt. `status --pruefen`
+# endet dann mit Fehler, und der Workflow veroeffentlicht nicht (Davids Entscheidung 2026-11-10).
+KAPUTT_NACH_TAGEN = 7
+
+
+def quellen_pruefen(runs, jetzt=None):
+    """Liste der Quellen, deren letzter erfolgreicher Lauf aelter als KAPUTT_NACH_TAGEN ist
+    (oder die nur Fehlversuche kennen). Quellen ohne jeden Lauf zaehlen nicht."""
+    jetzt = jetzt or datetime.now(timezone.utc)
+    grenze = (jetzt - timedelta(days=KAPUTT_NACH_TAGEN)).isoformat()
+    kaputt = []
+    for slug in quellen.slugs():
+        r = runs.get(slug, {})
+        if not r.get("letzter"):
+            continue
+        ok = r.get("letzter_ok")
+        if not ok or ok["finished_at"] < grenze:
+            seit = ok["finished_at"][:10] if ok else "nie"
+            kaputt.append(f"{quellen.name(slug)}: letzter erfolgreicher Lauf {seit}"
+                          + (f" - {r['letzter'].get('error')}" if r["letzter"].get("error") else ""))
+    return kaputt
+
+
 def cmd_status(args):
     _status_kurz()
+    if getattr(args, "pruefen", False):
+        with db.connect() as conn:
+            kaputt = quellen_pruefen(db.last_runs(conn))
+        if kaputt:
+            print(f"\n{len(kaputt)} Quelle(n) seit über {KAPUTT_NACH_TAGEN} Tagen ohne Erfolg:")
+            for z in kaputt:
+                print("  " + z)
+            sys.exit(1)
+        print(f"\nAlle Quellen hatten in den letzten {KAPUTT_NACH_TAGEN} Tagen einen erfolgreichen Lauf.")
+        return
     orte = Orte.load()
     heute = date.today().isoformat()
     with db.connect() as conn:
@@ -171,6 +205,8 @@ def main(argv=None):
     o.set_defaults(func=cmd_orte)
 
     st = sub.add_parser("status", help="Zustand der Quellen und des Bestands")
+    st.add_argument("--pruefen", action="store_true",
+                    help=f"nur Quellen pruefen; Fehler, wenn eine seit {KAPUTT_NACH_TAGEN} Tagen nicht lief")
     st.set_defaults(func=cmd_status)
 
     args = p.parse_args(argv)

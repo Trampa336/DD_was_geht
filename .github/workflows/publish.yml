@@ -8,7 +8,7 @@ name: Website veröffentlichen
 # Branch "gh-pages" (Ordner /) stellen, siehe CLAUDE.md.
 on:
   schedule:
-    - cron: "17 3 * * *"  # 03:17 UTC; zur vollen Stunde verschiebt GitHub Läufe um Stunden
+    - cron: "17 3 * * *"  # 03:17 UTC geplant; GitHub startet ihn tatsächlich meist erst 10–11 Uhr UTC (gemessen Nov. 2026)
   workflow_dispatch: {}
   push:
     branches: [main]
@@ -30,11 +30,11 @@ jobs:
   scrape-und-veroeffentlichen:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Abhaengigkeiten installieren
         run: pip install -r requirements.txt
@@ -44,7 +44,7 @@ jobs:
       # Detailseiten neuer Termine. Gespeichert wird am Ende des Jobs, nur wenn
       # er erfolgreich war. Fehlt der Cache, baut der Scrape alles neu auf.
       - name: Event-Datenbank vom letzten Lauf holen
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: cache/events.db
           key: events-db-${{ github.run_id }}
@@ -66,9 +66,18 @@ jobs:
             python -m ddwg scrape
           fi
 
+      # Quellen, die seit über 7 Tagen keinen erfolgreichen Lauf haben, lassen den Job scheitern
+      # (Davids Entscheidung 2026-11-10): die alte Seite bleibt stehen, die Fehler-Mail von GitHub kommt.
+      - name: Quellen pruefen
+        shell: bash  # bash mit pipefail, sonst verschluckt tee den Fehler
+        run: python -m ddwg status --pruefen | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # force_orphan: gh-pages ohne Verlauf. Jeder Lauf schreibt ~1.900 Vorschau-Seiten neu,
+      # mit Verlauf wuchs der Zweig um einige MB pro Tag (gemerkt 2026-11-10).
       - name: Auf gh-pages veroeffentlichen
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./ausgabe
           publish_branch: gh-pages
+          force_orphan: true

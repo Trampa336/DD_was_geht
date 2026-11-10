@@ -30,7 +30,7 @@ Bilder: Wix verkleinert über die Adresse; 600 px, Seitenverhältnis bleibt
 """
 import json
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from .. import normalize
 from . import base
@@ -127,7 +127,7 @@ def _parse(html, bezug):
             "price_text": None,
             "description": None,
             # Mehr gibt die Seite nicht her, es gibt nichts nachzuladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 
