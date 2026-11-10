@@ -148,7 +148,8 @@
   "adresse": "Altklotzsche 63a, 01109 Dresden",
   "lat": 51.1150356,
   "lon": 13.7617453,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "http://www.alte-kirche-klotzsche.de/"
  },
  "alte-schule-gohlis": {
   "name": "Alte Schule Gohlis",
@@ -395,7 +396,8 @@
   "adresse": "Rudolf-Leonhard-Straße 19, 01097 Dresden",
   "lat": 51.0732784,
   "lon": 13.7482488,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "https://neustadt-art-kollektiv.org/"
  },
  "atelier-eigenart-wiedemann": {
   "name": "Atelier eigenart Wiedemann",
@@ -2235,7 +2237,12 @@
   "aliase": [
    "Fotoforum Dresden"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://fotoforumdresden.de/",
+  "adresse": "Neustädter Markt 12, 01097 Dresden",
+  "lat": 51.05794941301783,
+  "lon": 13.742995385634647,
+  "geo_quelle": "kk_seite"
  },
  "frauenkirche": {
   "name": "Frauenkirche Dresden",
@@ -2357,7 +2364,8 @@
   "adresse": "Altkötzschenbroda 40, 01445 Radebeul",
   "lat": 51.103906629657565,
   "lon": 13.633790289240466,
-  "geo_quelle": "kk_page"
+  "geo_quelle": "kk_page",
+  "homepage": "https://kirchspielradebeul.churchdesk.com/page/77/kirchenmusik"
  },
  "friedhof-doelzschen": {
   "name": "Friedhof Dölzschen",
@@ -2606,7 +2614,9 @@
   "adresse": "Gehestraße 8, 01127 Dresden",
   "lat": 51.0734858,
   "lon": 13.7306925,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "http://www.geh8.de/",
+  "beschreibung": "GEH8 ist eine gemeinnützige Gesellschaft in Dresden zur Förderung der zeitgenössischen Kunst und Kultur."
  },
  "gemaeldegalerie-alte-meister-im-zwinger-staatliche-kunstsammlungen": {
   "name": "Gemäldegalerie Alte Meister im Zwinger Dresden - Staatliche Kunstsammlungen Dresden",
@@ -3729,7 +3739,12 @@
   "aliase": [
    "JOYNEXT Arena (Eishalle)"
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://www.dresden.de/de/leben/sport-und-freizeit/sport/eisarena.php?pk_campaign=Shortcut&pk_kwd=joynextarena",
+  "adresse": "Magdeburger Straße 10, 01067 Dresden",
+  "lat": 51.0621275,
+  "lon": 13.7222127,
+  "geo_quelle": "nominatim"
  },
  "juedische-gemeinde-hasenberg": {
   "name": "Jüdische Gemeinde Hasenberg",
@@ -4115,7 +4130,11 @@
   "aliase": [
    "Kirche Wachau"
   ],
-  "region": "umland"
+  "region": "umland",
+  "adresse": "Hauptstraße 66, 01454 Wachau",
+  "lat": 51.1575264,
+  "lon": 13.904544,
+  "geo_quelle": "nominatim"
  },
  "kleinbauernmuseum-reitzendorf": {
   "name": "Kleinbauernmuseum Reitzendorf",
@@ -4618,7 +4637,8 @@
   "adresse": "Bischofsweg 31, 01099 Dresden",
   "lat": 51.0682217,
   "lon": 13.7619199,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "https://kulturschlosserei.de/"
  },
  "kulturweberei": {
   "name": "Kulturweberei",
@@ -5592,7 +5612,8 @@
   "adresse": "Meschwitzstraße 9, 01099 Dresden",
   "lat": 51.0847862,
   "lon": 13.765186,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "https://objektkleina.com/"
  },
  "oekofranz-hof": {
   "name": "Ökofranz-Hof",
@@ -6791,7 +6812,13 @@
   "aliase": [
    "Schuberts e.V."
   ],
-  "region": "dresden"
+  "region": "dresden",
+  "homepage": "https://schuberts.net/",
+  "adresse": "Königstraße 17, 01816 Bad Gottleuba-Berggießhübel",
+  "lat": 50.8505047,
+  "lon": 13.942143,
+  "geo_quelle": "nominatim",
+  "beschreibung": "Schuberts ist ein Ort der Begegnung für alle Generationen, weltoffen, ohne Konsumzwang, selbstorganisiert. Zudem bietet Schuberts in den Räumen der ehemaligen Bäckerei und Cafe ein festes vom Verein gestaltetes Veranstaltungsprogramm. […]"
  },
  "schulmuseum": {
   "name": "Schulmuseum Dresden",
@@ -7026,7 +7053,9 @@
   "aliase": [
    "St.-Nikolai-Kirche Constappel"
   ],
-  "region": "umland"
+  "region": "umland",
+  "homepage": "http://www.kirche-constappel.de/index.php/unsere-gemeinde/kirchen/kirche-constappel",
+  "adresse": "An der Kirche 3, 01665 Klipphausen OT Constappel"
  },
  "st-pauli-friedhof": {
   "name": "St.-Pauli-Friedhof",
@@ -7850,7 +7879,9 @@
   "adresse": "Fiedlerstraße 1, 01307 Dresden",
   "lat": 51.0535893,
   "lon": 13.7727861,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "http://www.johannisfriedhof-dresden.de/",
+  "beschreibung": "Unsere Friedhöfe, Elias- , Trinitatis- und Johannisfriedhof zählen zu den schönsten Friedhöfen unserer Stadt. Sie sind stadtgeschichtlich, kulturhistorisch und"
  },
  "trinitatishaus": {
   "name": "Trinitatishaus",
@@ -7973,7 +8004,8 @@
   "adresse": "Görlitzer Straße 42 HH, 01099 Dresden",
   "lat": 51.0691985,
   "lon": 13.7563436,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "https://artderkultur.de/"
  },
  "veranstaltungsscheune": {
   "name": "Veranstaltungsscheune",
@@ -8600,7 +8632,9 @@
   "adresse": "Tiergartenstraße 1, 01219 Dresden",
   "lat": 51.0374765,
   "lon": 13.7521248,
-  "geo_quelle": "nominatim"
+  "geo_quelle": "nominatim",
+  "homepage": "https://www.zoo-dresden.de/neuigkeiten/veranstaltungen/",
+  "beschreibung": "In unserem Zoo ist immer etwas los. Ob Vorträge, Tieraktionstage, Artenschutzaktionen oder buntes Familienfest: Bei uns warten das ganze Jahr über tierisch spannende Events auf Groß und Klein."
  },
  "zschoner-muehle": {
   "name": "Zschoner Mühle",
