@@ -10,6 +10,7 @@ zusammen und bauen eine statische Seite (PWA). GitHub Actions aktualisiert sie t
     venv/bin/pip install -r requirements.txt
     venv/bin/python -m ddwg scrape    # Termine holen, baut ausgabe/index.html
     venv/bin/python -m ddwg build     # ohne Netz neu bauen
-    venv/bin/python -m pytest tests
+    venv/bin/python -m pytest tests   # Kerntests ohne Netz; Oberflächen-Test nur mit Node + playwright
+    venv/bin/python -m ddwg status    # Zustand der Quellen; --pruefen meldet kaputte Quellen
 
 Details, Regeln und Aufbau: [CLAUDE.md](CLAUDE.md)

@@ -31,8 +31,14 @@ python -m ddwg build             # ohne Netz: Events neu bauen + ausgabe/index.h
 python -m ddwg herz <ort>        # Ort als Herz-Ort markieren (--weg entfernt, --liste zeigt alle)
 python -m ddwg orte <suche>      # Orte suchen: slug, Name, Region, Anzahl Events
 python -m ddwg status            # letzter Lauf je Quelle, Bestand, neu entdeckte Orte
-python -m pytest tests           # Kerntests ohne Netz
+python -m ddwg status --pruefen  # Exit 1, wenn eine Quelle seit 7 Tagen keinen erfolgreichen Lauf hat
+python -m pytest tests           # Kerntests ohne Netz (~3 s); Oberflächen-Rauchtest nur mit Node + playwright
 ```
+**Oberflächen-Rauchtest** (seit 2026-11-10, `tests/test_oberflaeche.py` + `tests/oberflaeche_check.mjs`):
+baut die Seite aus vier Testterminen, öffnet sie in Chromium ohne Netz und prüft Feed, Termin-Blatt,
+Filter, Suche und den Fehlerfänger. Läuft nur, wenn `node -e "require('playwright')"` klappt
+(`npm i -g playwright && npx playwright install chromium`), sonst übersprungen. In der Cloud-Kopie ist
+Playwright vorinstalliert; im Workflow läuft er nicht. Vor jedem Push an der Vorlage ausführen.
 
 **Vorschau am Handy vor dem Push** (bei Änderungen an der Oberfläche, seit 2026-09-30):
 nach `python -m ddwg build` auf Davids Rechner `cd ausgabe && python3 -m http.server 8000`
@@ -68,7 +74,9 @@ wenn eine Vorschau sinnvoll ist. Schnelle Checks am PC: Chrome, F12, Handy-Ansic
   ist ein Knopf in der Orte-Liste. Flavours setzen **keine** Herzen mehr über Richtungen.
 - `cache/events.db` (SQLite, gitignored): `listings` (je Quelle roh, pro Lauf ersetzt) →
   `events` (verschmolzen, bei jedem Build komplett neu) + `scrape_runs` + `details`.
-  Löschen ist erlaubt, der nächste Scrape baut die Datenbank neu auf.
+  Löschen ist erlaubt, der nächste Scrape baut die Datenbank neu auf. **Bestand = 30 Tage**
+  (Davids Entscheidung 2026-11-10): `db.aufraeumen` löscht nach jedem Scrape listings, events und
+  Läufe, die älter als `BEHALTEN_TAGE` sind, und Detailseiten, auf die kein listing mehr zeigt.
 
 ## Ablauf (ddwg/pipeline.py)
 1. Jede Quelle (`ddwg/quellen/<slug>.py`, Funktion `scrape_range(start, ende)`) liefert Event-dicts.
@@ -108,9 +116,14 @@ die Seite nur aus der Datenbank vom letzten Lauf neu (`python -m ddwg build`, ~2
 veröffentlicht sie. Das gilt für Oberfläche und orte.json/flavours.json. Pushes, die nur
 `*.md`, `docs/` oder `tests/` ändern, lösen nichts aus. Fehlt die Datenbank im Cache, scrapt
 auch der Push-Lauf voll, ebenso wenn der letzte Scrape über 20 h her ist (ein Push verdrängt
-einen wartenden Tageslauf). Täglicher Lauf (03:17 UTC, krumme Minute gegen Verspätung) und
-„Run workflow“ scrapen immer frisch. Unter 200 Events endet `scrape`/`build` mit Fehler
-(`MINDEST_EVENTS`), dann bleibt die alte Seite stehen. Einmalig
+einen wartenden Tageslauf). Täglicher Lauf (geplant 03:17 UTC; GitHub startet ihn bei kostenlosen Repos tatsächlich meist
+erst 10–11 Uhr UTC, gemessen Nov. 2026) und „Run workflow“ scrapen immer frisch. Unter 200 Events
+endet `scrape`/`build` mit Fehler (`MINDEST_EVENTS`), dann bleibt die alte Seite stehen.
+Seit 2026-11-10 (Davids Entscheidung) scheitert der Lauf außerdem, wenn eine Quelle seit über 7 Tagen
+keinen erfolgreichen Lauf hatte (`python -m ddwg status --pruefen`, `KAPUTT_NACH_TAGEN`): GitHub schickt
+dann die Fehler-Mail, die alte Seite bleibt stehen, bis die Quelle repariert oder aus
+`ddwg/quellen/__init__.py` genommen ist. gh-pages wird ohne Verlauf geschrieben (`force_orphan`):
+jeder Lauf ersetzt ~1.900 Vorschau-Seiten, mit Verlauf wuchs der Zweig täglich um einige MB. Einmalig
 noetig, falls GitHub es nicht selbst erkennt: in den Repo-Einstellungen unter
 „Pages“ die Quelle auf Branch `gh-pages` (Ordner `/`) stellen.
 Der Workflow behaelt `cache/events.db` per `actions/cache` von Lauf zu Lauf, damit
@@ -233,6 +246,9 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
 - Zeitstrahl-Galerie (Reiter „Feed“) und Entdecken-Karte mit Leaflet + markercluster
   von cdnjs (Reiter „Karte“; im Code weiter `was` und `karte`). Die Schrift TeX Gyre Heros aus `ddwg/vorlage/schrift/`
   wird beim Bauen eingebettet. Entwürfe liegen unter `docs/ui-entwuerfe/` (gitignored).
+- **Fehlernetz** (seit 2026-11-10): `<noscript>`-Hinweis und ein Fehlerfänger im Kopf der Vorlage
+  (`window.addEventListener("error")`): wirft das Skript vor dem ersten Zeichnen (Feed noch leer), erscheint
+  `.fehler-hinweis` mit „Neu laden“ statt einer leeren Seite. Spätere Fehler (Feed steht) bleiben still.
 - **Themes** (seit 2026-10-02, Davids Wunsch): 5 dunkle Farbsätze, Industriegelände (Standard), Blaues
   Wunder, Neustadt, Platte, Heide (Namen von David; intern elbe, neon, platte, wald) (Davids Auswahl aus 10 Entwürfen; Kellerbar, Nachtviolett, Mitternacht und die
   hellen Papier und Salbei sind raus). Nur Farben über die CSS-Variablen in `:root[data-theme=…]`, dazu `--glow`
@@ -387,6 +403,24 @@ ansehen, Test-Beispiel in `tests/` ablegen, echter Lauf über GitHub Actions.
   Ausstellung einmal am ersten Tag. Ohne eigene Wahl (`F.dauer` null) ist er an, sobald die
   Richtung Ausstellungen oder Kultur gewählt ist; Tippen auf diese Richtung setzt die Wahl zurück.
 
+## Betrieb ohne Entwicklung (Runbook, seit 2026-11-10)
+Was zu tun ist, wenn nur noch der tägliche Lauf läuft und etwas schiefgeht:
+- **Fehler-Mail von GitHub, Schritt „Quellen pruefen“ rot:** Eine Quelle liefert seit 7 Tagen nichts.
+  Im Log steht welche. Seite im Browser ansehen: Hat sich das HTML geändert, Scraper anpassen
+  (Test-Fixture in `tests/` mit aktualisieren). Gibt es den Ort oder die Seite nicht mehr, die Quelle
+  aus `QUELLEN` in `ddwg/quellen/__init__.py` nehmen; ihre Termine kommen dann über die Sammelkalender.
+- **Schritt „Bauen bzw. scrapen“ rot mit „Nur N Events“:** fast alle Quellen fehlen, meist Netz oder
+  Kulturkalender down. Am nächsten Tag läuft es meist wieder; sonst „Run workflow“ von Hand.
+- **Push nach gh-pages rot (GitHub 500/502):** nichts tun, der nächste Lauf veröffentlicht.
+- **Seite zeigt alte Termine:** Läuft der Workflow? Unter Actions nachsehen. Nach 60 Tagen ohne Push
+  schaltet GitHub geplante Workflows ab (Mail kommt); dann in Actions wieder aktivieren.
+- **Seite leer oder 404:** Repo-Einstellungen → Pages → Quelle Branch `gh-pages`, Ordner `/`.
+- **Cache weg** (7 Tage ohne Lauf): der nächste Lauf lädt alle Detailseiten neu (~45 min), kein Eingriff nötig.
+- **Abhängigkeiten:** Versionen in `requirements.txt` sind festgenagelt; Python im Workflow 3.12. Erst
+  heben, wenn ein Lauf daran scheitert, dann `python -m pytest tests` lokal.
+- **Fehler auf dem Handy:** Zeigt die Seite „Die Seite konnte nicht geladen werden“, ist das JavaScript
+  beim Start abgestürzt (Fehlerfänger im Kopf der Vorlage). Am PC mit F12 → Console nachsehen.
+
 ## Gemeinsame Lesezeichen (Cloudflare-Dienst, seit 2026-10-08)
 Eine statische Seite kann nichts zwischen Geräten teilen, darum gibt es einen winzigen Dienst:
 `dienst/lesezeichen.js`, ein Cloudflare Worker mit D1-Datenbank (Binding `DB`, kostenlos). D1 statt KV, weil KV
@@ -435,6 +469,8 @@ bei fast gleichzeitigen Klicks Änderungen verlieren kann. Die Tabelle `merk` le
   zwei Orten). Nur 16 der 150 Orte haben überhaupt eine Homepage, darum greift das Werkzeug kaum. Lohnt sich nicht
   für die Ansicht; nur nötig, wenn David einzelne Orte gezielt will (dann Cover von Hand in orte.json).
   Der Log eines Laufs lässt sich aus der Cloud nicht laden (403), den Diff sieht man am Zweig `orte-ergaenzen`.
+  **2026-11-10:** 34 Felder davon in orte.json übernommen (13 Homepages, Adresse/Koordinaten für 5 Orte,
+  4 Beschreibungen), Cover bewusst nicht (Veranstaltungsplakate). Pull Request #3 und Zweig damit erledigt.
 - Bekannte Grenzfälle der Doppelungs-Erkennung: Quellen nennen Einlass statt Beginn
   (bis 150 min Toleranz bei gleichem Ort und Titel; seit 2026-10-02 auch bei Wortüberdeckung
   ab 0,6, wenn eine Zeile von der Seite des Hauses kommt). Seit 2026-10-02 legt `dedup` auch
