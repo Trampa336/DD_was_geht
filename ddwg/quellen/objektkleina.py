@@ -32,7 +32,7 @@ Beschreibung = Text plus "Lineup: …". Platzhalter ("lorem ipsum") fallen weg.
 Preis = Zeilen aus dem kleinen Text mit "€" oder "Eintritt".
 """
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from .. import normalize
 from . import base
@@ -156,7 +156,7 @@ def _parse(html):
             "price_text": preis,
             "description": beschreibung,
             # Alles steht schon auf der Monatsseite, es gibt nichts nachzuladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

@@ -114,7 +114,7 @@ def _parse(html):
             "description": description,
             # Der Feed liefert Bild und Beschreibung schon beim Scrapen mit -
             # es gibt nichts nachzuladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

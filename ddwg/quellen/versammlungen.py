@@ -24,7 +24,7 @@ Streiks stehen laut Stadt nicht in der Liste.
 """
 import json
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from .. import normalize
 from . import base
@@ -82,7 +82,7 @@ def _parse(daten, start_day, end_day):
             "image_url": None,
             "price_text": None,
             "description": " ".join(teile) or None,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

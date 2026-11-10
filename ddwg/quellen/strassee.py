@@ -38,7 +38,7 @@ import html
 import logging
 import re
 import time as time_module
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 import requests
 
@@ -195,7 +195,7 @@ def _build_event(entry, venue, norm_time, detail_ok):
         # nachtragen (die fehlen sonst z.B. bei "TOWER TRANSMISSIONS", wo die
         # Quelle selbst keine Einlasszeit nennt - das ist trotzdem ein
         # erfolgreicher Abruf, kein Fehlschlag).
-        "detail_fetched_at": datetime.utcnow().isoformat() if detail_ok else None,
+        "detail_fetched_at": datetime.now(timezone.utc).isoformat() if detail_ok else None,
     }
 
 

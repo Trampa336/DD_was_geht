@@ -21,7 +21,7 @@ vom Kulturkalender und von rauze. Die Quelle sorgt für Vollständigkeit
 "(hochverlegt in die Tante JU)" verschiebt den Termin, siehe base.verlegt().
 """
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import icalendar
@@ -69,7 +69,7 @@ def _parse_calendar(ics_bytes, start_day, end_day):
             "image_url": None,
             "price_text": None,
             "description": None,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

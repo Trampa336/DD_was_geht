@@ -45,7 +45,7 @@ Uhrzeit.
 import logging
 import re
 import time as time_module
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from .. import normalize
 from . import base, detail_fetch
@@ -232,7 +232,7 @@ def _build_event(entry, detail=None):
         "description": description,
         # Nur wenn die Detailseite wirklich gelesen wurde, gilt das Event als
         # vollständig - sonst darf detail_fetch.py es später nachholen.
-        "detail_fetched_at": datetime.utcnow().isoformat() if detail else None,
+        "detail_fetched_at": datetime.now(timezone.utc).isoformat() if detail else None,
     }
 
 

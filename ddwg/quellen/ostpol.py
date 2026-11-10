@@ -31,7 +31,7 @@ Drei Eigenheiten:
    Beschreibung sind nur Emoji-Grafiken von Facebook und werden ignoriert.
 """
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from .. import normalize
 from . import base
@@ -109,7 +109,7 @@ def _parse(html, bezug):
             "price_text": preis,
             "description": beschreibung,
             # Alles steht schon auf der Startseite, es gibt nichts nachzuladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

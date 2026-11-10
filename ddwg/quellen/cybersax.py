@@ -35,7 +35,7 @@ nur Orte (/terminal/adressen/address/<ort>/). Als url steht deshalb die
 Tagesseite drin - die ist wenigstens stabil und zeigt dauerhaft denselben Tag.
 Bilder und Preise liefert die Quelle gar nicht.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .. import normalize
 from . import base
@@ -209,7 +209,7 @@ def _collapse_festival_groups(slots, day, source_url):
             "image_url": None,
             "price_text": None,
             "description": f"Line-up: {lineup}",
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
         # Jede Zusammenfassung steht im Lauf-Protokoll: nur so faellt auf, wenn
         # die Quelle eine neue RUBRIK einfuehrt, die hier faelschlich als
@@ -313,7 +313,7 @@ def _parse(html, day, source_url):
             "description": description,
             # Die Tagesliste enthält bereits alles, was die Quelle hat - es
             # gibt keine Detailseite zum Nachladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events + _collapse_festival_groups(events, day, source_url)
 

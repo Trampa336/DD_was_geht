@@ -26,7 +26,7 @@ Zwei Eigenheiten:
 
 Kein Bild im Feed. Das Bild kommt beim Verschmelzen vom Kulturkalender.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
@@ -99,7 +99,7 @@ def _parse_calendar(ics_bytes, start_day, end_day):
             "image_url": None,
             "price_text": detail_fetch.price_from_text(text),
             "description": beschreibung,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

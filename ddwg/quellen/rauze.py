@@ -17,7 +17,7 @@ Kategorien, die Rauze tatsächlich vergibt (verifiziert):
 "Außerhalb" ist dabei eine Ortsangabe (Veranstaltung im Umland), kein Genre -
 solche Events werden bewusst über die Titel-Schlüsselwörter klassifiziert.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from .. import normalize
 from . import base
@@ -118,7 +118,7 @@ def _parse(html, day, source_url):
             "description": _extract_description(container),
             # Rauze blendet den kompletten Detailinhalt schon in der Tagesliste
             # mit ein (nur per JS zugeklappt) - es gibt also nichts nachzuladen.
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 

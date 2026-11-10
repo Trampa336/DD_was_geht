@@ -29,7 +29,7 @@ Eigenheiten:
 3. ATTACH trägt das Bild des Termins, DESCRIPTION den ganzen Text.
 """
 import html
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import icalendar
@@ -121,7 +121,7 @@ def _parse_calendar(ics_bytes, start_day, end_day):
             "image_url": str(bild) if bild else None,
             "price_text": detail_fetch.price_from_text(text),
             "description": text,
-            "detail_fetched_at": datetime.utcnow().isoformat(),
+            "detail_fetched_at": datetime.now(timezone.utc).isoformat(),
         })
     return events
 
